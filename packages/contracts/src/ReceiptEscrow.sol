@@ -12,14 +12,24 @@ import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
  *         deterministic adjudicator publishes a verdict over the seller's
  *         response, then it moves to the seller or back to the buyer.
  *
- * @dev VALUE DENOMINATION. This contract holds the chain's NATIVE asset.
- *      On Hedera that is HBAR, and there are two different units for it:
- *        - the native ledger (and x402 `amount`) counts TINYBARS, 1e8 per HBAR
- *        - the EVM `msg.value` counts WEIBARS,            1e18 per HBAR
- *      so `valueScale` is 1e10 on Hedera. On a plain EVM chain where the
- *      signed amount is already wei, deploy with valueScale = 1. Keeping the
- *      factor in an immutable is what lets the same bytecode back the Base
- *      Sepolia fallback without editing the contract.
+ * @dev VALUE DENOMINATION — measured, not assumed.
+ *      HBAR has two units: the native ledger counts TINYBARS (1e8 per HBAR)
+ *      and Ethereum tooling expects WEIBARS (1e18 per HBAR). It is tempting to
+ *      conclude that `msg.value` is therefore in weibars. It is not.
+ *
+ *      Hedera's JSON-RPC relay accepts a transaction `value` in WEIBARS for
+ *      tooling compatibility and divides by 1e10 at the boundary, so inside
+ *      the EVM `msg.value` arrives in TINYBARS. Verified on testnet: sending
+ *      value = 5e17 weibars produced msg.value = 5e7.
+ *
+ *      x402 `amount` is also in tinybars, so on Hedera the two already agree
+ *      and `valueScale` is 1. The immutable remains useful for a chain where
+ *      the signed unit differs from the unit `msg.value` reports — deploy the
+ *      same bytecode with a different scale rather than editing this file.
+ *
+ *      Callers still send `value` in weibars over RPC: see tinybarsToWeibars
+ *      in packages/core/src/units.ts, which converts for the wire, not for
+ *      this comparison.
  *
  * @dev TRUST MODEL. The facilitator receives the x402 payment natively and
  *      forwards it here in the same request, so it custodies for one hop.
@@ -40,7 +50,7 @@ contract ReceiptEscrow is EIP712, Ownable, ReentrancyGuard {
     struct Deal {
         address payer;
         address payee;
-        uint256 amountWeibars;
+        uint256 amount; // in msg.value units (tinybars on Hedera)
         bytes32 termsHash;
         uint64 openedAt;
         uint64 deadline;
@@ -54,14 +64,14 @@ contract ReceiptEscrow is EIP712, Ownable, ReentrancyGuard {
     mapping(bytes32 => Deal) public deals;
     address public adjudicator;
 
-    /// @notice Weibars per unit of the signed `amount`. 1e10 on Hedera, 1 elsewhere.
+    /// @notice Units of `msg.value` per unit of the signed `amount`. 1 on Hedera.
     uint256 public immutable valueScale;
 
     event DealOpened(
         bytes32 indexed dealId,
         address indexed payer,
         address indexed payee,
-        uint256 amountWeibars,
+        uint256 amount,
         bytes32 termsHash,
         uint64 deadline
     );
@@ -152,7 +162,7 @@ contract ReceiptEscrow is EIP712, Ownable, ReentrancyGuard {
         deals[dealId] = Deal({
             payer: payer,
             payee: payee,
-            amountWeibars: msg.value,
+            amount: msg.value,
             termsHash: termsHash,
             openedAt: uint64(block.timestamp),
             deadline: deadline,
@@ -168,7 +178,7 @@ contract ReceiptEscrow is EIP712, Ownable, ReentrancyGuard {
         if (d.status != Status.Open) revert DealNotOpen();
         d.status = Status.Released;
         emit DealReleased(dealId, verdictHash);
-        _send(d.payee, d.amountWeibars);
+        _send(d.payee, d.amount);
     }
 
     /// @notice Verdict failed: return the buyer's money.
@@ -181,7 +191,7 @@ contract ReceiptEscrow is EIP712, Ownable, ReentrancyGuard {
         if (d.status != Status.Open) revert DealNotOpen();
         d.status = Status.Refunded;
         emit DealRefunded(dealId, verdictHash, reason);
-        _send(d.payer, d.amountWeibars);
+        _send(d.payer, d.amount);
     }
 
     /**
@@ -198,7 +208,7 @@ contract ReceiptEscrow is EIP712, Ownable, ReentrancyGuard {
         d.status = Status.Refunded;
         emit DealExpired(dealId);
         emit DealRefunded(dealId, bytes32(0), "expired");
-        _send(d.payer, d.amountWeibars);
+        _send(d.payer, d.amount);
     }
 
     function setAdjudicator(address next) external onlyOwner {
@@ -208,8 +218,8 @@ contract ReceiptEscrow is EIP712, Ownable, ReentrancyGuard {
     }
 
     /// @dev Status is always written before this is called (checks-effects-interactions).
-    function _send(address to, uint256 amountWeibars) private {
-        (bool sent,) = payable(to).call{value: amountWeibars}("");
+    function _send(address to, uint256 amount) private {
+        (bool sent,) = payable(to).call{value: amount}("");
         if (!sent) revert TransferFailed();
     }
 }
