@@ -13,3 +13,4 @@ packages/contracts/broadcast/
 # vitest / tsc
 coverage/
 *.tsbuildinfo
+.secrets/
