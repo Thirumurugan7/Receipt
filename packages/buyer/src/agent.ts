@@ -128,6 +128,21 @@ export async function buy(mode = 'honest') {
   const verdict = res.headers.get('X-Receipt-Verdict')
   const after = await balance(BUYER_ID)
 
+  // The seller never answered. The facilitator declined to invent a verdict it
+  // could not publish, so the deal is still open and the deadline is the
+  // remedy — claimable by anyone, including people with no stake in it.
+  if (res.status === 504) {
+    const info = JSON.parse(body) as { dealId: string; claimableAfter: string; error: string }
+    console.log(`\nHTTP 504 — seller did not respond`)
+    console.log(`  dealId          ${info.dealId}`)
+    console.log(`  claimable after ${info.claimableAfter}`)
+    console.log(`  escrow          still Open; no verdict was published`)
+    console.log(`\nbuyer balance now     ${hbar(after)}`)
+    console.log(`buyer delta           ${hbar(after - before)}  (still escrowed)`)
+    console.log(`\nrecover it with:  pnpm claim --deal ${info.dealId}`)
+    return { verdict: 'unreachable' as const, dealId: info.dealId, delta: after - before }
+  }
+
   console.log(`\nHTTP ${res.status}`)
   console.log(`  verdict        ${verdict}`)
   console.log(`  firstFailure   ${res.headers.get('X-Receipt-First-Failure') || '(none)'}`)

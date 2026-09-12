@@ -8,7 +8,10 @@
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "facilitator": "pnpm --filter @receipt/facilitator start",
     "seller": "pnpm --filter @receipt/seller start",
-    "buy": "pnpm --filter @receipt/buyer start"
+    "buy": "pnpm --filter @receipt/buyer start",
+    "verify": "pnpm --filter @receipt/verify start",
+    "claim": "pnpm --filter @receipt/buyer claim",
+    "scenes": "pnpm --filter @receipt/buyer scenes"
   },
   "devDependencies": {
     "@types/node": "^22.20.2",

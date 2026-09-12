@@ -69,11 +69,26 @@ app.use(
 )
 
 /**
- * Honest mode. The payload is real data pulled live from the Hedera mirror
- * node — no API key, no fixture file. A demo that sells invented numbers
- * invites the question of what else is invented.
+ * Three modes, switchable live so the demo can change the seller's behaviour
+ * between scenes without restarting anything.
+ *
+ *   honest  — real data, passes every check
+ *   garbage — HTTP 200 with a useless body. The important one: a naive payment
+ *             rail sees "200 OK" and releases the money.
+ *   dead    — never responds at all.
  */
 app.get('/api/quote', async (c) => {
+  const mode = c.req.query('mode') ?? 'honest'
+
+  if (mode === 'garbage') {
+    // Note the status: 200, not 500. Nothing at the HTTP layer is wrong here.
+    return c.json({ error: 'upstream rate limited' }, 200)
+  }
+
+  if (mode === 'dead') {
+    await new Promise(() => {}) // never settles; the caller must time out
+  }
+
   const res = await fetch(`${MIRROR}/api/v1/network/supply`)
   const supply = (await res.json()) as { released_supply?: string; total_supply?: string }
 

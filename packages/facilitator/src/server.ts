@@ -13,7 +13,7 @@ import { decodeTermsHeader, hashVerdict } from '@receipt/core'
 import type { Hex } from '@receipt/core'
 import { config } from './env.js'
 import { blocky, requirementsFor } from './blocky.js'
-import { decodePayment, FlowError, runFlow } from './flow.js'
+import { decodePayment, FlowError, runFlow, SellerUnreachableError } from './flow.js'
 import { adjudicatorAddress, readDeal } from './escrow.js'
 import * as store from './store.js'
 import { lookup, record } from './payments.js'
@@ -108,6 +108,19 @@ app.post('/proxy', async (c) => {
       },
     })
   } catch (e) {
+    if (e instanceof SellerUnreachableError) {
+      return c.json(
+        {
+          error: e.message,
+          dealId: e.dealId,
+          remedy: 'claimExpired',
+          claimableAfter: new Date(e.deadlineMs).toISOString(),
+          note: 'the deal is still open on-chain; anyone may call claimExpired after the deadline',
+        },
+        504,
+        { 'X-Receipt-Deal-Id': e.dealId },
+      )
+    }
     const err = e as FlowError
     return c.json({ error: err.message }, (err.status as 400) ?? 500)
   }

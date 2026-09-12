@@ -15,6 +15,8 @@
     "tsx": "^4.23.13"
   },
   "scripts": {
-    "start": "tsx src/agent.ts"
+    "start": "tsx src/agent.ts",
+    "claim": "tsx src/claim-expired.ts",
+    "scenes": "tsx src/scenes.ts"
   }
 }

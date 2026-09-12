@@ -3,7 +3,8 @@ import type { Terms, Verdict } from '@receipt/core'
 
 export type Phase =
   | 'terms-verified' | 'payment-verified' | 'settled' | 'escrowed'
-  | 'seller-responded' | 'adjudicated' | 'released' | 'refunded' | 'expired' | 'failed'
+  | 'seller-responded' | 'adjudicated' | 'released' | 'refunded'
+  | 'awaiting-expiry' | 'expired' | 'failed'
 
 export interface DealRecord {
   dealId: string

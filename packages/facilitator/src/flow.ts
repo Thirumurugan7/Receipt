@@ -16,6 +16,9 @@ import * as escrow from './escrow.js'
 import { advance, upsert } from './store.js'
 import { record as recordSettlement } from './payments.js'
 
+/** Must stay below the terms deadline, or a hung seller would outlive it. */
+export const PROXY_TIMEOUT_MS = Number(process.env.PROXY_TIMEOUT_MS ?? 45_000)
+
 const domain = {
   name: 'Receipt',
   version: '1',
@@ -27,6 +30,29 @@ const hcs = { operatorId: config.operatorId, operatorKey: config.operatorKey, ne
 
 export class FlowError extends Error {
   constructor(message: string, readonly status = 400) { super(message) }
+}
+
+/**
+ * The seller never answered.
+ *
+ * This deliberately does NOT refund. The adjudicator's whole claim is that a
+ * verdict is a pure function of (terms, response) that anyone can recompute —
+ * and there is no response here to publish, so any verdict would be one nobody
+ * could reproduce. Rather than invent one, the facilitator declines to resolve
+ * and leaves the deal open.
+ *
+ * The buyer is not stuck: past the deadline `claimExpired` returns the money
+ * and needs no permission from anyone, including us. That is the point of the
+ * deadline, and it holds even if this facilitator disappears entirely.
+ */
+export class SellerUnreachableError extends FlowError {
+  constructor(readonly dealId: Hex, readonly deadlineMs: number, readonly waitedMs: number) {
+    super(
+      `seller did not respond within ${waitedMs}ms; deal left open, ` +
+        `claimExpired is callable by anyone after ${new Date(deadlineMs).toISOString()}`,
+      504,
+    )
+  }
 }
 
 /** Step 1: the terms must be signed by the payer they name. */
@@ -101,8 +127,9 @@ export async function runFlow(
   let status = 0
   let headers: Record<string, string> = {}
   let body = new Uint8Array()
+  let reachedSeller = false
   const controller = new AbortController()
-  const timeout = setTimeout(() => controller.abort(), 45_000) // DECISIONS-01 Q6
+  const timeout = setTimeout(() => controller.abort(), PROXY_TIMEOUT_MS) // DECISIONS-01 Q6
   try {
     const res = await fetch(terms.resource, {
       // x402 v2 carries the payment in PAYMENT-SIGNATURE. The resource
@@ -118,16 +145,19 @@ export async function runFlow(
     status = res.status
     headers = Object.fromEntries([...res.headers].map(([k, v]) => [k.toLowerCase(), v]))
     body = new Uint8Array(await res.arrayBuffer())
-  } catch (e) {
-    // A dead seller is a normal outcome, not an exception: status 0 fails the
-    // status check and the buyer is refunded on the spot.
-    status = 0
-    headers = {}
-    body = new Uint8Array()
+    reachedSeller = true
+  } catch {
+    reachedSeller = false
   } finally {
     clearTimeout(timeout)
   }
   const observedLatencyMs = Math.round(performance.now() - started)
+
+  if (!reachedSeller) {
+    advance(dealId, { phase: 'awaiting-expiry', observedLatencyMs })
+    throw new SellerUnreachableError(dealId, terms.deadlineMs, observedLatencyMs)
+  }
+
   advance(dealId, { phase: 'seller-responded', observedLatencyMs })
 
   const observation: Observation = { status, headers, body, requestTimeMs, observedLatencyMs }

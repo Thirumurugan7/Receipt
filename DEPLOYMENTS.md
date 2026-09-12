@@ -105,3 +105,38 @@ reproduce when it is in fact correct.
 | `release()` | `0x728a26100789c79db8a5e72986bc7edfe3c57c589428d9dc1a23073df44b0801` |
 | Verdict | pass, all seven reproducible checks |
 | Buyer delta | -0.5 ℏ, and no network fee — Blocky402's fee payer covered gas |
+
+
+## All scenes, verified on testnet
+
+`pnpm scenes` runs every path end to end. Nothing is simulated; the dead-seller
+scene really waits for a deadline to pass.
+
+| Scene | Seller | Outcome | Buyer delta |
+|---|---|---|---|
+| 2 | honest | all 7 reproducible checks pass, `release()` pays the seller | −0.5 ℏ |
+| 3 | garbage | **HTTP 200** with a useless body; `requiredPaths` fails, `refund()` | 0.0 ℏ |
+| 4 | dead | no verdict is invented; a stranger calls `claimExpired` | 0.0 ℏ after claim |
+| 5 | — | `pnpm verify` recomputes both verdicts and prints MATCH | — |
+
+Scene 3 is the one naive payment rails cannot catch: the HTTP layer is entirely
+healthy, the status check passes, and the body is still worthless.
+
+Scene 4 deliberately does **not** auto-refund. A verdict is a pure function of
+(terms, response), and there is no response here — so publishing one would mean
+publishing something nobody could reproduce. The facilitator declines, leaves the
+deal open, and the deadline does the work. `claimExpired` is callable by anyone
+and can only pay the payer, so the money is recoverable even if this facilitator
+disappears. Demonstrated from `0x13DD3C134DE76eb85dAb76Bf3d3D4e435Dbe5770`, a
+wallet with no relationship to the deal.
+
+### What `pnpm verify` proves, and what it does not
+
+Proven: the `reproducible` checks are recomputed offline from the published
+terms and raw response, and the resulting `verdictHash` matches both the
+published document and the hash the escrow recorded on chain. Confirmed for a
+passing deal (`DealReleased`) and a failing one (`DealRefunded`).
+
+Not proven: `observedLatencyMs`. It is the facilitator's own stopwatch and no
+third party can recompute it — which is exactly why it lives in `attested` and
+gates nothing. It is reported, never trusted.
