@@ -1,5 +1,5 @@
 {
-  "totalMs": 220000,
+  "totalMs": 227000,
   "scenes": [
     {
       "n": "title",
@@ -29,71 +29,71 @@
     {
       "n": "it works",
       "start": 44000,
-      "dur": 12000
+      "dur": 14000
     },
     {
       "n": "seven checks",
-      "start": 56000,
+      "start": 58000,
       "dur": 10000
     },
     {
       "n": "junk answer",
-      "start": 66000,
-      "dur": 12000
+      "start": 68000,
+      "dur": 13000
     },
     {
       "n": "refunded",
-      "start": 78000,
+      "start": 81000,
       "dur": 10000
     },
     {
       "n": "seller says no",
-      "start": 88000,
-      "dur": 10000
+      "start": 91000,
+      "dur": 12000
     },
     {
       "n": "seller vanishes",
-      "start": 98000,
-      "dur": 11000
+      "start": 103000,
+      "dur": 13000
     },
     {
       "n": "the live app",
-      "start": 109000,
+      "start": 116000,
       "dur": 30000
     },
     {
       "n": "check it yourself",
-      "start": 139000,
+      "start": 146000,
       "dur": 10000
     },
     {
       "n": "second opinion",
-      "start": 149000,
+      "start": 156000,
       "dur": 11000
     },
     {
       "n": "the receipts",
-      "start": 160000,
+      "start": 167000,
       "dur": 14000
     },
     {
       "n": "architecture",
-      "start": 174000,
+      "start": 181000,
       "dur": 17000
     },
     {
       "n": "sponsors",
-      "start": 191000,
+      "start": 198000,
       "dur": 12000
     },
     {
       "n": "what we cannot prove",
-      "start": 203000,
+      "start": 210000,
       "dur": 9000
     },
     {
       "n": "close",
-      "start": 212000,
+      "start": 219000,
       "dur": 8000
     }
   ]

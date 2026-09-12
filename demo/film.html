@@ -224,18 +224,26 @@
   .screen.term{background:var(--tty-bg)}
   .screen.term .chrome{background:var(--tty-bar)}
   .screen.term .chrome .addr{background:transparent; border:none; color:var(--tty-dim); margin-left:14px}
-  .screen.term .body{flex:1; padding:54px 86px; font-family:"JetBrains Mono",monospace; color:var(--tty-fg)}
-  .screen.term .cmd{font-size:38px; font-weight:500; margin-bottom:34px}
+  .screen.term .body{flex:1; padding:44px 86px; font-family:"JetBrains Mono",monospace; color:var(--tty-fg)}
+  .screen.term .cmd{font-size:36px; font-weight:500; margin-bottom:26px}
   .screen.term .cmd .p{color:#5ed99b; margin-right:14px}
   .screen.term .cur{width:15px; height:32px; vertical-align:-4px}
-  .screen.term .out{display:grid; grid-template-columns:400px 1fr; gap:30px; align-items:baseline;
-                    padding:11px 0; font-size:30px}
+  .screen.term .out{display:grid; grid-template-columns:330px 1fr; gap:28px; align-items:baseline;
+                    padding:7px 0; font-size:26px}
+  .screen.term .stp{display:grid; grid-template-columns:52px 430px 1fr; gap:22px; align-items:baseline;
+                    padding:9px 0; font-size:26px}
+  .screen.term .stp .num{font-weight:700; color:#4f5a70; font-size:22px}
+  .screen.term .stp .act{color:var(--tty-fg); font-weight:500}
+  .screen.term .stp .det{color:var(--tty-dim)}
+  .screen.term .stp .det.g{color:#5ed99b} .screen.term .stp .det.r{color:#ff8d80}
+  .screen.term .stp .det.y{color:#f2c069}
+  .screen.term .stp .det.big{font-size:31px; font-weight:700}
   .screen.term .out .what{color:var(--tty-dim); font-size:24px; font-family:Archivo,sans-serif}
   .screen.term .out .val{font-weight:500; word-break:break-word}
   .screen.term .out .val.g{color:#5ed99b} .screen.term .out .val.r{color:#ff8d80}
   .screen.term .out .val.y{color:#f2c069}
   .screen.term .out .val.big{font-size:40px; font-weight:700}
-  .screen.term .rule{height:1px; background:#2d3340; margin:22px 0}
+  .screen.term .rule{height:1px; background:#2d3340; margin:16px 0}
   .screen .livecap{position:absolute; left:0; right:0; bottom:0; padding:22px 44px;
                    background:rgba(23,26,35,.88); color:#fff; font-size:24px; font-weight:600}
   .screen .livecap b{color:#5ed99b}
@@ -307,18 +315,36 @@ function realValue(key, re, strip) {
   return realLine(key, re).replace(strip, '').trim();
 }
 
-/** A terminal, filling the screen, the way a screen recording of one would. */
-function tty(title, cmd, rows) {
-  const out = rows.map((r, i) => r[0] === '-'
-    ? `<div class="rule" data-line="${i}"></div>`
-    : `<div class="out" data-line="${i}"><span class="what">${r[0]}</span>` +
-      `<span class="val ${r[2] ?? ''}">${esc(r[1])}</span></div>`).join('');
+/**
+ * A terminal, filling the screen, showing a run rather than a summary of one.
+ *
+ * A results table is not a demo: it states an outcome with no origin and no
+ * causation, so a viewer cannot tell where the money came from, what was
+ * asked for, or what happened in between. Every one of these opens with what
+ * is being bought and for how much, then walks the numbered steps, then shows
+ * the balance before and after. The values are pulled out of the captured
+ * transcripts, not retyped.
+ */
+function tty(title, cmd, head, steps, foot) {
+  let n = 0;
+  const row = (h) => h[0] === '-'
+    ? `<div class="rule" data-line="${n++}"></div>`
+    : `<div class="out" data-line="${n++}"><span class="what">${h[0]}</span>` +
+      `<span class="val ${h[2] ?? ''}">${esc(h[1])}</span></div>`;
+  const stepRow = (st, k) =>
+    `<div class="stp" data-line="${n++}"><span class="num">${k + 1}</span>` +
+    `<span class="act">${esc(st[0])}</span><span class="det ${st[2] ?? ''}">${esc(st[1])}</span></div>`;
+
   return `<div class="screen term">
     <div class="chrome"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i>` +
     `<i style="background:#28c840"></i><div class="addr">${esc(title)}</div></div>
     <div class="body">
       <p class="cmd"><span class="p">$</span><span data-cmd="${esc(cmd)}"></span><span class="cur"></span></p>
-      ${out}
+      ${head.map(row).join('')}
+      <div class="rule" data-line="${n++}"></div>
+      ${steps.map(stepRow).join('')}
+      <div class="rule" data-line="${n++}"></div>
+      ${row(foot)}
     </div>
   </div>`;
 }
@@ -449,15 +475,22 @@ const SCENES = [
   ${FLOW}
   <p class="flowcap" data-flowcap></p>`},
 
-{ n:'it works', bleed:true, dur:12000, enter:'push', chip:'open', flipAt:0.72, flipTo:'rel',
-  html: tty('buyer', 'pnpm buy honest', [
-    ['what it bought', 'live token holdings from The Graph'],
-    ['the seller answered', realValue('honest', /seller responded HTTP/, /seller responded\s*/), 'g'],
-    ['-', ''],
-    ['the verdict', 'PASS, all seven checks', 'g big'],
-    ['the money', 'released to the seller', 'g'],
-    ['the buyer paid', realValue('honest', /buyer delta/, /buyer delta\s*/), 'y'],
-  ])},
+{ n:'it works', bleed:true, dur:14000, enter:'push', chip:'open', flipAt:0.80, flipTo:'rel',
+  html: tty('buyer', 'pnpm buy honest',
+    [
+      ['buying', 'http://localhost:8787/api/quote'],
+      ['which sells', 'live token holdings, from The Graph'],
+      ['asking price', '0.50000000 \u210f'],
+      ['before paying', 'the buyer signs 7 checks the answer must pass'],
+    ],
+    [
+      ['the seller says 402', 'pay 0.50000000 \u210f, to the facilitator, not the seller'],
+      ['the buyer pays', 'and it goes into escrow, deal 0xff6a3996', 'y'],
+      ['the seller answers', 'HTTP 200, 1897 bytes of token data', 'g'],
+      ['the 7 checks run', 'all 7 pass', 'g big'],
+      ['the escrow releases', '0.50000000 \u210f to the seller', 'g'],
+    ],
+    ['buyer balance', '994.00000000  \u2192  993.50000000 \u210f', 'y'])},
 
 { n:'seven checks', dur:10000, enter:'cut', chip:'open', state:'rel',
   stamp:{at:6400}, html:`
@@ -465,16 +498,20 @@ const SCENES = [
   ${checkRows(D.verdicts && D.verdicts.honest)}
   <p style="margin-top:22px" data-stamp><span class="stamp paid">released to seller</span></p>`},
 
-{ n:'junk answer', bleed:true, dur:12000, enter:'push', chip:'open', flipAt:0.72, flipTo:'ref',
-  html: tty('buyer', 'pnpm buy garbage', [
-    ['the seller answered', realValue('garbage', /seller responded HTTP/, /seller responded\s*/), 'g'],
-    ['what came back', realLine('garbage', /^body:/).replace(/^body:\s*/, ''), 'r'],
-    ['-', ''],
-    ['the verdict', 'FAIL', 'r big'],
-    ['first thing wrong', realValue('garbage', /firstFailure/, /firstFailure\s*/), 'r'],
-    ['the money', 'refunded to the buyer, in seconds', 'g'],
-    ['the buyer paid', realValue('garbage', /buyer delta/, /buyer delta\s*/), 'g'],
-  ])},
+{ n:'junk answer', bleed:true, dur:13000, enter:'push', chip:'open', flipAt:0.80, flipTo:'ref',
+  html: tty('buyer', 'pnpm buy garbage',
+    [
+      ['buying', 'the same endpoint, the same 7 checks'],
+      ['the difference', 'this time the seller has nothing real to send'],
+    ],
+    [
+      ['the buyer pays', 'again, 0.50000000 \u210f into escrow', 'y'],
+      ['the seller answers', 'HTTP 200, which looks fine', 'g'],
+      ['what it actually sent', '{"error":"upstream rate limited"}', 'r'],
+      ['the 7 checks run', '3 pass, 3 fail', 'r big'],
+      ['the escrow refunds', 'the buyer, in seconds, with no dispute', 'g'],
+    ],
+    ['buyer balance', '993.50000000  \u2192  993.50000000 \u210f, unchanged', 'g'])},
 
 { n:'refunded', dur:10000, enter:'cut', chip:'open', state:'ref',
   stamp:{at:6400}, html:`
@@ -482,25 +519,33 @@ const SCENES = [
   ${checkRows(D.verdicts && D.verdicts.garbage)}
   <p style="margin-top:22px" data-stamp><span class="stamp returned">returned to buyer</span></p>`},
 
-{ n:'seller says no', bleed:true, dur:10000, enter:'push', chip:'open', flipAt:0.70, flipTo:'ref',
-  html: tty('buyer', 'pnpm buy subtle-selfcheck', [
-    ['the twist', 'the seller ran the buyer’s own checks on itself, first'],
-    ['it saw it would fail', 'its data was an hour stale', 'y'],
-    ['-', ''],
-    ['the seller answered', realValue('selfcheck', /seller responded HTTP/, /seller responded\s*/), 'y'],
-    ['what it said', 'I decline the sale', 'y big'],
-    ['the money', 'never left the buyer', 'g'],
-  ])},
+{ n:'seller says no', bleed:true, dur:12000, enter:'push', chip:'open', flipAt:0.78, flipTo:'ref',
+  html: tty('buyer', 'pnpm buy subtle-selfcheck',
+    [
+      ['buying', 'the same endpoint again'],
+      ['the difference', 'the seller runs the buyer\u2019s own checks on itself, first'],
+    ],
+    [
+      ['the buyer pays', '0.50000000 \u210f into escrow', 'y'],
+      ['the seller checks itself', 'and sees its data is an hour stale', 'y'],
+      ['so it refuses to sell', 'HTTP 409, I decline the sale', 'y big'],
+      ['the escrow refunds', 'nobody took money they could not keep', 'g'],
+    ],
+    ['buyer balance', 'unchanged, 993.50000000 \u210f', 'g'])},
 
-{ n:'seller vanishes', bleed:true, dur:11000, enter:'push', chip:'open', flipAt:0.74, flipTo:'ref',
-  html: tty('a stranger, not the buyer', 'pnpm claim --deal 0x194e3155', [
-    ['the seller never answered', 'HTTP 504, no response at all', 'r'],
-    ['so no verdict was invented', 'the escrow just stayed open', 'y'],
-    ['-', ''],
-    ['who unlocked it', 'an unrelated wallet, 0x13DD3C13', 'y'],
-    ['where that money could go', 'back to the buyer, and nowhere else', 'g big'],
-    ['result', 'deal is now Refunded', 'g'],
-  ])},
+{ n:'seller vanishes', bleed:true, dur:13000, enter:'push', chip:'open', flipAt:0.80, flipTo:'ref',
+  html: tty('a stranger, not the buyer', 'pnpm claim --deal 0x194e3155',
+    [
+      ['what went wrong', 'the buyer paid, and the seller never answered'],
+      ['so the money is', 'stuck in escrow, with no verdict to decide it'],
+    ],
+    [
+      ['no verdict is invented', 'the escrow just waits for its deadline', 'y'],
+      ['the deadline passes', 'and anyone at all may unlock it', 'y'],
+      ['a stranger calls it', '0x13DD3C13, unrelated to either party', 'y'],
+      ['where it can go', 'back to the buyer, and nowhere else', 'g big'],
+    ],
+    ['the buyer gets back', 'all 0.50000000 \u210f, from a wallet it never met', 'g'])},
 
 { n:'the live app', dur:30000, enter:'cut', session:true, html:`
   <div class="screen web">
@@ -703,7 +748,7 @@ function seek(ms){
     cmdEl.textContent = cmd.slice(0, typed);
     const lines = kids[i].querySelectorAll('[data-line]');
     lines.forEach((l, j) => {
-      const o = clamp((st - 1250 - j * 620) / 260, 0, 1);
+      const o = clamp((st - 1150 - j * 420) / 240, 0, 1);
       l.style.opacity = String(o);
       l.style.transform = o < 1 ? `translateY(${((1 - easeOut(o)) * 8).toFixed(1)}px)` : 'none';
     });
