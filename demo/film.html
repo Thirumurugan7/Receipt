@@ -55,7 +55,7 @@
   body[data-dark="1"] #rail .num,
   body[data-dark="1"] #rail .nm,
   body[data-dark="1"] #rail .clock{color:#69748f}
-  .chip{display:inline-block; max-width:82px; margin-bottom:16px; padding:5px 8px 4px; font-size:11.5px;
+  .chip{display:inline-block; max-width:82px; transform-origin:left center; margin-bottom:16px; padding:5px 8px 4px; font-size:11.5px;
         font-weight:600; letter-spacing:.09em; line-height:1.4; border:1.5px solid currentColor}
   .chip.open{color:var(--held)} .chip.rel{color:var(--paid)} .chip.ref{color:var(--returned)}
 
@@ -82,6 +82,12 @@
   .term .dim{color:var(--term-dim)} .term .g{color:#5ed99b} .term .r{color:#ff8d80}
   .term .y{color:#f2c069} .term .w{color:#fff; font-weight:500}
   .term .hot{color:#5ef0a6; font-weight:600}
+  /* The line currently being printed rides a little brighter than the ones
+     behind it, so the eye follows the output instead of re-reading the top.
+     A filter rather than a colour, so it lifts the syntax colours with it. */
+  .term .live{filter:brightness(1.55)}
+  .term{transform-origin:top left}
+
   /* filled in from seek(): a sweep across the line the scene is about */
   .term .w{background-image:linear-gradient(90deg, rgba(94,217,155,.20), rgba(94,217,155,.20));
            background-repeat:no-repeat; background-size:var(--sweep,0%) 100%}
@@ -427,7 +433,7 @@ function seek(ms){
     }
     sig.push('t' + acc);
   }
-  let printed = false;   // has the transcript reached the line where the money moves?
+  let flipAtMs = null;   // when the transcript printed the line where the money moves
 
   const term = kids[i].querySelector('.term[data-k]');
   if (term) {
@@ -435,17 +441,30 @@ function seek(ms){
     const printMs = s.dur * 0.66;
     const chars = Math.floor(clamp(st / printMs, 0, 1) * text.length);
     const blink = st < printMs || Math.floor(t / 530) % 2 === 0;
-    term.innerHTML = paint(text.slice(0, chars)) + (blink ? '<span class="cur"></span>' : '');
+    // Paint, then lift the last line: nothing in paint() spans a newline, so
+    // the painted HTML can be split on one safely.
+    const painted = paint(text.slice(0, chars)).split('\n');
+    const printing = chars < text.length && painted.length > 0;
+    if (printing) painted[painted.length - 1] = `<span class="live">${painted[painted.length - 1]}</span>`;
+    term.innerHTML = painted.join('\n') + (blink ? '<span class="cur"></span>' : '');
+
+    // A slow drift while it fills. Anchored top-left so the text cannot walk
+    // out of the frame, and small enough that it reads as life rather than
+    // as a zoom.
+    const dr = easeInOut(clamp(st / s.dur, 0, 1));
+    term.style.transform = `translateY(${(-5 * dr).toFixed(2)}px) scale(${(1 + 0.012 * dr).toFixed(4)})`;
 
     // Once the transcript has finished printing, light up the verdict line.
     // Without it the eye has to hunt for the one line the scene is about.
     const sweep = Math.round(easeOut((st - printMs - 260) / 520) * 100);
     term.style.setProperty('--sweep', `${sweep}%`);
 
-    sig.push(chars, blink ? 1 : 0, sweep);
+    sig.push(chars, blink ? 1 : 0, sweep, Math.round(dr * 60));
+
     if (s.flip) {
       const at = text.indexOf(s.flip.needle);
-      printed = at !== -1 && chars >= at + s.flip.needle.length;
+      // when, in scene time, the money-moving line finished printing
+      if (at !== -1) flipAtMs = ((at + s.flip.needle.length) / text.length) * printMs;
     }
   }
 
@@ -515,12 +534,22 @@ function seek(ms){
 
   railNum.textContent = `${String(i + 1).padStart(2, '0')}/${SCENES.length}`;
   railNm.textContent = s.n;
+  const flipped = flipAtMs !== null && st >= flipAtMs;
+  const changedAt = s.state ? (s.stamp?.at ?? 0) : (flipped ? flipAtMs : null);
   const settledTo = (s.state && st >= (s.stamp?.at ?? 0)) ? s.state
-    : (printed ? s.flip.to : null);
+    : (flipped ? s.flip.to : null);
   const chip = settledTo
     ? `<span class="chip ${settledTo}">${settledTo === 'rel' ? 'RELEASED' : 'REFUNDED'}</span>`
     : ((s.chip || s.state) ? `<span class="chip open">ESCROW OPEN</span>` : '');
   railState.innerHTML = chip;
+  // The state of the money changing is the point of the whole scene, so the
+  // chip lands rather than merely swapping.
+  const pop = settledTo && changedAt !== null
+    ? 1 + (1 - easeBack(clamp((st - changedAt) / 300, 0, 1))) * 0.45
+    : 1;
+  const chipEl = railState.firstElementChild;
+  if (chipEl) chipEl.style.transform = `scale(${pop.toFixed(3)})`;
+  sig.push(Math.round(pop * 100));
   railClock.textContent = `${mmss(t)} / ${mmss(TOTAL_MS)}`;
   bar.style.width = `${(t / TOTAL_MS) * 100}%`;
   sig.push(Math.floor(t / 1000), settledTo ?? '-');
