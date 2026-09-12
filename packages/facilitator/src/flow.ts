@@ -13,7 +13,7 @@ import { encodeTermsHeader, recoverTermsSigner } from '@receipt/core'
 import { config } from './env.js'
 import { blocky, requirementsFor, type PaymentPayload } from './blocky.js'
 import * as escrow from './escrow.js'
-import { advance, upsert } from './store.js'
+import { advance, get as getDeal, upsert } from './store.js'
 import { record as recordSettlement } from './payments.js'
 
 /** Must stay below the terms deadline, or a hung seller would outlive it. */
@@ -120,7 +120,8 @@ export async function runFlow(
   advance(dealId, { phase: 'escrowed', openTxHash: opened.hash })
 
   // 5. call the seller, timed
-  await submit(hcs, config.topicId, { kind: 'terms', dealId, termsHash, terms })
+  const termsMsg = await submit(hcs, config.topicId, { kind: 'terms', dealId, termsHash, terms })
+  advance(dealId, { audit: { terms: termsMsg } })
 
   const requestTimeMs = Date.now()
   const started = performance.now()
@@ -204,10 +205,11 @@ export async function runFlow(
       firstFailure: 'bodyTooLarge',
     }
   } else {
-    await submit(hcs, config.topicId, {
+    const obsMsg = await submit(hcs, config.topicId, {
       kind: 'observation', dealId, termsHash, status, headers,
       bodyBase64: Buffer.from(body).toString('base64'), requestTimeMs,
     })
+    advance(dealId, { audit: { ...getDeal(dealId)?.audit, observation: obsMsg } })
   }
   const verdictHash = hashVerdict(verdict)
   advance(dealId, { phase: 'adjudicated', verdict })
@@ -219,10 +221,11 @@ export async function runFlow(
   advance(dealId, { phase: verdict.pass ? 'released' : 'refunded', resolveTxHash })
 
   // 8. publish the verdict, with BOTH legs of the custody hop recorded
-  await submit(hcs, config.topicId, {
+  const verdictMsg = await submit(hcs, config.topicId, {
     kind: 'verdict', dealId, termsHash, verdictHash, verdict,
     settlementTxId, openTxHash: opened.hash, resolveTxHash,
   })
+  advance(dealId, { audit: { ...getDeal(dealId)?.audit, verdict: verdictMsg } })
 
   return {
     dealId, verdict, body, status,

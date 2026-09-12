@@ -1,5 +1,6 @@
 /** In-memory deal log plus an SSE fan-out for the dashboard. */
 import type { Terms, Verdict } from '@receipt/core'
+import type { Published } from '@receipt/core/hcs'
 
 export type Phase =
   | 'terms-verified' | 'payment-verified' | 'settled' | 'escrowed'
@@ -19,6 +20,11 @@ export interface DealRecord {
   observedLatencyMs?: number
   /** What the response said it was made of, for the ledger view. */
   bought?: { products: string; indexedBlock?: number }
+  /**
+   * Where each audit message landed, so the ledger can cite the public record
+   * per deal rather than pointing at the whole topic and wishing you luck.
+   */
+  audit?: { terms?: Published; observation?: Published; verdict?: Published }
   /** True when the seller graded its own response and refused the sale. */
   sellerDeclined?: boolean
   error?: string

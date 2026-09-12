@@ -75,11 +75,25 @@ export async function createTopic(cfg: HcsConfig, memo: string): Promise<string>
 }
 
 /** Submits one message. The SDK chunks at 1KB; 20 chunks is the default cap. */
+/**
+ * Where one published message landed on the public log.
+ *
+ * Both halves are citations a third party can follow without asking us
+ * anything: the transaction is the write itself on the explorer, and the
+ * sequence number addresses the message on the mirror node, which serves the
+ * raw bytes the verdict was computed over.
+ */
+export interface Published {
+  transactionId: string
+  /** Null only if the receipt omitted it, which would be a Hedera change. */
+  sequenceNumber: number | null
+}
+
 export async function submit(
   cfg: HcsConfig,
   topicId: string,
   message: HcsMessage,
-): Promise<string> {
+): Promise<Published> {
   const client = clientFor(cfg)
   try {
     const body = JSON.stringify(message)
@@ -87,8 +101,11 @@ export async function submit(
       .setTopicId(topicId)
       .setMessage(body)
       .execute(client)
-    await response.getReceipt(client)
-    return response.transactionId.toString()
+    const receipt = await response.getReceipt(client)
+    return {
+      transactionId: response.transactionId.toString(),
+      sequenceNumber: receipt.topicSequenceNumber ? receipt.topicSequenceNumber.toNumber() : null,
+    }
   } finally {
     client.close()
   }

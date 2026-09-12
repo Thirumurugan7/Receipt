@@ -6,247 +6,458 @@
 <title>Receipt — live ledger</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
+  /*
+   * A multi-part receipt: warm paper, carbon-copy blue for structure, and
+   * three saturated stamp colours that mean exactly one thing each -- amber
+   * for money held by nobody, green for released, red for returned. Colour is
+   * load-bearing here, not decoration: the state of the money is the whole
+   * product, so it is the only thing allowed to be loud.
+   */
   :root{
-    --paper:#e4e6e1; --paper-dim:#d8dbd5; --ink:#1c1f1a; --ink-faded:#6b7268;
-    --rule:#b9beb6;
-    --held:#8a6a2f; --paid:#2f6b4f; --returned:#9b3b2f;
-    --roll: 660px;
+    --paper:#faf7f2; --card:#ffffff; --ink:#191d2b; --muted:#6b7486;
+    --rule:#e2d9cc; --rule-soft:#efe9e0;
+    --carbon:#2f3aa8; --carbon-soft:#eceefb;
+    --held:#c2740b; --held-soft:#fdf3e2;
+    --paid:#13894f; --paid-soft:#e8f6ee;
+    --returned:#cf2f24; --returned-soft:#fdeceb;
+    --term-bg:#14171f; --term-fg:#dfe4ee; --term-dim:#7c879d;
   }
-  *{box-sizing:border-box}
-  html{background:#23261f}
+  *{box-sizing:border-box; margin:0; padding:0}
   body{
-    margin:0; padding:0 16px 72px;
-    background:#23261f;
-    color:var(--ink);
-    font:400 14px/1.55 "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+    background:var(--paper); color:var(--ink);
+    font:400 15px/1.55 "IBM Plex Mono", ui-monospace, Menlo, monospace;
+    font-variant-numeric:tabular-nums;
     -webkit-font-smoothing:antialiased;
   }
+  a{color:var(--carbon); text-decoration:none; border-bottom:1px solid #c3c8ee}
+  a:hover{border-bottom-color:var(--carbon)}
+  .wrap{max-width:1180px; margin:0 auto; padding:0 20px 72px}
 
-  /* the roll ------------------------------------------------------------ */
-  .roll{
-    max-width:var(--roll); margin:0 auto; background:var(--paper);
-    padding:0 clamp(16px,4vw,38px);
-    box-shadow:0 0 0 1px #cbcfc7, 0 18px 50px rgba(0,0,0,.45);
-  }
-  /* torn top and bottom edge */
-  .tear{
-    max-width:var(--roll); margin:0 auto; height:12px; background:var(--paper);
-    --t:conic-gradient(from -45deg at 50% 0, #23261f 0 90deg, transparent 0);
-    -webkit-mask:var(--t) 50%/14px 12px repeat-x; mask:var(--t) 50%/14px 12px repeat-x;
-  }
-  .tear.bottom{transform:scaleY(-1)}
+  /* ── masthead ─────────────────────────────────────────────────────── */
+  .band{background:var(--carbon); color:#fff; padding:20px 0 22px; margin-bottom:26px}
+  .band .wrap{padding-bottom:0; display:flex; flex-wrap:wrap; gap:16px; align-items:baseline; justify-content:space-between}
+  .band h1{font-size:27px; font-weight:700; letter-spacing:.26em; text-indent:.26em}
+  .band p{color:#c6cbf4; font-size:14px; margin-top:5px; max-width:62ch}
+  .live{display:flex; align-items:center; gap:9px; font-size:13px; color:#c6cbf4; white-space:nowrap}
+  .dot{width:8px; height:8px; border-radius:50%; background:#8a93d8}
+  .dot.on{background:#5ef0a6; box-shadow:0 0 0 4px rgba(94,240,166,.22)}
 
-  /* header -------------------------------------------------------------- */
-  header{padding:26px 0 14px; text-align:center}
-  h1{
-    margin:0; font-size:30px; font-weight:600; letter-spacing:.34em;
-    text-indent:.34em; /* optical centring for the tracking */
-  }
-  .tagline{margin:6px 0 0; color:var(--ink-faded); font-size:12.5px}
-  .meta{margin:18px 0 0; text-align:left}
+  h2{font-size:13px; font-weight:700; letter-spacing:.13em; text-transform:uppercase; color:var(--muted); margin-bottom:12px}
+  .card{background:var(--card); border:1px solid var(--rule); border-radius:3px; padding:18px 20px}
+  section{margin-bottom:30px}
 
-  /* dot leaders: the receipt's own way of pairing a label with a value */
-  .row{display:flex; align-items:baseline; gap:6px; font-size:12.5px}
-  .row .k{color:var(--ink-faded); white-space:nowrap}
+  /* ── check it yourself ────────────────────────────────────────────── */
+  .proof{display:grid; grid-template-columns:repeat(auto-fit,minmax(268px,1fr)); gap:12px}
+  .proof a{display:block; border:1px solid var(--rule); border-bottom:1px solid var(--rule);
+           border-left:3px solid var(--carbon); background:var(--card); padding:13px 15px; border-radius:3px}
+  .proof a:hover{background:var(--carbon-soft); border-bottom-color:var(--rule)}
+  .proof .t{font-weight:600; color:var(--ink); font-size:14px}
+  .proof .d{color:var(--muted); font-size:12.5px; margin-top:4px; line-height:1.45}
+  .proof .u{color:var(--carbon); font-size:12px; margin-top:7px; word-break:break-all}
+
+  /* ── run panel ────────────────────────────────────────────────────── */
+  .runbar{display:flex; flex-wrap:wrap; gap:9px; align-items:center; margin-bottom:14px}
+  button{
+    font:600 13.5px/1 "IBM Plex Mono", monospace; letter-spacing:.02em;
+    background:var(--card); color:var(--ink); border:1.5px solid var(--ink);
+    padding:10px 15px; border-radius:3px; cursor:pointer;
+  }
+  button:hover:not(:disabled){background:var(--ink); color:#fff}
+  button:disabled{opacity:.4; cursor:not-allowed}
+  button.go{background:var(--carbon); border-color:var(--carbon); color:#fff}
+  button.go:hover:not(:disabled){background:#232c85}
+  .budget{color:var(--muted); font-size:12.5px; margin-left:auto}
+
+  .term{background:var(--term-bg); color:var(--term-fg); border-radius:3px; padding:16px 18px;
+        font-size:13px; line-height:1.62; white-space:pre-wrap; word-break:break-word;
+        min-height:132px; max-height:340px; overflow-y:auto}
+  .term .g{color:#5ed99b} .term .r{color:#ff8d80} .term .y{color:#f2c069}
+  .term .dim{color:var(--term-dim)} .term .w{color:#fff; font-weight:600}
+  .term .idle{color:var(--term-dim)}
+
+  /* transaction chips, as each leg lands */
+  .chips{display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; min-height:1px}
+  .chip{display:inline-flex; align-items:center; gap:7px; border:1px solid var(--rule);
+        background:var(--card); border-radius:3px; padding:7px 11px; font-size:12.5px}
+  .chip b{font-weight:600; color:var(--muted); letter-spacing:.04em; text-transform:uppercase; font-size:11px}
+  .chip a{border-bottom:none; font-weight:600}
+  .chip .new{animation:land .5s ease both}
+  @keyframes land{from{opacity:0; transform:translateY(-4px)}to{opacity:1; transform:none}}
+
+  /* ── ledger ───────────────────────────────────────────────────────── */
+  .entry{background:var(--card); border:1px solid var(--rule); border-radius:3px;
+         padding:17px 19px; margin-bottom:12px; border-left:4px solid var(--rule)}
+  .entry[data-state="held"]{border-left-color:var(--held)}
+  .entry[data-state="paid"]{border-left-color:var(--paid)}
+  .entry[data-state="returned"]{border-left-color:var(--returned)}
+  .entry[data-state="failed"]{border-left-color:var(--muted)}
+  .head{display:flex; flex-wrap:wrap; gap:14px; justify-content:space-between; align-items:flex-start}
+  .deal{font-weight:700; font-size:14.5px; word-break:break-all}
+  .resource{color:var(--muted); font-size:12.5px; margin-top:3px; word-break:break-all}
+  .amount{font-size:22px; font-weight:700; white-space:nowrap}
+  .stamp{display:inline-block; margin-top:9px; padding:5px 11px 4px; border:2px solid currentColor;
+         border-radius:2px; font-size:11.5px; font-weight:700; letter-spacing:.13em; text-transform:uppercase}
+  .stamp[data-state="held"]{color:var(--held); background:var(--held-soft)}
+  .stamp[data-state="paid"]{color:var(--paid); background:var(--paid-soft)}
+  .stamp[data-state="returned"]{color:var(--returned); background:var(--returned-soft)}
+  .stamp[data-state="failed"]{color:var(--muted); background:#f2f2f2}
+
+  .checks{list-style:none; margin-top:14px; border-top:1px solid var(--rule-soft)}
+  .checks li{border-bottom:1px solid var(--rule-soft); padding:6px 0}
+  .row{display:flex; align-items:baseline; gap:8px; font-size:13.5px}
+  .row .k{color:var(--muted)}
   .row .lead{flex:1; border-bottom:1px dotted var(--rule); transform:translateY(-3px)}
-  .row .v{white-space:nowrap}
-  .row .v a{color:var(--ink); text-decoration:none; border-bottom:1px solid var(--rule)}
-  .row .v a:hover,.row .v a:focus-visible{border-bottom-color:var(--ink)}
+  .row .v{font-weight:600}
+  .pass{color:var(--paid)} .fail{color:var(--returned)} .att{color:var(--muted); font-weight:400}
+  .detail{color:var(--muted); font-size:12px; margin-top:3px; padding-left:2px; word-break:break-word}
+  .legs{margin-top:13px}
 
-  .rule{border:0; border-top:1px dashed var(--rule); margin:18px 0}
-  .rule.solid{border-top:1px solid var(--ink)}
+  .foot{color:var(--muted); font-size:12.5px; line-height:1.7}
+  code{background:#f0ece5; border-radius:2px; padding:1px 5px; font-size:12.5px; color:var(--ink)}
+  .cmds{background:var(--term-bg); color:var(--term-fg); border-radius:3px; padding:15px 17px;
+        font-size:12.8px; line-height:1.75; white-space:pre-wrap; margin-top:10px}
+  .cmds .c{color:#f2c069}
 
-  /* live indicator ------------------------------------------------------ */
-  .live{display:inline-flex; align-items:center; gap:7px; font-size:12px; color:var(--ink-faded)}
-  .dot{width:7px; height:7px; border-radius:50%; background:var(--ink-faded)}
-  .live[data-on="true"] .dot{background:var(--paid)}
-  .live[data-on="true"] .dot{animation:pulse 2.4s ease-in-out infinite}
-  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
-
-  /* a deal entry -------------------------------------------------------- */
-  .entry{padding:20px 0; border-top:1px dashed var(--rule); position:relative}
-  .entry:first-of-type{border-top:0}
-  .entry-head{display:flex; align-items:flex-start; justify-content:space-between; gap:18px}
-  .deal-id{font-size:13px; font-weight:500; word-break:break-all}
-  .resource{margin:3px 0 0; font-size:12px; color:var(--ink-faded); word-break:break-all}
-  .amount{font-size:19px; font-weight:600; white-space:nowrap}
-
-  /* the stamp: all-caps here is the artefact, not a label style */
-  .stamp{
-    margin-top:10px; display:inline-block; padding:5px 13px 4px;
-    border:2px solid currentColor; border-radius:2px;
-    font-size:13px; font-weight:600; letter-spacing:.18em; text-indent:.18em;
-    text-transform:uppercase; transform:rotate(-3.5deg); opacity:.9;
+  @media (prefers-reduced-motion: reduce){
+    *{animation:none !important; transition:none !important}
   }
-  .stamp[data-state="held"]{color:var(--held)}
-  .stamp[data-state="paid"]{color:var(--paid)}
-  .stamp[data-state="returned"]{color:var(--returned)}
-  .stamp[data-state="failed"]{color:var(--returned); border-style:dashed}
-  .stamp.land{animation:land .32s cubic-bezier(.2,1.4,.35,1) both}
-  @keyframes land{from{transform:rotate(-13deg) scale(1.5); opacity:0}to{transform:rotate(-3.5deg) scale(1); opacity:.9}}
-
-  .checks{margin:14px 0 0; padding:0; list-style:none}
-  .checks .row{padding:1px 0}
-  .verdict-pass{color:var(--paid)} .verdict-fail{color:var(--returned)}
-  .attested{color:var(--ink-faded)}
-  .detail{color:var(--returned); font-size:12px; margin:2px 0 0 0}
-
-  .empty{padding:46px 0 40px; text-align:center; color:var(--ink-faded); font-size:13px}
-  .empty code{background:var(--paper-dim); padding:2px 6px}
-
-  footer{padding:16px 0 26px; text-align:center; color:var(--ink-faded); font-size:11.5px}
-
-  @media (prefers-reduced-motion:reduce){
-    *,*::before,*::after{animation:none !important; transition:none !important}
-  }
-  @media (max-width:520px){
-    .entry-head{flex-direction:column; gap:8px}
-    h1{font-size:23px; letter-spacing:.22em; text-indent:.22em}
+  @media (max-width:620px){
+    .band h1{font-size:21px}
+    .amount{font-size:18px}
   }
 </style>
 </head>
 <body>
-<div class="tear"></div>
-<main class="roll">
-  <header>
-    <h1>RECEIPT</h1>
-    <p class="tagline">conditional settlement for x402 — every verdict recomputable</p>
-  </header>
 
-  <hr class="rule solid">
+<div class="band">
+  <div class="wrap">
+    <div>
+      <h1>RECEIPT</h1>
+      <p>Conditional settlement for x402. The money waits in escrow and moves only if the response passes checks the buyer signed. Every verdict below is on a public ledger you can read without asking us.</p>
+    </div>
+    <div class="live"><span class="dot" id="dot"></span><span id="live-text">connecting…</span></div>
+  </div>
+</div>
 
-  <section class="meta" id="meta">
-    <div class="row"><span class="k">escrow</span><span class="lead"></span><span class="v" id="m-escrow">—</span></div>
-    <div class="row"><span class="k">audit topic</span><span class="lead"></span><span class="v" id="m-topic">—</span></div>
-    <div class="row"><span class="k">settles through</span><span class="lead"></span><span class="v" id="m-blocky">—</span></div>
-    <div class="row"><span class="k">held in escrow</span><span class="lead"></span><span class="v" id="m-held">0.00000000 ℏ</span></div>
-    <div class="row" style="margin-top:8px">
-      <span class="live" data-on="false" id="live"><span class="dot"></span><span id="live-text">connecting</span></span>
-      <span class="lead"></span><span class="v" id="m-count">0 deals</span>
+<div class="wrap">
+
+  <section>
+    <h2>Check this yourself</h2>
+    <div class="proof" id="proof"></div>
+  </section>
+
+  <section>
+    <h2>Run a real deal</h2>
+    <div class="card">
+      <div class="runbar" id="runbar">
+        <button class="go" data-mode="honest">honest — checks pass</button>
+        <button data-mode="garbage">garbage — 200, useless body</button>
+        <button data-mode="subtle">stale — fresh-looking, an hour old</button>
+        <button data-mode="subtle-selfcheck">seller declines the sale</button>
+        <span class="budget" id="budget"></span>
+      </div>
+      <div class="term" id="term"><span class="idle">Press a button. This spends real testnet HBAR, calls the seller, adjudicates the response and releases or refunds — the same code path as <b>pnpm buy honest</b>. Transaction links appear below as each leg lands.</span></div>
+      <div class="chips" id="chips"></div>
     </div>
   </section>
 
-  <hr class="rule">
-
-  <section id="entries">
-    <p class="empty">No deals yet. Run <code>pnpm scenes</code> to fill this roll.</p>
+  <section>
+    <h2>The ledger <span id="count" style="font-weight:400; letter-spacing:0; text-transform:none"></span></h2>
+    <div id="ledger"></div>
   </section>
 
-  <hr class="rule">
-  <footer>terms, response and verdict are published to Hedera Consensus Service — anyone can re-run the adjudicator</footer>
-</main>
-<div class="tear bottom"></div>
+  <section>
+    <h2>Do not trust any of this — recompute it</h2>
+    <div class="card foot">
+      Every deal publishes its terms, the raw response and the verdict to the audit topic, and the escrow records the verdict hash on chain. Nothing above needs to be believed: fetch the messages from the mirror node and re-run the adjudicator yourself.
+      <div class="cmds"><span class="c">pnpm verify --all</span>        replay every verdict this facilitator ever published
+<span class="c">pnpm verify --deal 0x…</span>   one deal, end to end
+<span class="c">cd verify-py &amp;&amp; python3 verify.py --deal 0x… --topic <span id="cmd-topic">…</span></span>
+                        a second implementation, no dependencies, written from SPEC.md</div>
+    </div>
+  </section>
+
+</div>
 
 <script>
-const HASHSCAN = 'https://hashscan.io/testnet';
 const deals = new Map();
-const stamped = new Set();
+let net = 'testnet';
+let health = null;
 
 const el = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const short = (s, n = 10) => (typeof s === 'string' && s.length > n * 2 ? s.slice(0, n) + '…' + s.slice(-4) : s ?? '—');
 const hbar = (tinybars) => (Number(tinybars || 0) / 1e8).toFixed(8) + ' ℏ';
-const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+/*
+ * Hedera prints a transaction id as 0.0.7162784@1789235851.125983072 and
+ * HashScan routes on 0.0.7162784-1789235851-125983072. Handing the printed
+ * form straight to the explorer gives a page that does not exist, which on a
+ * page whose whole argument is "go and check" is the worst possible bug.
+ * Mirrors packages/core/src/explorer.ts.
+ */
+const EVM_TX = /^0x[0-9a-fA-F]{64}$/;
+const HEDERA_TX = /^(\d+\.\d+\.\d+)@(\d+)\.(\d+)$/;
+function hashscanTx(id) {
+  if (!id) return null;
+  const v = String(id).trim();
+  if (EVM_TX.test(v)) return `https://hashscan.io/${net}/transaction/${v}`;
+  const m = HEDERA_TX.exec(v);
+  if (m) return `https://hashscan.io/${net}/transaction/${m[1]}-${m[2]}-${m[3]}`;
+  return null;
+}
+const hashscanContract = (a) => `https://hashscan.io/${net}/contract/${a}`;
+const hashscanTopicMessages = (t) => `https://hashscan.io/${net}/topic/${t}/messages`;
+const mirrorMessage = (t, seq) => `https://${net}.mirrornode.hedera.com/api/v1/topics/${t}/messages/${seq}`;
+
+const link = (href, text) => href
+  ? `<a href="${esc(href)}" target="_blank" rel="noopener">${esc(text)}</a>`
+  : '<span class="att">—</span>';
+const txLink = (id, label) => {
+  const href = hashscanTx(id);
+  return href ? link(href, label ?? short(id, 8)) : '<span class="att">—</span>';
+};
+
+function row(k, valueHtml) {
+  return `<div class="row"><span class="k">${esc(k)}</span><span class="lead"></span><span class="v">${valueHtml}</span></div>`;
+}
 
 // phase -> what the stamp says. "held" is the interesting state: the money
 // exists and belongs to nobody yet.
 function stampFor(phase) {
   switch (phase) {
-    case 'released': return { state: 'paid', text: 'paid to seller' };
+    case 'released': return { state: 'paid', text: 'released to seller' };
     case 'refunded': return { state: 'returned', text: 'returned to buyer' };
     case 'expired': return { state: 'returned', text: 'expired · returned' };
     case 'awaiting-expiry': return { state: 'held', text: 'awaiting deadline' };
     case 'failed': return { state: 'failed', text: 'not settled' };
+    case 'terms-verified': case 'payment-verified': case 'settled':
+    case 'escrowed': case 'seller-responded': case 'adjudicated':
     default: return { state: 'held', text: 'held in escrow' };
   }
 }
 
-function row(k, valueHtml) {
-  return `<div class="row"><span class="k">${esc(k)}</span><span class="lead"></span><span class="v">${valueHtml}</span></div>`;
+/** The three public-record citations for one deal. */
+function auditLinks(d) {
+  if (!health?.topic) return '';
+  const a = d.audit || {};
+  const parts = [['terms', a.terms], ['response', a.observation], ['verdict', a.verdict]]
+    .filter(([, m]) => m && m.sequenceNumber)
+    .map(([name, m]) =>
+      `${link(mirrorMessage(health.topic, m.sequenceNumber), `${name} #${m.sequenceNumber}`)}` +
+      ` <span class="att">(${txLink(m.transactionId, 'tx')})</span>`);
+  return parts.length ? row('audit log', parts.join(' &nbsp;')) : '';
 }
-const txLink = (h) => h ? `<a href="${HASHSCAN}/transaction/${encodeURIComponent(h)}" target="_blank" rel="noopener">${esc(short(h, 8))}</a>` : '—';
 
 function renderEntry(d) {
   const s = stampFor(d.phase);
   const v = d.verdict;
-  // What was actually bought, when the log carries it.
   const bought = d.bought || null;
+
   const checks = v ? v.reproducible.map((c) => {
-    const mark = c.skipped ? 'skipped' : (c.pass ? 'pass' : 'fail');
-    const cls = c.skipped ? 'attested' : (c.pass ? 'verdict-pass' : 'verdict-fail');
+    const mark = c.skipped ? 'not required' : (c.pass ? 'pass' : 'fail');
+    const cls = c.skipped ? 'att' : (c.pass ? 'pass' : 'fail');
     return `<li>${row(c.check, `<span class="${cls}">${mark}</span>`)}${c.detail ? `<p class="detail">${esc(c.detail)}</p>` : ''}</li>`;
   }).join('') : '';
 
   const attested = v ? v.attested.map((a) =>
-    `<li>${row(a.check + ' (attested)', `<span class="attested">${a.observed}ms · ${a.pass ? 'within' : 'over'} budget</span>`)}</li>`
+    `<li>${row(a.check + ' — attested, gates nothing', `<span class="att">${esc(String(a.observed))}ms</span>`)}</li>`
   ).join('') : '';
 
+  const resolveLabel = (d.phase === 'refunded' || d.phase === 'expired') ? 'refund()' : 'release()';
+
   return `
-  <article class="entry" data-deal="${esc(d.dealId)}">
-    <div class="entry-head">
+  <article class="entry" data-state="${s.state}" data-deal="${esc(d.dealId)}">
+    <div class="head">
       <div>
-        <div class="deal-id">${esc(short(d.dealId, 12))}</div>
+        <div class="deal">${esc(short(d.dealId, 14))}</div>
         <p class="resource">${esc(d.terms?.resource ?? '')}</p>
         <span class="stamp" data-state="${s.state}">${esc(s.text)}</span>
       </div>
       <div class="amount">${hbar(d.terms?.amount)}</div>
     </div>
-    ${v ? `<ul class="checks">${checks}${attested}</ul>` : `<ul class="checks"><li>${row('status', `<span class="attested">${esc(d.phase)}</span>`)}</li></ul>`}
-    <div style="margin-top:12px">
-      ${bought ? row('products', esc(bought.products || '—')) : ''}
-      ${bought && bought.indexedBlock ? row('indexed block', esc(String(bought.indexedBlock))) : ''}
-      ${d.sellerDeclined ? row('seller', '<span class="verdict-fail">declined the sale</span>') : ''}
-      ${row('x402 settlement', d.settlementTxId ? esc(short(d.settlementTxId, 14)) : '—')}
+    ${v ? `<ul class="checks">${checks}${attested}</ul>`
+        : `<ul class="checks"><li>${row('phase', `<span class="att">${esc(d.phase)}</span>`)}</li></ul>`}
+    <div class="legs">
+      ${bought ? row('bought', esc(bought.products || '—')) : ''}
+      ${bought && bought.indexedBlock ? row('indexed at block', esc(String(bought.indexedBlock))) : ''}
+      ${d.sellerDeclined ? row('seller', '<span class="fail">declined the sale</span>') : ''}
+      ${row('x402 settlement', txLink(d.settlementTxId))}
       ${row('open()', txLink(d.openTxHash))}
-      ${row(d.phase === 'refunded' || d.phase === 'expired' ? 'refund()' : 'release()', txLink(d.resolveTxHash))}
-      ${v ? row('first failure', v.firstFailure ? `<span class="verdict-fail">${esc(v.firstFailure)}</span>` : '<span class="verdict-pass">none</span>') : ''}
+      ${row(resolveLabel, txLink(d.resolveTxHash))}
+      ${auditLinks(d)}
+      ${v ? row('first failure', v.firstFailure ? `<span class="fail">${esc(v.firstFailure)}</span>` : '<span class="pass">none</span>') : ''}
     </div>
   </article>`;
 }
 
 function render() {
   const list = [...deals.values()].sort((a, b) => b.createdAt - a.createdAt);
-  el('m-count').textContent = list.length === 1 ? '1 deal' : `${list.length} deals`;
+  el('count').textContent = list.length ? `· ${list.length} deal${list.length === 1 ? '' : 's'}` : '';
+  el('ledger').innerHTML = list.length
+    ? list.map(renderEntry).join('')
+    : '<div class="card foot">No deals yet. Press a button above and one will appear here as it settles.</div>';
+}
 
-  const heldTinybars = list
-    .filter((d) => !['released', 'refunded', 'expired', 'failed'].includes(d.phase))
-    .reduce((sum, d) => sum + Number(d.terms?.amount || 0), 0);
-  el('m-held').textContent = hbar(heldTinybars);
+/* ── the public record, up top ─────────────────────────────────────── */
+function renderProof() {
+  if (!health) return;
+  net = String(health.network || 'hedera:testnet').split(':').pop();
+  el('cmd-topic').textContent = health.topic;
+  el('proof').innerHTML = [
+    {
+      t: 'The escrow contract',
+      d: 'Holds the money between payment and verdict. Every open, release and refund is a transaction on it.',
+      href: hashscanContract(health.escrow), u: health.escrow,
+    },
+    {
+      t: 'The audit log',
+      d: 'Terms, the raw response and the verdict, published for every deal. This is what makes re-running the adjudicator possible.',
+      href: hashscanTopicMessages(health.topic), u: `topic ${health.topic}`,
+    },
+    {
+      t: 'Settlement runs through Blocky402',
+      d: 'Every payment is a real x402 settlement. The buyer signs a partial transfer and pays no gas.',
+      href: health.settlesThrough, u: health.settlesThrough,
+    },
+  ].map((p) => `<a href="${esc(p.href)}" target="_blank" rel="noopener">
+      <div class="t">${esc(p.t)}</div>
+      <div class="d">${esc(p.d)}</div>
+      <div class="u">${esc(p.u)} ↗</div>
+    </a>`).join('');
+}
 
-  const target = el('entries');
-  if (!list.length) {
-    target.innerHTML = '<p class="empty">No deals yet. Run <code>pnpm scenes</code> to fill this roll.</p>';
-    return;
-  }
-  target.innerHTML = list.map(renderEntry).join('');
+fetch('/health').then((r) => r.json()).then((h) => { health = h; renderProof(); render(); })
+  .catch(() => {});
 
-  // Stamp lands once, when a deal first reaches a settled state. Re-running it
-  // on every SSE frame would turn the page into a flicker.
-  for (const d of list) {
-    const settled = ['released', 'refunded', 'expired'].includes(d.phase);
-    if (settled && !stamped.has(d.dealId)) {
-      stamped.add(d.dealId);
-      target.querySelector(`[data-deal="${CSS.escape(d.dealId)}"] .stamp`)?.classList.add('land');
+/* ── run a deal ────────────────────────────────────────────────────── */
+const TX_LABELS = [
+  [/settlement tx\s+(\S+)/, 'x402 settlement'],
+  [/open tx\s+(\S+)/, 'open()'],
+  [/resolve tx\s+(\S+)/, 'release() / refund()'],
+  [/claimExpired tx\s+(\S+)/, 'claimExpired()'],
+];
+
+function paint(line) {
+  let h = esc(line);
+  h = h.replace(/\b(pass|released|passed)\b/g, '<span class="g">$1</span>')
+       .replace(/\b(fail|refunded|failed|DECLINED)\b/g, '<span class="r">$1</span>')
+       .replace(/(-?0\.\d{8} ℏ)/g, '<span class="y">$1</span>')
+       .replace(/^(\s*[a-zA-Z0-9_()\/ -]{3,26})(\s{2,})/, '<span class="dim">$1</span>$2');
+  return h;
+}
+
+function addChip(label, id) {
+  const href = hashscanTx(id);
+  if (!href) return;
+  const chips = el('chips');
+  if (chips.querySelector(`[data-tx="${CSS.escape(id)}"]`)) return;
+  const span = document.createElement('span');
+  span.className = 'chip new';
+  span.dataset.tx = id;
+  span.innerHTML = `<b>${esc(label)}</b> <a href="${esc(href)}" target="_blank" rel="noopener">${esc(short(id, 10))} ↗</a>`;
+  chips.appendChild(span);
+}
+
+let running = false;
+function setRunning(on) {
+  running = on;
+  for (const b of document.querySelectorAll('#runbar button')) b.disabled = on;
+}
+
+async function runDeal(mode) {
+  if (running) return;
+  setRunning(true);
+  el('chips').innerHTML = '';
+  const term = el('term');
+  term.innerHTML = `<span class="dim">$ pnpm buy ${esc(mode)}</span>\n`;
+
+  const append = (html) => {
+    term.insertAdjacentHTML('beforeend', html + '\n');
+    term.scrollTop = term.scrollHeight;
+  };
+
+  try {
+    const res = await fetch('/demo/run', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ mode }),
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      append(`<span class="r">${esc(err.error || res.statusText)}</span>`);
+      if (err.retryAfterMs) append(`<span class="dim">try again in ${Math.ceil(err.retryAfterMs / 1000)}s</span>`);
+      setRunning(false);
+      return;
     }
+
+    // Server-sent events over fetch, so the body can be read as it arrives.
+    const reader = res.body.getReader();
+    const dec = new TextDecoder();
+    let buf = '';
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buf += dec.decode(value, { stream: true });
+      const frames = buf.split('\n\n');
+      buf = frames.pop() ?? '';
+      for (const frame of frames) {
+        const ev = /^event: (.+)$/m.exec(frame)?.[1];
+        const raw = /^data: (.*)$/m.exec(frame)?.[1];
+        if (!raw) continue;
+        const data = JSON.parse(raw);
+        if (ev === 'line') {
+          append(paint(data.line));
+          for (const [re, label] of TX_LABELS) {
+            const m = re.exec(data.line);
+            if (m) addChip(label, m[1]);
+          }
+        } else if (ev === 'done') {
+          append(data.ok
+            ? '<span class="g w">done — the deal is on the ledger below, and on the public log</span>'
+            : `<span class="r">exited ${esc(String(data.exitCode))}</span>`);
+          if (typeof data.remaining === 'number') {
+            el('budget').textContent = `${data.remaining} runs left in this demo's budget`;
+          }
+        }
+      }
+    }
+  } catch (e) {
+    append(`<span class="r">${esc(String(e))}</span>`);
+  } finally {
+    setRunning(false);
   }
 }
 
-fetch('/health').then((r) => r.json()).then((h) => {
-  el('m-escrow').innerHTML = `<a href="${HASHSCAN}/contract/${h.escrow}" target="_blank" rel="noopener">${esc(short(h.escrow, 10))}</a>`;
-  el('m-topic').innerHTML = `<a href="${HASHSCAN}/topic/${h.topic}" target="_blank" rel="noopener">${esc(h.topic)}</a>`;
-  el('m-blocky').textContent = (h.settlesThrough || '').replace(/^https?:\/\//, '') + ' · ' + h.network;
+for (const b of document.querySelectorAll('#runbar button')) {
+  b.addEventListener('click', () => runDeal(b.dataset.mode));
+}
+
+fetch('/demo/status').then((r) => r.json()).then((s) => {
+  el('budget').textContent = `${s.remaining} runs left in this demo's budget`;
 }).catch(() => {});
 
+/* ── live ledger ───────────────────────────────────────────────────── */
 const source = new EventSource('/stream');
-source.onopen = () => { el('live').dataset.on = 'true'; el('live-text').textContent = 'live'; };
-source.onerror = () => { el('live').dataset.on = 'false'; el('live-text').textContent = 'reconnecting'; };
+source.onopen = () => {
+  el('dot').classList.add('on');
+  el('live-text').textContent = 'live';
+};
+source.onerror = () => {
+  el('dot').classList.remove('on');
+  el('live-text').textContent = 'reconnecting…';
+};
 source.onmessage = (e) => {
   try {
     const d = JSON.parse(e.data);
-    if (d && d.dealId) { deals.set(d.dealId, d); render(); }
-  } catch {}
+    deals.set(d.dealId, d);
+    render();
+  } catch { /* keepalive */ }
 };
+
 render();
 </script>
 </body>

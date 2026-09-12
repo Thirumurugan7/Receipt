@@ -7,6 +7,7 @@
  *     The seller points @x402/hono at this URL instead of Blocky402 and
  *     changes nothing else. That is the drop-in claim, made literal.
  */
+import { spawn } from 'node:child_process'
 import { readFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -20,6 +21,7 @@ import { decodePayment, FlowError, runFlow, SellerUnreachableError } from './flo
 import { adjudicatorAddress, readDeal } from './escrow.js'
 import * as store from './store.js'
 import { openapi, publicUrl } from './openapi.js'
+import { DEMO_MODES, isDemoMode, RunGate } from './demo.js'
 import { lookup, record } from './payments.js'
 
 const app = new Hono()
@@ -147,6 +149,92 @@ app.post('/proxy', async (c) => {
     const err = e as FlowError
     return c.json({ error: err.message }, (err.status as 400) ?? 500)
   }
+})
+
+/**
+ * Let a visitor run a real deal.
+ *
+ * This spends testnet HBAR and starts a child process on every press, so the
+ * mode is looked up in a fixed list and the gate caps how often and how many
+ * times. What it runs is the documented command, so what a judge sees here is
+ * the same code path they would get by cloning the repo.
+ */
+const gate = new RunGate({
+  minGapMs: Number(process.env.RECEIPT_DEMO_MIN_GAP_MS ?? 15_000),
+  maxRuns: Number(process.env.RECEIPT_DEMO_MAX_RUNS ?? 200),
+})
+
+app.get('/demo/status', (c) =>
+  c.json({ modes: DEMO_MODES, remaining: gate.remaining, busy: gate.busy }),
+)
+
+app.post('/demo/run', async (c) => {
+  const body = (await c.req.json().catch(() => ({}))) as { mode?: unknown }
+  if (!isDemoMode(body.mode)) {
+    return c.json({ error: 'unknown mode', allowed: DEMO_MODES }, 400)
+  }
+  const mode = body.mode
+
+  const slot = gate.tryAcquire(Date.now())
+  if (!slot.ok) {
+    return c.json(
+      { error: slot.reason, retryAfterMs: slot.retryAfterMs, remaining: gate.remaining },
+      429,
+    )
+  }
+
+  const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../../..')
+  const enc = new TextEncoder()
+
+  const stream = new ReadableStream({
+    start(controller) {
+      const send = (event: string, data: unknown) => {
+        try {
+          controller.enqueue(enc.encode(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`))
+        } catch { /* client gone */ }
+      }
+
+      send('start', { mode, command: `pnpm buy ${mode}` })
+
+      // The mode is one of four constants; nothing from the request reaches
+      // the argument list, and there is no shell.
+      const child = spawn('pnpm', ['--filter', '@receipt/buyer', 'start', mode], {
+        cwd: repoRoot,
+        env: process.env,
+      })
+
+      let buffered = ''
+      const pump = (chunk: Buffer) => {
+        buffered += chunk.toString('utf8')
+        const lines = buffered.split('\n')
+        buffered = lines.pop() ?? ''
+        for (const line of lines) {
+          if (/^\s*>\s/.test(line)) continue   // pnpm's own banner
+          send('line', { line })
+        }
+      }
+      child.stdout.on('data', pump)
+      child.stderr.on('data', pump)
+
+      const finish = (info: Record<string, unknown>) => {
+        if (buffered.trim()) send('line', { line: buffered })
+        gate.release(Date.now())
+        send('done', { ...info, remaining: gate.remaining })
+        try { controller.close() } catch { /* already closed */ }
+      }
+
+      child.on('error', (err) => finish({ ok: false, error: String(err) }))
+      child.on('close', (code) => finish({ ok: code === 0, exitCode: code }))
+    },
+  })
+
+  return new Response(stream, {
+    headers: {
+      'content-type': 'text/event-stream',
+      'cache-control': 'no-cache',
+      connection: 'keep-alive',
+    },
+  })
 })
 
 app.get('/deals', (c) => c.json(store.all()))

@@ -45,12 +45,35 @@ describe('dashboard', () => {
     expect(scriptSrcs).toHaveLength(0)
   })
 
+  /**
+   * Hedera prints a transaction id as 0.0.7162784@1789235851.125983072 and
+   * HashScan routes on 0.0.7162784-1789235851-125983072. Passing the printed
+   * form straight through renders a link to a page that does not exist, on
+   * the one page whose whole argument is "do not believe me, go and look".
+   */
+  test('converts a printed Hedera transaction id into the form HashScan routes on', () => {
+    expect(html).toMatch(/\(\\d\+\\\.\\d\+\\\.\\d\+\)@/)
+    expect(html).toMatch(/\$\{m\[1\]\}-\$\{m\[2\]\}-\$\{m\[3\]\}/)
+  })
+
+  test('cites each audit message on the mirror node, not just the topic', () => {
+    expect(html).toMatch(/mirrornode\.hedera\.com/)
+    expect(html).toMatch(/topics\/\$\{t\}\/messages\/\$\{seq\}/)
+  })
+
+  test('the run button posts a mode the server re-checks, and streams the result', () => {
+    expect(html).toMatch(/fetch\('\/demo\/run'/)
+    expect(html).toMatch(/EventSource\('\/stream'\)/)
+  })
+
   test('respects reduced motion', () => {
     expect(html).toMatch(/prefers-reduced-motion/)
   })
 
   test('links out to HashScan for contract, topic and transactions', () => {
-    expect(html).toMatch(/hashscan\.io\/testnet/)
+    // The network comes from /health like every other identifier, so the URL
+    // is built rather than spelled out.
+    expect(html).toMatch(/hashscan\.io\/\$\{net\}/)
     expect(html).toMatch(/\/contract\//)
     expect(html).toMatch(/\/topic\//)
     expect(html).toMatch(/\/transaction\//)
