@@ -120,6 +120,9 @@ app.post('/proxy', async (c) => {
         'content-type': result.contentType || 'application/octet-stream',
         'X-Receipt-Deal-Id': result.dealId,
         'X-Receipt-Verdict': result.verdict.pass ? 'pass' : 'fail',
+        // the seller's own status, so a caller can tell a decline (409) from a
+        // bad payload returned with 200
+        'X-Receipt-Seller-Status': String(result.status),
         'X-Receipt-Verdict-Hash': hashVerdict(result.verdict),
         'X-Receipt-First-Failure': result.verdict.firstFailure ?? '',
         'X-Receipt-Settlement-Tx': result.settlementTxId,

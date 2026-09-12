@@ -270,6 +270,49 @@ The buying routine is shared with the CLI agent and lives on the **buyer** side:
 the facilitator never holds the buyer's key, and never authors the terms it is
 later judged against.
 
+### The seller can grade its own work
+
+Because the check is a pure function of (terms, response), the **seller** can
+run it too — on its own response, before returning it — and decline the sale
+rather than ship something it knows will be rejected:
+
+```bash
+pnpm buy subtle-selfcheck
+```
+
+```
+seller responded HTTP 409
+  the seller DECLINED the sale
+  it ran the buyer's own checks, saw it would fail on: freshness
+  and refused rather than take a payment it could not keep
+```
+
+No design with an external evaluator permits this. ERC-8183's evaluator, ACP's
+evaluator and a human reviewer are all consulted *after* delivery; a meter has
+nothing to check against at all. An honest seller can only say "do not pay me
+for this" if it can compute the same verdict the escrow will.
+
+It is off by default, because a seller that does **not** do this is the
+realistic case and is exactly what the adjudicator exists to catch.
+
+### Verify the whole log, not one deal
+
+```bash
+pnpm verify --all
+```
+
+```
+  reproduce        24
+  mismatch         0
+  no verdict       5   (seller never answered — correct behaviour)
+
+ALL 24 VERDICTS REPRODUCE
+```
+
+One `MATCH` proves a deal. A sweep proves a facilitator: if any verdict it ever
+published failed to follow from its own published inputs, it would show up
+here.
+
 ### Two implementations, one verdict
 
 The strongest claim this project makes is that the verdict is a pure function

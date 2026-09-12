@@ -29,7 +29,11 @@ async function balance(id: string): Promise<bigint> {
 }
 
 export async function run(mode = 'honest') {
-  const resource = `${SELLER}/api/quote?mode=${mode}`
+  // `<mode>-selfcheck` asks the seller to grade its own response against the
+  // buyer's terms before returning it, and decline rather than fail.
+  const selfCheck = mode.endsWith('-selfcheck')
+  const base = selfCheck ? mode.slice(0, -'-selfcheck'.length) : mode
+  const resource = `${SELLER}/api/quote?mode=${base}${selfCheck ? '&selfcheck=1' : ''}`
   const { terms, minIndexedBlock, head } = await buildTerms({ resource })
 
   console.log('terms')
@@ -37,6 +41,7 @@ export async function run(mode = 'honest') {
   console.log(`  amount     ${terms.amount} tinybars (${hbar(BigInt(terms.amount))})`)
   console.log(`  checks     ${Object.keys(terms.checks).join(', ')}`)
   console.log(`  products   the-graph token-api + subgraph (both asserted)`)
+  if (selfCheck) console.log(`  selfcheck  seller will grade its own response before answering`)
   console.log(
     minIndexedBlock === null
       ? `  provenance NOT ASSERTED — no eth head available, so no block floor was signed`
@@ -62,7 +67,15 @@ export async function run(mode = 'honest') {
   }
 
   const after = await balance(BUYER_ID)
-  console.log(`\nHTTP ${r.status}`)
+
+  console.log(`\nseller responded HTTP ${r.sellerStatus}`)
+  if (r.declined) {
+    let reason = '(unknown)'
+    try { reason = (JSON.parse(r.body) as { reason?: string }).reason ?? reason } catch { /* keep default */ }
+    console.log(`  the seller DECLINED the sale`)
+    console.log(`  it ran the buyer's own checks, saw it would fail on: ${reason}`)
+    console.log(`  and refused rather than take a payment it could not keep`)
+  }
   console.log(`  verdict        ${r.settled ? 'pass' : 'fail'}`)
   console.log(`  firstFailure   ${r.firstFailure ?? '(none)'}`)
   console.log(`  dealId         ${r.dealId}`)

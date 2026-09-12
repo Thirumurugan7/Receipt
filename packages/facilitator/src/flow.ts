@@ -9,7 +9,7 @@
 import { adjudicate, hashTerms, hashVerdict, dealId as computeDealId } from '@receipt/core'
 import type { Hex, Observation, Terms, Verdict } from '@receipt/core'
 import { MAX_BODY_BYTES, submit } from '@receipt/core/hcs'
-import { recoverTermsSigner } from '@receipt/core'
+import { encodeTermsHeader, recoverTermsSigner } from '@receipt/core'
 import { config } from './env.js'
 import { blocky, requirementsFor, type PaymentPayload } from './blocky.js'
 import * as escrow from './escrow.js'
@@ -139,6 +139,11 @@ export async function runFlow(
       headers: {
         'PAYMENT-SIGNATURE': encodePayment(paymentPayload),
         'X-PAYMENT': encodePayment(paymentPayload),
+        // The seller gets the buyer's signed terms too. Because the checks are
+        // a pure function, a seller holding them can grade its own response
+        // before returning it — and decline a sale it knows it cannot earn.
+        // No design with an external evaluator permits that.
+        'X-Receipt-Terms': encodeTermsHeader(terms),
       },
       signal: controller.signal,
     })

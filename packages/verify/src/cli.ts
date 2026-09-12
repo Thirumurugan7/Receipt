@@ -20,7 +20,7 @@
  */
 import '@receipt/core/loadenv'
 import { adjudicate, hashVerdict, jcs } from '@receipt/core'
-import type { Verdict } from '@receipt/core'
+import type { Terms, Verdict } from '@receipt/core'
 import { observationFromMessage, readTopic } from '@receipt/core/hcs'
 import { keccak256, toBytes } from 'viem'
 
@@ -34,8 +34,10 @@ const dealId = arg('deal')
 const mirror = arg('mirror') ?? process.env.HEDERA_MIRROR_URL ?? 'https://testnet.mirrornode.hedera.com'
 const escrow = (arg('escrow') ?? process.env.ESCROW_ADDRESS ?? '').toLowerCase()
 
-if (!topicId || !dealId) {
-  console.error('usage: pnpm verify --topic <hcs-topic-id> --deal <dealId> [--mirror <url>] [--escrow <address>]')
+const all = process.argv.includes('--all')
+
+if (!topicId || (!dealId && !all)) {
+  console.error('usage: pnpm verify --topic <hcs-topic-id> (--deal <dealId> | --all) [--mirror <url>] [--escrow <address>]')
   process.exit(2)
 }
 
@@ -105,6 +107,66 @@ line('mirror node', mirror)
 line('escrow', escrow || '(not checked: pass --escrow)')
 
 const messages = await readTopic(mirror, topicId)
+
+/**
+ * Sweep every deal on the topic.
+ *
+ * One MATCH proves a deal. This proves a facilitator: if any verdict it ever
+ * published fails to follow from its own published inputs, it shows up here.
+ */
+if (all) {
+  const byDeal = new Map<string, typeof messages>()
+  for (const m of messages) {
+    const id = (m.message as { dealId?: string }).dealId
+    if (!id) continue
+    byDeal.set(id, [...(byDeal.get(id) ?? []), m])
+  }
+
+  let match = 0, mismatch = 0, expired = 0, withheld = 0, incomplete = 0
+  const failures: string[] = []
+
+  console.log(`\nsweeping topic ${topicId} — ${byDeal.size} deals\n`)
+  for (const [id, msgs] of byDeal) {
+    const t = msgs.find((m) => m.message.kind === 'terms')
+    const o = msgs.find((m) => m.message.kind === 'observation')
+    const v = msgs.find((m) => m.message.kind === 'verdict')
+    const short = `${id.slice(0, 10)}…`
+
+    if (!t) { incomplete++; console.log(`  ${short}  no terms`); continue }
+    if (!v) { expired++; console.log(`  ${short}  no verdict — seller never answered (by design)`); continue }
+    if (!o) { withheld++; console.log(`  ${short}  body withheld (bodyTooLarge) — not reproducible by design`); continue }
+
+    const terms = (t.message as { terms: Terms }).terms
+    const pub = v.message as { verdict: Verdict; verdictHash: string }
+    const om = o.message as Extract<typeof o.message, { kind: 'observation' }>
+    const latency = pub.verdict.attested.find((a) => a.check === 'maxLatencyMs')?.observed ?? 0
+    const recomputed = adjudicate(terms, observationFromMessage(om, latency))
+    const rebuilt: Verdict = { ...pub.verdict, reproducible: recomputed.reproducible }
+    const ok = hashVerdict(rebuilt).toLowerCase() === pub.verdictHash.toLowerCase()
+      && jcs(recomputed.reproducible) === jcs(pub.verdict.reproducible)
+
+    if (ok) { match++; console.log(`  ${short}  MATCH   ${pub.verdict.pass ? 'released' : `refunded (${pub.verdict.firstFailure})`}`) }
+    else { mismatch++; failures.push(id); console.log(`  ${short}  MISMATCH`) }
+  }
+
+  console.log(`\n  reproduce        ${match}`)
+  console.log(`  mismatch         ${mismatch}`)
+  console.log(`  no verdict       ${expired}   (seller never answered — correct behaviour)`)
+  if (withheld) console.log(`  body withheld    ${withheld}`)
+  if (incomplete) console.log(`  incomplete       ${incomplete}`)
+
+  console.log('')
+  if (mismatch === 0 && match > 0) {
+    console.log(`ALL ${match} VERDICTS REPRODUCE`)
+    console.log('  every verdict this facilitator published follows from its own published')
+    console.log('  inputs. Recomputed independently, with no cooperation from it.')
+    process.exit(0)
+  }
+  console.log(`${mismatch} VERDICT(S) DO NOT REPRODUCE`)
+  for (const f of failures) console.log(`  ${f}`)
+  process.exit(1)
+}
+
 const forDeal = messages.filter((m) => (m.message as { dealId?: string }).dealId === dealId)
 
 if (forDeal.length === 0) {

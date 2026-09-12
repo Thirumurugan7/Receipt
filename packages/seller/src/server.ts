@@ -15,6 +15,8 @@ import { paymentMiddlewareFromConfig } from '@x402/hono'
 import { HTTPFacilitatorClient } from '@x402/core/server'
 import { ExactHederaScheme } from '@x402/hedera/exact/server'
 import { balances, GraphError, poolsFor, toQuote } from './graph.js'
+import { adjudicate, decodeTermsHeader } from '@receipt/core'
+import type { Observation } from '@receipt/core'
 
 const need = (k: string): string => {
   const v = process.env[k]
@@ -97,10 +99,49 @@ app.use(
  *             waves through: nothing looks wrong. Only `freshness` catches it.
  *   dead    — never responds at all.
  */
+/**
+ * The seller grades its own response against the buyer's terms before
+ * returning it.
+ *
+ * This is only possible because adjudication is a pure function of
+ * (terms, response): the seller can run the identical check the escrow will
+ * run, reach the identical verdict, and decline rather than ship something it
+ * knows will be rejected. An external evaluator — ERC-8183, ACP, a human
+ * reviewer — cannot be consulted before the work is delivered, so no such
+ * design allows an honest seller to say "I cannot earn this, do not pay me".
+ *
+ * Off by default, because a seller that does NOT do this is the realistic
+ * case and is what the adjudicator exists to catch.
+ */
+export function selfCheck(termsHeader: string | undefined, body: unknown) {
+  if (!termsHeader) return null
+  let terms
+  try {
+    terms = decodeTermsHeader(termsHeader)
+  } catch {
+    return null // unreadable terms are not the seller's to enforce
+  }
+  const encoded = new TextEncoder().encode(JSON.stringify(body))
+  const observation: Observation = {
+    status: 200,
+    headers: { 'content-type': 'application/json' },
+    body: encoded,
+    requestTimeMs: Date.now(),
+    observedLatencyMs: 0,
+  }
+  const verdict = adjudicate(terms, observation)
+  return verdict.pass ? null : verdict
+}
+
 app.get('/api/quote', async (c) => {
   const mode = c.req.query('mode') ?? 'honest'
+  const wantsSelfCheck = c.req.query('selfcheck') === '1'
 
   if (mode === 'garbage') {
+    const refused = wantsSelfCheck
+      ? selfCheck(c.req.header('X-Receipt-Terms'), { error: 'upstream rate limited' })
+      : null
+    if (refused) return c.json(declinedBody(refused), 409)
     // Note the status: 200, not 500. Nothing at the HTTP layer is wrong here.
     return c.json({ error: 'upstream rate limited' }, 200)
   }
@@ -125,10 +166,15 @@ app.get('/api/quote', async (c) => {
     // `subtle` models a lagging indexer: the holdings are genuinely from The
     // Graph and every field is valid, but the snapshot is stale. A reviewer
     // eyeballing this response would approve it. The signed terms will not.
-    if (mode === 'subtle') {
-      return c.json({ ...quote, timestamp: quote.timestamp - STALE_BY_SECONDS })
+    const payload = mode === 'subtle'
+      ? { ...quote, timestamp: quote.timestamp - STALE_BY_SECONDS }
+      : quote
+
+    if (wantsSelfCheck) {
+      const refused = selfCheck(c.req.header('X-Receipt-Terms'), payload)
+      if (refused) return c.json(declinedBody(refused), 409)
     }
-    return c.json(quote)
+    return c.json(payload)
   } catch (e) {
     if (e instanceof GraphError) {
       // Fail loudly rather than substituting invented data. The checks would
@@ -139,6 +185,23 @@ app.get('/api/quote', async (c) => {
     throw e
   }
 })
+
+/**
+ * 409, not 200-with-junk and not 500. The request was well-formed and the
+ * seller is working correctly — it simply will not accept payment for a
+ * response that does not meet the buyer's stated criteria.
+ */
+export function declinedBody(verdict: { firstFailure: string | null; reproducible: unknown[] }) {
+  return {
+    declined: true,
+    reason: verdict.firstFailure,
+    detail:
+      "the seller ran the buyer's own acceptance checks against this response, " +
+      'saw that it would be rejected, and declined the sale rather than take a ' +
+      'payment it could not keep',
+    checks: verdict.reproducible,
+  }
+}
 
 serve({ fetch: app.fetch, port: PORT }, (info) => {
   console.log(`seller on :${info.port}`)

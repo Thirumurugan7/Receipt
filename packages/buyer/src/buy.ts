@@ -33,6 +33,10 @@ export interface BuyOptions {
 export interface BuyResult {
   outcome: 'released' | 'refunded' | 'unreachable'
   settled: boolean
+  /** The seller's own HTTP status, distinct from the facilitator's. */
+  sellerStatus: number
+  /** True when the seller graded its own response and refused the sale. */
+  declined: boolean
   dealId: string | null
   firstFailure: string | null
   status: number
@@ -196,8 +200,9 @@ export async function buy(
     const info = JSON.parse(body) as { dealId: string }
     return {
       outcome: 'unreachable', settled: false, dealId: info.dealId, firstFailure: null,
-      status: 504, body, data: null, settlementTxId: null, openTxHash: null,
-      resolveTxHash: null, verifyCommand: null, topic, terms, termsHash: hashTerms(terms),
+      status: 504, sellerStatus: 0, declined: false, body, data: null,
+      settlementTxId: null, openTxHash: null, resolveTxHash: null,
+      verifyCommand: null, topic, terms, termsHash: hashTerms(terms),
     }
   }
 
@@ -206,7 +211,13 @@ export async function buy(
   let data: unknown = null
   try { data = JSON.parse(body) } catch { /* non-JSON body stays null */ }
 
+  const sellerStatus = Number(res.headers.get('X-Receipt-Seller-Status') ?? res.status)
+  let declined = false
+  try { declined = (JSON.parse(body) as { declined?: boolean }).declined === true } catch { /* not JSON */ }
+
   return {
+    sellerStatus,
+    declined,
     outcome: passed ? 'released' : 'refunded',
     settled: passed,
     dealId,
