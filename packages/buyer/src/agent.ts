@@ -56,18 +56,43 @@ export async function buy(mode = 'honest') {
     amount: AMOUNT_TINYBARS,
     resource,
     deadlineMs: Date.now() + 60_000, // DECISIONS-01 Q6: watchable on video
+    /**
+     * Acceptance terms written against The Graph's Token API payload.
+     *
+     * This is the point of the project in one object: the agent says what
+     * shape of token data it is willing to pay for, and the escrow enforces
+     * it. A response that is merely well-formed JSON does not qualify — the
+     * schema demands a non-empty holdings array where every entry carries a
+     * contract address and an integer-string amount, and freshness rejects a
+     * stale snapshot even when it is otherwise perfect.
+     */
     checks: {
       status: { in: [200] },
       contentType: { equals: 'application/json' },
       minBytes: 32,
-      maxLatencyMs: 5000,
-      requiredPaths: ['$.data', '$.timestamp'],
+      maxLatencyMs: 8000,
+      requiredPaths: ['$.data', '$.timestamp', '$.source'],
       jsonSchema: {
         type: 'object',
-        required: ['data'],
-        properties: { data: { type: 'array', minItems: 1 } },
+        required: ['data', 'source', 'timestamp'],
+        properties: {
+          source: { type: 'string', const: 'the-graph-token-api' },
+          timestamp: { type: 'integer', minimum: 1 },
+          data: {
+            type: 'array',
+            minItems: 1,
+            items: {
+              type: 'object',
+              required: ['contract', 'amount'],
+              properties: {
+                contract: { type: 'string', pattern: '^0x[0-9a-fA-F]{40}$' },
+                amount: { type: 'string', pattern: '^[0-9]+$' },
+              },
+            },
+          },
+        },
       },
-      freshnessSeconds: 120,
+      freshnessSeconds: 3600,
     },
   }
 

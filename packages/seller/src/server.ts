@@ -14,6 +14,7 @@ import { Hono } from 'hono'
 import { paymentMiddlewareFromConfig } from '@x402/hono'
 import { HTTPFacilitatorClient } from '@x402/core/server'
 import { ExactHederaScheme } from '@x402/hedera/exact/server'
+import { balances, GraphError, toQuote } from './graph.js'
 
 const need = (k: string): string => {
   const v = process.env[k]
@@ -26,6 +27,10 @@ const NETWORK = need('BLOCKY402_NETWORK') as `${string}:${string}`
 const ASSET = need('SETTLEMENT_ASSET')
 const PRICE_TINYBARS = process.env.SELLER_PRICE_TINYBARS ?? '50000000' // 0.5 ℏ
 const MIRROR = need('HEDERA_MIRROR_URL')
+/** The address whose token holdings this seller quotes. Vitalik's, because it
+ *  always has holdings and nobody has to trust a wallet we control. */
+const QUOTE_ADDRESS = process.env.GRAPH_QUOTE_ADDRESS ?? '0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045'
+const QUOTE_NETWORK = process.env.GRAPH_QUOTE_NETWORK ?? 'mainnet'
 
 /** Receipt, not Blocky402. This single line is the integration. */
 const RECEIPT = process.env.RECEIPT_FACILITATOR_URL ?? 'http://localhost:8080'
@@ -41,7 +46,15 @@ app.use('*', async (c, next) => {
   )
 })
 
-app.get('/health', (c) => c.json({ status: 'ok', facilitator: RECEIPT, price: PRICE_TINYBARS }))
+app.get('/health', (c) =>
+  c.json({
+    status: 'ok',
+    facilitator: RECEIPT,
+    price: PRICE_TINYBARS,
+    sells: 'the-graph-token-api',
+    graphKeyConfigured: Boolean(process.env.GRAPH_TOKEN_API_KEY),
+  }),
+)
 
 app.use(
   paymentMiddlewareFromConfig(
@@ -89,21 +102,22 @@ app.get('/api/quote', async (c) => {
     await new Promise(() => {}) // never settles; the caller must time out
   }
 
-  const res = await fetch(`${MIRROR}/api/v1/network/supply`)
-  const supply = (await res.json()) as { released_supply?: string; total_supply?: string }
-
-  return c.json({
-    data: [
-      {
-        symbol: 'HBAR',
-        network: 'hedera-testnet',
-        releasedSupply: supply.released_supply ?? null,
-        totalSupply: supply.total_supply ?? null,
-        source: 'hedera mirror node /api/v1/network/supply',
-      },
-    ],
-    timestamp: Math.floor(Date.now() / 1000),
-  })
+  // Honest mode: live token holdings from The Graph's Token API. This is the
+  // product. The buyer's terms are written against its shape, the adjudicator
+  // decides payment by validating it, and the raw bytes go to HCS so the
+  // decision can be re-checked by anyone.
+  try {
+    const raw = await balances(QUOTE_ADDRESS, QUOTE_NETWORK, 5)
+    return c.json(toQuote(raw, QUOTE_ADDRESS, QUOTE_NETWORK))
+  } catch (e) {
+    if (e instanceof GraphError) {
+      // Fail loudly rather than substituting invented data. The checks would
+      // catch a fake payload anyway — but a seller that fabricates on error is
+      // exactly the behaviour this project exists to make unprofitable.
+      return c.json({ error: 'upstream: the graph token api', detail: e.message }, 502)
+    }
+    throw e
+  }
 })
 
 serve({ fetch: app.fetch, port: PORT }, (info) => {
