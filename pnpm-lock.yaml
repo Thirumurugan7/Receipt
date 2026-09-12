@@ -66,6 +66,10 @@ importers:
       viem:
         specifier: 2.56.3
         version: 2.56.3(typescript@5.9.2)(zod@3.25.76)
+    devDependencies:
+      tsx:
+        specifier: ^4.23.13
+        version: 4.23.13
 
   packages/dashboard: {}
 

@@ -1,0 +1,675 @@
+{
+  "terms": {
+    "v": 1,
+    "nonce": "0x1111111111111111111111111111111111111111111111111111111111111111",
+    "payer": "0x1111111111111111111111111111111111111111",
+    "payee": "0x2222222222222222222222222222222222222222",
+    "token": "0.0.0",
+    "amount": "50000000",
+    "resource": "https://seller.example/api/quote",
+    "deadlineMs": 1789200060000,
+    "checks": {
+      "status": {
+        "in": [
+          200
+        ]
+      },
+      "contentType": {
+        "equals": "application/json"
+      },
+      "minBytes": 32,
+      "maxLatencyMs": 5000,
+      "requiredPaths": [
+        "$.data",
+        "$.timestamp",
+        "$.source"
+      ],
+      "jsonSchema": {
+        "type": "object",
+        "required": [
+          "data",
+          "source",
+          "timestamp"
+        ],
+        "properties": {
+          "source": {
+            "type": "string",
+            "const": "the-graph-token-api"
+          },
+          "timestamp": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "data": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "required": [
+                "contract",
+                "amount"
+              ],
+              "properties": {
+                "contract": {
+                  "type": "string",
+                  "pattern": "^0x[0-9a-fA-F]{40}$"
+                },
+                "amount": {
+                  "type": "string",
+                  "pattern": "^[0-9]+$"
+                }
+              }
+            }
+          }
+        }
+      },
+      "freshnessSeconds": 3600
+    }
+  },
+  "cases": [
+    {
+      "name": "honest",
+      "observation": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json; charset=utf-8"
+        },
+        "bodyBase64": "eyJzb3VyY2UiOiJ0aGUtZ3JhcGgtdG9rZW4tYXBpIiwiYWRkcmVzcyI6IjB4MjhDNmMwNjI5OGQ1MTREYjA4OTkzNDA3MTM1NUU1NzQzYmYyMWQ2MCIsIm5ldHdvcmsiOiJtYWlubmV0IiwidGltZXN0YW1wIjoxNzg5MjAwMDAwLCJkYXRhIjpbeyJjb250cmFjdCI6IjB4YTBiODY5OTFjNjIxOGIzNmMxZDE5ZDRhMmU5ZWIwY2UzNjA2ZWI0OCIsInN5bWJvbCI6IlVTREMiLCJuYW1lIjoiVVNEQyIsImFtb3VudCI6IjUxOTUxMjk3OTIwIiwiZGVjaW1hbHMiOjYsInZhbHVlIjo1MTk1MS4yOTc5MiwiYmxvY2tOdW0iOjI1OTYwNjU4LCJsYXN0VXBkYXRlIjoiMjAyNi0wOS0xMiAxMDowMDowMCIsIm5ldHdvcmsiOiJtYWlubmV0In1dfQ==",
+        "requestTimeMs": 1789200000000
+      },
+      "expected": {
+        "pass": true,
+        "firstFailure": null,
+        "responseHash": "0xc8c7b39a77bae368bc230bfb8bf888b06e46181c35a1ca8c592014457ca621f8",
+        "reproducibleJcs": "[{\"check\":\"status\",\"pass\":true},{\"check\":\"contentType\",\"pass\":true},{\"check\":\"minBytes\",\"pass\":true},{\"check\":\"requiredPaths\",\"pass\":true},{\"check\":\"jsonSchema\",\"pass\":true},{\"check\":\"freshness\",\"pass\":true},{\"check\":\"expectedHash\",\"pass\":true,\"skipped\":true}]",
+        "verdictHash": "0x01750f0783c8d05d19a5d7e13f8932f008cded2cbc3de8a69a2661557ad8c353"
+      },
+      "verdict": {
+        "v": 1,
+        "adjudicator": "receipt-adjudicator@0.1.0",
+        "termsHash": "0x584a51fda1f55ac3c13a042f58a786c1f485da88d923a31e55c4a8ee7d5838ea",
+        "responseHash": "0xc8c7b39a77bae368bc230bfb8bf888b06e46181c35a1ca8c592014457ca621f8",
+        "observedStatus": 200,
+        "observedBytes": 358,
+        "reproducible": [
+          {
+            "check": "status",
+            "pass": true
+          },
+          {
+            "check": "contentType",
+            "pass": true
+          },
+          {
+            "check": "minBytes",
+            "pass": true
+          },
+          {
+            "check": "requiredPaths",
+            "pass": true
+          },
+          {
+            "check": "jsonSchema",
+            "pass": true
+          },
+          {
+            "check": "freshness",
+            "pass": true
+          },
+          {
+            "check": "expectedHash",
+            "pass": true,
+            "skipped": true
+          }
+        ],
+        "attested": [
+          {
+            "check": "maxLatencyMs",
+            "pass": true,
+            "observed": 412
+          }
+        ],
+        "pass": true,
+        "firstFailure": null
+      }
+    },
+    {
+      "name": "garbage",
+      "observation": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json; charset=utf-8"
+        },
+        "bodyBase64": "eyJlcnJvciI6InVwc3RyZWFtIHJhdGUgbGltaXRlZCJ9",
+        "requestTimeMs": 1789200000000
+      },
+      "expected": {
+        "pass": false,
+        "firstFailure": "requiredPaths",
+        "responseHash": "0xf16ba772ebaf7402a47ed24254a69f3d3dd696dcbd4e7f31bcae97aed46ae09e",
+        "reproducibleJcs": "[{\"check\":\"status\",\"pass\":true},{\"check\":\"contentType\",\"pass\":true},{\"check\":\"minBytes\",\"pass\":true},{\"check\":\"requiredPaths\",\"detail\":\"missing $.data, $.timestamp, $.source\",\"pass\":false},{\"check\":\"jsonSchema\",\"detail\":\"/: must have required property 'data'; /: must have required property 'source'; /: must have required property 'timestamp'\",\"pass\":false},{\"check\":\"freshness\",\"detail\":\"$.timestamp missing or unparseable\",\"pass\":false},{\"check\":\"expectedHash\",\"pass\":true,\"skipped\":true}]",
+        "verdictHash": "0x3c1f838181122fcc674e5d4ec9d39fff1f522b3feb9f5eb68c2b43ee0d06edcd"
+      },
+      "verdict": {
+        "v": 1,
+        "adjudicator": "receipt-adjudicator@0.1.0",
+        "termsHash": "0x584a51fda1f55ac3c13a042f58a786c1f485da88d923a31e55c4a8ee7d5838ea",
+        "responseHash": "0xf16ba772ebaf7402a47ed24254a69f3d3dd696dcbd4e7f31bcae97aed46ae09e",
+        "observedStatus": 200,
+        "observedBytes": 33,
+        "reproducible": [
+          {
+            "check": "status",
+            "pass": true
+          },
+          {
+            "check": "contentType",
+            "pass": true
+          },
+          {
+            "check": "minBytes",
+            "pass": true
+          },
+          {
+            "check": "requiredPaths",
+            "pass": false,
+            "detail": "missing $.data, $.timestamp, $.source"
+          },
+          {
+            "check": "jsonSchema",
+            "pass": false,
+            "detail": "/: must have required property 'data'; /: must have required property 'source'; /: must have required property 'timestamp'"
+          },
+          {
+            "check": "freshness",
+            "pass": false,
+            "detail": "$.timestamp missing or unparseable"
+          },
+          {
+            "check": "expectedHash",
+            "pass": true,
+            "skipped": true
+          }
+        ],
+        "attested": [
+          {
+            "check": "maxLatencyMs",
+            "pass": true,
+            "observed": 412
+          }
+        ],
+        "pass": false,
+        "firstFailure": "requiredPaths"
+      }
+    },
+    {
+      "name": "stale",
+      "observation": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json; charset=utf-8"
+        },
+        "bodyBase64": "eyJzb3VyY2UiOiJ0aGUtZ3JhcGgtdG9rZW4tYXBpIiwiYWRkcmVzcyI6IjB4MjhDNmMwNjI5OGQ1MTREYjA4OTkzNDA3MTM1NUU1NzQzYmYyMWQ2MCIsIm5ldHdvcmsiOiJtYWlubmV0IiwidGltZXN0YW1wIjoxNzg5MTkyODAwLCJkYXRhIjpbeyJjb250cmFjdCI6IjB4YTBiODY5OTFjNjIxOGIzNmMxZDE5ZDRhMmU5ZWIwY2UzNjA2ZWI0OCIsInN5bWJvbCI6IlVTREMiLCJuYW1lIjoiVVNEQyIsImFtb3VudCI6IjUxOTUxMjk3OTIwIiwiZGVjaW1hbHMiOjYsInZhbHVlIjo1MTk1MS4yOTc5MiwiYmxvY2tOdW0iOjI1OTYwNjU4LCJsYXN0VXBkYXRlIjoiMjAyNi0wOS0xMiAxMDowMDowMCIsIm5ldHdvcmsiOiJtYWlubmV0In1dfQ==",
+        "requestTimeMs": 1789200000000
+      },
+      "expected": {
+        "pass": false,
+        "firstFailure": "freshness",
+        "responseHash": "0x06276e37dbb095c8353c0fb7c32432fad2922e3a6649dad82d7f90bfbe506570",
+        "reproducibleJcs": "[{\"check\":\"status\",\"pass\":true},{\"check\":\"contentType\",\"pass\":true},{\"check\":\"minBytes\",\"pass\":true},{\"check\":\"requiredPaths\",\"pass\":true},{\"check\":\"jsonSchema\",\"pass\":true},{\"check\":\"freshness\",\"detail\":\"timestamp is 7200s from request, limit 3600s\",\"pass\":false},{\"check\":\"expectedHash\",\"pass\":true,\"skipped\":true}]",
+        "verdictHash": "0xb5058a46262caa7be34cd47eb95c2533a2527d727c03eccff900d5d2ee73143a"
+      },
+      "verdict": {
+        "v": 1,
+        "adjudicator": "receipt-adjudicator@0.1.0",
+        "termsHash": "0x584a51fda1f55ac3c13a042f58a786c1f485da88d923a31e55c4a8ee7d5838ea",
+        "responseHash": "0x06276e37dbb095c8353c0fb7c32432fad2922e3a6649dad82d7f90bfbe506570",
+        "observedStatus": 200,
+        "observedBytes": 358,
+        "reproducible": [
+          {
+            "check": "status",
+            "pass": true
+          },
+          {
+            "check": "contentType",
+            "pass": true
+          },
+          {
+            "check": "minBytes",
+            "pass": true
+          },
+          {
+            "check": "requiredPaths",
+            "pass": true
+          },
+          {
+            "check": "jsonSchema",
+            "pass": true
+          },
+          {
+            "check": "freshness",
+            "pass": false,
+            "detail": "timestamp is 7200s from request, limit 3600s"
+          },
+          {
+            "check": "expectedHash",
+            "pass": true,
+            "skipped": true
+          }
+        ],
+        "attested": [
+          {
+            "check": "maxLatencyMs",
+            "pass": true,
+            "observed": 412
+          }
+        ],
+        "pass": false,
+        "firstFailure": "freshness"
+      }
+    },
+    {
+      "name": "empty-holdings",
+      "observation": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json; charset=utf-8"
+        },
+        "bodyBase64": "eyJzb3VyY2UiOiJ0aGUtZ3JhcGgtdG9rZW4tYXBpIiwiYWRkcmVzcyI6IjB4MjhDNmMwNjI5OGQ1MTREYjA4OTkzNDA3MTM1NUU1NzQzYmYyMWQ2MCIsIm5ldHdvcmsiOiJtYWlubmV0IiwidGltZXN0YW1wIjoxNzg5MjAwMDAwLCJkYXRhIjpbXX0=",
+        "requestTimeMs": 1789200000000
+      },
+      "expected": {
+        "pass": false,
+        "firstFailure": "jsonSchema",
+        "responseHash": "0xdbd6d17ef9eaf054381383b840d1400da24072f3b17abf8d7655c82f1a58d3ba",
+        "reproducibleJcs": "[{\"check\":\"status\",\"pass\":true},{\"check\":\"contentType\",\"pass\":true},{\"check\":\"minBytes\",\"pass\":true},{\"check\":\"requiredPaths\",\"pass\":true},{\"check\":\"jsonSchema\",\"detail\":\"/data: must NOT have fewer than 1 items\",\"pass\":false},{\"check\":\"freshness\",\"pass\":true},{\"check\":\"expectedHash\",\"pass\":true,\"skipped\":true}]",
+        "verdictHash": "0xce38911e4fe1a247bbf6f4cc9f1589881557978eccd6e08edcc416ba03056e33"
+      },
+      "verdict": {
+        "v": 1,
+        "adjudicator": "receipt-adjudicator@0.1.0",
+        "termsHash": "0x584a51fda1f55ac3c13a042f58a786c1f485da88d923a31e55c4a8ee7d5838ea",
+        "responseHash": "0xdbd6d17ef9eaf054381383b840d1400da24072f3b17abf8d7655c82f1a58d3ba",
+        "observedStatus": 200,
+        "observedBytes": 140,
+        "reproducible": [
+          {
+            "check": "status",
+            "pass": true
+          },
+          {
+            "check": "contentType",
+            "pass": true
+          },
+          {
+            "check": "minBytes",
+            "pass": true
+          },
+          {
+            "check": "requiredPaths",
+            "pass": true
+          },
+          {
+            "check": "jsonSchema",
+            "pass": false,
+            "detail": "/data: must NOT have fewer than 1 items"
+          },
+          {
+            "check": "freshness",
+            "pass": true
+          },
+          {
+            "check": "expectedHash",
+            "pass": true,
+            "skipped": true
+          }
+        ],
+        "attested": [
+          {
+            "check": "maxLatencyMs",
+            "pass": true,
+            "observed": 412
+          }
+        ],
+        "pass": false,
+        "firstFailure": "jsonSchema"
+      }
+    },
+    {
+      "name": "forged-source",
+      "observation": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json; charset=utf-8"
+        },
+        "bodyBase64": "eyJzb3VyY2UiOiJpbnZlbnRlZCIsImFkZHJlc3MiOiIweDI4QzZjMDYyOThkNTE0RGIwODk5MzQwNzEzNTVFNTc0M2JmMjFkNjAiLCJuZXR3b3JrIjoibWFpbm5ldCIsInRpbWVzdGFtcCI6MTc4OTIwMDAwMCwiZGF0YSI6W3siY29udHJhY3QiOiIweGEwYjg2OTkxYzYyMThiMzZjMWQxOWQ0YTJlOWViMGNlMzYwNmViNDgiLCJzeW1ib2wiOiJVU0RDIiwibmFtZSI6IlVTREMiLCJhbW91bnQiOiI1MTk1MTI5NzkyMCIsImRlY2ltYWxzIjo2LCJ2YWx1ZSI6NTE5NTEuMjk3OTIsImJsb2NrTnVtIjoyNTk2MDY1OCwibGFzdFVwZGF0ZSI6IjIwMjYtMDktMTIgMTA6MDA6MDAiLCJuZXR3b3JrIjoibWFpbm5ldCJ9XX0=",
+        "requestTimeMs": 1789200000000
+      },
+      "expected": {
+        "pass": false,
+        "firstFailure": "jsonSchema",
+        "responseHash": "0xe91ce402d772eef72b4355897c5e94bec410abba085a19f38c2f36e61a220ac5",
+        "reproducibleJcs": "[{\"check\":\"status\",\"pass\":true},{\"check\":\"contentType\",\"pass\":true},{\"check\":\"minBytes\",\"pass\":true},{\"check\":\"requiredPaths\",\"pass\":true},{\"check\":\"jsonSchema\",\"detail\":\"/source: must be equal to constant\",\"pass\":false},{\"check\":\"freshness\",\"pass\":true},{\"check\":\"expectedHash\",\"pass\":true,\"skipped\":true}]",
+        "verdictHash": "0x1f89aa4d81f5b80b0fdb1c2fe106bfa1261815cddd2d889e35293e14f4e01e0d"
+      },
+      "verdict": {
+        "v": 1,
+        "adjudicator": "receipt-adjudicator@0.1.0",
+        "termsHash": "0x584a51fda1f55ac3c13a042f58a786c1f485da88d923a31e55c4a8ee7d5838ea",
+        "responseHash": "0xe91ce402d772eef72b4355897c5e94bec410abba085a19f38c2f36e61a220ac5",
+        "observedStatus": 200,
+        "observedBytes": 347,
+        "reproducible": [
+          {
+            "check": "status",
+            "pass": true
+          },
+          {
+            "check": "contentType",
+            "pass": true
+          },
+          {
+            "check": "minBytes",
+            "pass": true
+          },
+          {
+            "check": "requiredPaths",
+            "pass": true
+          },
+          {
+            "check": "jsonSchema",
+            "pass": false,
+            "detail": "/source: must be equal to constant"
+          },
+          {
+            "check": "freshness",
+            "pass": true
+          },
+          {
+            "check": "expectedHash",
+            "pass": true,
+            "skipped": true
+          }
+        ],
+        "attested": [
+          {
+            "check": "maxLatencyMs",
+            "pass": true,
+            "observed": 412
+          }
+        ],
+        "pass": false,
+        "firstFailure": "jsonSchema"
+      }
+    },
+    {
+      "name": "bad-amount",
+      "observation": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json; charset=utf-8"
+        },
+        "bodyBase64": "eyJzb3VyY2UiOiJ0aGUtZ3JhcGgtdG9rZW4tYXBpIiwiYWRkcmVzcyI6IjB4MjhDNmMwNjI5OGQ1MTREYjA4OTkzNDA3MTM1NUU1NzQzYmYyMWQ2MCIsIm5ldHdvcmsiOiJtYWlubmV0IiwidGltZXN0YW1wIjoxNzg5MjAwMDAwLCJkYXRhIjpbeyJjb250cmFjdCI6IjB4YTBiODY5OTFjNjIxOGIzNmMxZDE5ZDRhMmU5ZWIwY2UzNjA2ZWI0OCIsInN5bWJvbCI6IlVTREMiLCJuYW1lIjoiVVNEQyIsImFtb3VudCI6ImxvdHMiLCJkZWNpbWFscyI6NiwidmFsdWUiOjUxOTUxLjI5NzkyLCJibG9ja051bSI6MjU5NjA2NTgsImxhc3RVcGRhdGUiOiIyMDI2LTA5LTEyIDEwOjAwOjAwIiwibmV0d29yayI6Im1haW5uZXQifV19",
+        "requestTimeMs": 1789200000000
+      },
+      "expected": {
+        "pass": false,
+        "firstFailure": "jsonSchema",
+        "responseHash": "0xdd42a29caa8cd4f8ee632661b4056541aa99e26cfde8fceb86ea5c4921476b81",
+        "reproducibleJcs": "[{\"check\":\"status\",\"pass\":true},{\"check\":\"contentType\",\"pass\":true},{\"check\":\"minBytes\",\"pass\":true},{\"check\":\"requiredPaths\",\"pass\":true},{\"check\":\"jsonSchema\",\"detail\":\"/data/0/amount: must match pattern \\\"^[0-9]+$\\\"\",\"pass\":false},{\"check\":\"freshness\",\"pass\":true},{\"check\":\"expectedHash\",\"pass\":true,\"skipped\":true}]",
+        "verdictHash": "0x35f454f22a2b9021c137877b96ed12985eebeb2250263b3708465370c91446ef"
+      },
+      "verdict": {
+        "v": 1,
+        "adjudicator": "receipt-adjudicator@0.1.0",
+        "termsHash": "0x584a51fda1f55ac3c13a042f58a786c1f485da88d923a31e55c4a8ee7d5838ea",
+        "responseHash": "0xdd42a29caa8cd4f8ee632661b4056541aa99e26cfde8fceb86ea5c4921476b81",
+        "observedStatus": 200,
+        "observedBytes": 351,
+        "reproducible": [
+          {
+            "check": "status",
+            "pass": true
+          },
+          {
+            "check": "contentType",
+            "pass": true
+          },
+          {
+            "check": "minBytes",
+            "pass": true
+          },
+          {
+            "check": "requiredPaths",
+            "pass": true
+          },
+          {
+            "check": "jsonSchema",
+            "pass": false,
+            "detail": "/data/0/amount: must match pattern \"^[0-9]+$\""
+          },
+          {
+            "check": "freshness",
+            "pass": true
+          },
+          {
+            "check": "expectedHash",
+            "pass": true,
+            "skipped": true
+          }
+        ],
+        "attested": [
+          {
+            "check": "maxLatencyMs",
+            "pass": true,
+            "observed": 412
+          }
+        ],
+        "pass": false,
+        "firstFailure": "jsonSchema"
+      }
+    },
+    {
+      "name": "bad-contract",
+      "observation": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json; charset=utf-8"
+        },
+        "bodyBase64": "eyJzb3VyY2UiOiJ0aGUtZ3JhcGgtdG9rZW4tYXBpIiwiYWRkcmVzcyI6IjB4MjhDNmMwNjI5OGQ1MTREYjA4OTkzNDA3MTM1NUU1NzQzYmYyMWQ2MCIsIm5ldHdvcmsiOiJtYWlubmV0IiwidGltZXN0YW1wIjoxNzg5MjAwMDAwLCJkYXRhIjpbeyJjb250cmFjdCI6Im5vcGUiLCJzeW1ib2wiOiJVU0RDIiwibmFtZSI6IlVTREMiLCJhbW91bnQiOiI1MTk1MTI5NzkyMCIsImRlY2ltYWxzIjo2LCJ2YWx1ZSI6NTE5NTEuMjk3OTIsImJsb2NrTnVtIjoyNTk2MDY1OCwibGFzdFVwZGF0ZSI6IjIwMjYtMDktMTIgMTA6MDA6MDAiLCJuZXR3b3JrIjoibWFpbm5ldCJ9XX0=",
+        "requestTimeMs": 1789200000000
+      },
+      "expected": {
+        "pass": false,
+        "firstFailure": "jsonSchema",
+        "responseHash": "0xd87e1ac51e718a9371c90caf42a1f5fcc4c521490804f86dca670a1dc9726a2d",
+        "reproducibleJcs": "[{\"check\":\"status\",\"pass\":true},{\"check\":\"contentType\",\"pass\":true},{\"check\":\"minBytes\",\"pass\":true},{\"check\":\"requiredPaths\",\"pass\":true},{\"check\":\"jsonSchema\",\"detail\":\"/data/0/contract: must match pattern \\\"^0x[0-9a-fA-F]{40}$\\\"\",\"pass\":false},{\"check\":\"freshness\",\"pass\":true},{\"check\":\"expectedHash\",\"pass\":true,\"skipped\":true}]",
+        "verdictHash": "0xd483e5f32c330978b036db583f94b0270aa010d931993a5d7309ae42175c5ea4"
+      },
+      "verdict": {
+        "v": 1,
+        "adjudicator": "receipt-adjudicator@0.1.0",
+        "termsHash": "0x584a51fda1f55ac3c13a042f58a786c1f485da88d923a31e55c4a8ee7d5838ea",
+        "responseHash": "0xd87e1ac51e718a9371c90caf42a1f5fcc4c521490804f86dca670a1dc9726a2d",
+        "observedStatus": 200,
+        "observedBytes": 320,
+        "reproducible": [
+          {
+            "check": "status",
+            "pass": true
+          },
+          {
+            "check": "contentType",
+            "pass": true
+          },
+          {
+            "check": "minBytes",
+            "pass": true
+          },
+          {
+            "check": "requiredPaths",
+            "pass": true
+          },
+          {
+            "check": "jsonSchema",
+            "pass": false,
+            "detail": "/data/0/contract: must match pattern \"^0x[0-9a-fA-F]{40}$\""
+          },
+          {
+            "check": "freshness",
+            "pass": true
+          },
+          {
+            "check": "expectedHash",
+            "pass": true,
+            "skipped": true
+          }
+        ],
+        "attested": [
+          {
+            "check": "maxLatencyMs",
+            "pass": true,
+            "observed": 412
+          }
+        ],
+        "pass": false,
+        "firstFailure": "jsonSchema"
+      }
+    },
+    {
+      "name": "wrong-status",
+      "observation": {
+        "status": 503,
+        "headers": {
+          "content-type": "application/json; charset=utf-8"
+        },
+        "bodyBase64": "eyJzb3VyY2UiOiJ0aGUtZ3JhcGgtdG9rZW4tYXBpIiwiYWRkcmVzcyI6IjB4MjhDNmMwNjI5OGQ1MTREYjA4OTkzNDA3MTM1NUU1NzQzYmYyMWQ2MCIsIm5ldHdvcmsiOiJtYWlubmV0IiwidGltZXN0YW1wIjoxNzg5MjAwMDAwLCJkYXRhIjpbeyJjb250cmFjdCI6IjB4YTBiODY5OTFjNjIxOGIzNmMxZDE5ZDRhMmU5ZWIwY2UzNjA2ZWI0OCIsInN5bWJvbCI6IlVTREMiLCJuYW1lIjoiVVNEQyIsImFtb3VudCI6IjUxOTUxMjk3OTIwIiwiZGVjaW1hbHMiOjYsInZhbHVlIjo1MTk1MS4yOTc5MiwiYmxvY2tOdW0iOjI1OTYwNjU4LCJsYXN0VXBkYXRlIjoiMjAyNi0wOS0xMiAxMDowMDowMCIsIm5ldHdvcmsiOiJtYWlubmV0In1dfQ==",
+        "requestTimeMs": 1789200000000
+      },
+      "expected": {
+        "pass": false,
+        "firstFailure": "status",
+        "responseHash": "0xc8c7b39a77bae368bc230bfb8bf888b06e46181c35a1ca8c592014457ca621f8",
+        "reproducibleJcs": "[{\"check\":\"status\",\"detail\":\"status 503 not in [200]\",\"pass\":false},{\"check\":\"contentType\",\"pass\":true},{\"check\":\"minBytes\",\"pass\":true},{\"check\":\"requiredPaths\",\"pass\":true},{\"check\":\"jsonSchema\",\"pass\":true},{\"check\":\"freshness\",\"pass\":true},{\"check\":\"expectedHash\",\"pass\":true,\"skipped\":true}]",
+        "verdictHash": "0x999a6b7975b15a81e49c213664acfd33b63f44b53a17d6cf5387220f25e0b61e"
+      },
+      "verdict": {
+        "v": 1,
+        "adjudicator": "receipt-adjudicator@0.1.0",
+        "termsHash": "0x584a51fda1f55ac3c13a042f58a786c1f485da88d923a31e55c4a8ee7d5838ea",
+        "responseHash": "0xc8c7b39a77bae368bc230bfb8bf888b06e46181c35a1ca8c592014457ca621f8",
+        "observedStatus": 503,
+        "observedBytes": 358,
+        "reproducible": [
+          {
+            "check": "status",
+            "pass": false,
+            "detail": "status 503 not in [200]"
+          },
+          {
+            "check": "contentType",
+            "pass": true
+          },
+          {
+            "check": "minBytes",
+            "pass": true
+          },
+          {
+            "check": "requiredPaths",
+            "pass": true
+          },
+          {
+            "check": "jsonSchema",
+            "pass": true
+          },
+          {
+            "check": "freshness",
+            "pass": true
+          },
+          {
+            "check": "expectedHash",
+            "pass": true,
+            "skipped": true
+          }
+        ],
+        "attested": [
+          {
+            "check": "maxLatencyMs",
+            "pass": true,
+            "observed": 412
+          }
+        ],
+        "pass": false,
+        "firstFailure": "status"
+      }
+    },
+    {
+      "name": "wrong-content-type",
+      "observation": {
+        "status": 200,
+        "headers": {
+          "content-type": "text/html"
+        },
+        "bodyBase64": "eyJzb3VyY2UiOiJ0aGUtZ3JhcGgtdG9rZW4tYXBpIiwiYWRkcmVzcyI6IjB4MjhDNmMwNjI5OGQ1MTREYjA4OTkzNDA3MTM1NUU1NzQzYmYyMWQ2MCIsIm5ldHdvcmsiOiJtYWlubmV0IiwidGltZXN0YW1wIjoxNzg5MjAwMDAwLCJkYXRhIjpbeyJjb250cmFjdCI6IjB4YTBiODY5OTFjNjIxOGIzNmMxZDE5ZDRhMmU5ZWIwY2UzNjA2ZWI0OCIsInN5bWJvbCI6IlVTREMiLCJuYW1lIjoiVVNEQyIsImFtb3VudCI6IjUxOTUxMjk3OTIwIiwiZGVjaW1hbHMiOjYsInZhbHVlIjo1MTk1MS4yOTc5MiwiYmxvY2tOdW0iOjI1OTYwNjU4LCJsYXN0VXBkYXRlIjoiMjAyNi0wOS0xMiAxMDowMDowMCIsIm5ldHdvcmsiOiJtYWlubmV0In1dfQ==",
+        "requestTimeMs": 1789200000000
+      },
+      "expected": {
+        "pass": false,
+        "firstFailure": "contentType",
+        "responseHash": "0xc8c7b39a77bae368bc230bfb8bf888b06e46181c35a1ca8c592014457ca621f8",
+        "reproducibleJcs": "[{\"check\":\"status\",\"pass\":true},{\"check\":\"contentType\",\"detail\":\"content-type text/html != application/json\",\"pass\":false},{\"check\":\"minBytes\",\"pass\":true},{\"check\":\"requiredPaths\",\"pass\":true},{\"check\":\"jsonSchema\",\"pass\":true},{\"check\":\"freshness\",\"pass\":true},{\"check\":\"expectedHash\",\"pass\":true,\"skipped\":true}]",
+        "verdictHash": "0xf0e7ea4319bdbe7a0ccf86e7642eab5b9be3829974c07bb797ebf88c54c6b33d"
+      },
+      "verdict": {
+        "v": 1,
+        "adjudicator": "receipt-adjudicator@0.1.0",
+        "termsHash": "0x584a51fda1f55ac3c13a042f58a786c1f485da88d923a31e55c4a8ee7d5838ea",
+        "responseHash": "0xc8c7b39a77bae368bc230bfb8bf888b06e46181c35a1ca8c592014457ca621f8",
+        "observedStatus": 200,
+        "observedBytes": 358,
+        "reproducible": [
+          {
+            "check": "status",
+            "pass": true
+          },
+          {
+            "check": "contentType",
+            "pass": false,
+            "detail": "content-type text/html != application/json"
+          },
+          {
+            "check": "minBytes",
+            "pass": true
+          },
+          {
+            "check": "requiredPaths",
+            "pass": true
+          },
+          {
+            "check": "jsonSchema",
+            "pass": true
+          },
+          {
+            "check": "freshness",
+            "pass": true
+          },
+          {
+            "check": "expectedHash",
+            "pass": true,
+            "skipped": true
+          }
+        ],
+        "attested": [
+          {
+            "check": "maxLatencyMs",
+            "pass": true,
+            "observed": 412
+          }
+        ],
+        "pass": false,
+        "firstFailure": "contentType"
+      }
+    }
+  ]
+}

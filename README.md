@@ -107,6 +107,32 @@ We can tell you exactly which part of our verdict you have to take on faith, and
 
 ---
 
+## Where this sits against everything else
+
+| | What it does | What it does not do |
+|---|---|---|
+| **x402** | Per-request HTTP payment. Synchronous, atomic, no evaluation step. | No refund primitive. Pay first, find out second. |
+| **[ERC-8183](https://eips.ethereum.org/EIPS/eip-8183)** (Virtuals) | Job escrow for agent-to-agent work, with an **Evaluator** who approves or rejects. Explicitly scoped to deliverables that *"can't be verified by HTTP 200"*. | The EIP names its own weak point: *"the security risks of the Evaluator itself"*. Someone must be trusted. |
+| **Virtuals ACP** | Shipped the evaluator design on Base. 12M cumulative memos. | Five unique senders a day. Nobody could answer who judges, who pays the judge, or why the verdict is trustworthy. |
+| **x402r** | The only native x402 refund attempt. | ~1 GitHub star per repo; Solana contracts self-described as unaudited pilot code. |
+| **Google AP2 / ERC-8004** | Signed audit trails and agent identity. | Both stop at evidence and hand the remedy to whatever rail you are on. |
+| **Kleros / UMA** | Real dispute resolution with real guarantees. | Bonds, liveness windows and gas — dollars and days against a median ticket near $0.46. |
+| **Receipt** | Conditional settlement for the deliverables that **are** machine-checkable, with **no evaluator at all**. | Does not handle subjective deliverables. That is ERC-8183's problem, and we do not pretend to solve it. |
+
+The gap we fill is narrow and specific. ERC-8183 scopes itself to work that
+cannot be checked by an HTTP response — and in doing so leaves the much larger
+class that *can* be checked to an evaluator nobody needs. If the acceptance
+criteria are a pure function, the judge is redundant: both parties compute it,
+and so can a stranger.
+
+**Our novelty is not the refund.** Refunds over x402 on Hedera already exist —
+Pinout won a Hedera x402 bounty for exactly that in July 2026. The novelty is
+that **the decision itself is reproducible**: the verdict that moved the money
+can be recomputed from the public log by anyone, in any language, and checked
+against the hash the escrow recorded. Nothing above does that.
+
+---
+
 ## Deployed
 
 | | |
@@ -211,10 +237,34 @@ pnpm claim  --deal 0x…              # permissionless expiry, from an unrelated
 pnpm verify --deal 0x…              # re-run the adjudicator offline
 ```
 
+### Two implementations, one verdict
+
+The strongest claim this project makes is that the verdict is a pure function
+anyone can recompute. So it is computed twice, by two implementations that
+share no code:
+
+```bash
+cd verify-py
+python3 keccak.py                    # known-answer tests for the hash
+python3 test_cross_implementation.py # both implementations, same fixture
+python3 verify.py --topic 0.0.10495465 --deal 0x… \
+  --escrow 0x3483B3761ebe3C2fC2eB3EfE8215a7CF90634071
+```
+
+`verify-py/` is written from [SPEC.md](SPEC.md) in Python with **zero
+dependencies** — its own Keccak-256, its own JCS canonicaliser, its own JSON
+Schema subset, its own JSONPath. It reads the public topic and prints the same
+`verdictHash` the escrow recorded.
+
+Writing it found a real defect in the spec: `detail` strings sit inside the
+hashed document, so two conforming implementations could disagree on the hash
+over a human-readable message. That is now pinned in SPEC.md §5.1 and asserted
+in CI — and it is the kind of thing only a second implementation finds.
+
 ### Tests
 
 ```bash
-pnpm test                                   # 77 unit tests
+pnpm test                                   # 163 unit tests
 pnpm typecheck                              # strict TypeScript, no emit
 cd packages/contracts && forge test         # 22 contract tests
 ```

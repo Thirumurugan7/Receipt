@@ -75,3 +75,21 @@ jobs:
       - name: Solidity side of the pin
         working-directory: packages/contracts
         run: forge test --match-contract Eip712InteropTest -vv
+
+  # A second implementation of SPEC.md, in Python, with no dependencies and no
+  # shared code. If the two ever disagree on a verdict or a hash, the claim
+  # that "anyone can recompute this" is false and CI says so.
+  conformance:
+    name: Cross-implementation conformance (TypeScript vs Python)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Keccak-256 known-answer tests
+        working-directory: verify-py
+        run: python3 keccak.py
+      - name: Both implementations must agree
+        working-directory: verify-py
+        run: python3 test_cross_implementation.py
