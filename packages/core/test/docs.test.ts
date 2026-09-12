@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs'
+import { readFileSync, readdirSync } from 'node:fs'
 import { describe, expect, test } from 'vitest'
 import { ADJUDICATOR_VERSION, REPRODUCIBLE_ORDER } from '../src/adjudicator.js'
 import { EIP712_TERMS_TYPES } from '../src/terms.js'
@@ -161,5 +161,51 @@ describe('SPEC.md matches the implementation', () => {
 
   test('the spec states pass is the AND of reproducible only', () => {
     expect(spec).toMatch(/`pass` is the AND of\s*\n?`reproducible\[\]` only/)
+  })
+})
+
+describe('.env.example documents every variable the code reads', () => {
+  /**
+   * The README tells a reader to `cp .env.example .env`. If the code reads a
+   * variable the example does not mention, that instruction produces a broken
+   * setup and the reader has to reverse-engineer the gap from a crash. This
+   * caught 16 undocumented variables, including STRANGER_PRIVATE_KEY, without
+   * which demo scene 4 cannot run at all.
+   */
+  const example = read('.env.example')
+  const documented = new Set([...example.matchAll(/^#?\s*([A-Z_][A-Z0-9_]*)=/gm)].map((m) => m[1]!))
+
+  const sourceFiles = (): string[] => {
+    const out: string[] = []
+    const walk = (dir: URL) => {
+      for (const entry of readdirSync(dir, { withFileTypes: true })) {
+        if (entry.name === 'node_modules' || entry.name === 'test') continue
+        const child = new URL(`${entry.name}${entry.isDirectory() ? '/' : ''}`, dir)
+        if (entry.isDirectory()) walk(child)
+        else if (entry.name.endsWith('.ts') || entry.name.endsWith('.mts')) out.push(readFileSync(child, 'utf8'))
+      }
+    }
+    walk(new URL('packages/', root))
+    return out
+  }
+
+  const referenced = new Set<string>()
+  for (const src of sourceFiles()) {
+    for (const re of [
+      /process\.env\.([A-Z_][A-Z0-9_]*)/g,
+      /process\.env\['([A-Z_][A-Z0-9_]*)'\]/g,
+      /\bneed\('([A-Z_][A-Z0-9_]*)'\)/g,
+      /\benv\('([A-Z_][A-Z0-9_]*)'\)/g,
+    ]) {
+      for (const m of src.matchAll(re)) referenced.add(m[1]!)
+    }
+  }
+
+  test('the code reads a non-trivial number of variables', () => {
+    expect(referenced.size).toBeGreaterThan(20)
+  })
+
+  test.each([...referenced].sort())('%s is documented in .env.example', (name) => {
+    expect(documented).toContain(name)
   })
 })

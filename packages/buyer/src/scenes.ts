@@ -60,6 +60,12 @@ const garbage = capture(['--filter', '@receipt/buyer', 'start', 'garbage'])
 process.stdout.write(garbage.stdout ?? '')
 const garbageDeal = (garbage.stdout ?? '').match(/dealId\s+(0x[0-9a-f]{64})/i)?.[1] ?? null
 
+// ── Scene 3b ──────────────────────────────────────────────────────────────
+rule('SCENE 3b — subtle: valid data, stale snapshot. Only freshness catches it.')
+const subtle = capture(['--filter', '@receipt/buyer', 'start', 'subtle'])
+process.stdout.write(subtle.stdout ?? '')
+const subtleDeal = (subtle.stdout ?? '').match(/dealId\s+(0x[0-9a-f]{64})/i)?.[1] ?? null
+
 // ── Scene 4 ───────────────────────────────────────────────────────────────
 rule('SCENE 4 — dead seller: no verdict is invented; a stranger recovers the funds')
 const dead = capture(['--filter', '@receipt/buyer', 'start', 'dead'])
@@ -77,7 +83,11 @@ console.log('\nwaiting a few seconds for the mirror node to index the last messa
 await new Promise((r) => setTimeout(r, 8000))
 
 let failures = 0
-for (const [label, deal] of [['released (pass)', honestDeal], ['refunded (fail)', garbageDeal]] as const) {
+for (const [label, deal] of [
+  ['released (pass)', honestDeal],
+  ['refunded, obvious garbage', garbageDeal],
+  ['refunded, stale but well-formed', subtleDeal],
+] as const) {
   if (!deal) continue
   console.log(`\n── verifying the ${label} deal ──`)
   const res = run(['verify', '--deal', deal])
