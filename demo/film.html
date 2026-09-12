@@ -374,7 +374,17 @@ const SCENES = [
 
 { n:'title', dur:6000, enter:'cut', html:`
   <div style="text-align:center; padding-right:50px">
-    <h1 style="margin-top:14px">${'RECEIPT'.split('').map((c, i) =>
+    <div data-in="0" style="color:var(--carbon); line-height:0"><svg width="92" height="92"  xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Receipt">
+  <mask id="rc-film">
+    <rect width="64" height="64" fill="#fff"/>
+    <path d="M21 31.5 28.5 39 44 23" fill="none" stroke="#000" stroke-width="6"
+          stroke-linecap="round" stroke-linejoin="round"/>
+  </mask>
+  <path fill="currentColor" mask="url(#rc-film)"
+        d="M11 5a1 1 0 0 1 1-1h40a1 1 0 0 1 1 1v50.6a1 1 0 0 1-1.6.8L45.5 52l-5.9 4.4a1 1 0 0 1-1.2 0L32.5 52
+           l-5.9 4.4a1 1 0 0 1-1.2 0L19.5 52l-5.9 4.4A1 1 0 0 1 11 55.6z"/>
+</svg></div>
+    <h1 style="margin-top:22px">${'RECEIPT'.split('').map((c, i) =>
       `<span data-in="${260 + i * 68}" style="display:inline-block">${c}</span>`).join('')}</h1>
     <p data-in="900" class="lede" style="margin:22px auto 0; max-width:46ch; color:var(--ink); font-size:26px">
       Pay for an API call. Get your money back automatically if the answer is junk.</p>
@@ -561,7 +571,7 @@ const SCENES = [
     Money only moves at step 3 and step 5. Everything else is public record,
     which is why step 7 is possible at all.</p>`},
 
-{ n:'sponsors', dur:14000, enter:'rise', revealMs:850, html:`
+{ n:'sponsors', dur:12000, enter:'rise', revealMs:850, html:`
   <h3 style="max-width:64ch">Each of these is load-bearing. Remove one and it stops working.</h3>
   <table class="ev">
     <tr><th>Sponsor</th><th>What it carries here</th><th>How you check it</th></tr>
@@ -577,9 +587,6 @@ const SCENES = [
     <tr data-reveal><td class="who">Bazantic</td>
       <td>Makes all of it one tool an agent can call. Two published Recipes, one chaining Receipt and 1inch.</td>
       <td class="how">Both are live and published</td></tr>
-    <tr data-reveal><td class="who no">Chainlink</td>
-      <td class="no">Not claimed. Confidential Workflows is the right fix for publishing raw answers, and it is not built.</td>
-      <td class="how no">Said out loud, next screen</td></tr>
   </table>`},
 
 

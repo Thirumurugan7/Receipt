@@ -113,6 +113,7 @@ Renders just those moments into `demo/.frames/` and exits.
 | `shots/` | those captures, committed so the film can be rebuilt offline |
 | `shots/run/` | the recorded session, one JPEG per frame |
 | `shots/memes/` | blank meme templates, captioned by the film in its own type |
+| `../assets/logo.svg` | the project mark, inlined by the film and by the live page |
 | `run-frames.js` | the frame count, written by `interact.mjs` so the film cannot hold a stale copy |
 | `schedule.json` | the running order, written by the renderer; `DEMO.md` is tested against it |
 | `receipt-demo.mp4` | the rendered film |

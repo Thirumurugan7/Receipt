@@ -1,5 +1,5 @@
 {
-  "totalMs": 222000,
+  "totalMs": 220000,
   "scenes": [
     {
       "n": "title",
@@ -84,16 +84,16 @@
     {
       "n": "sponsors",
       "start": 191000,
-      "dur": 14000
+      "dur": 12000
     },
     {
       "n": "what we cannot prove",
-      "start": 205000,
+      "start": 203000,
       "dur": 9000
     },
     {
       "n": "close",
-      "start": 214000,
+      "start": 212000,
       "dur": 8000
     }
   ]

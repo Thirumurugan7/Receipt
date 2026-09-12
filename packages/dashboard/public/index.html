@@ -3,7 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Receipt — live ledger</title>
+<title>Receipt, live ledger</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%20role%3D%22img%22%20aria-label%3D%22Receipt%22%3E%20%20%3Cmask%20id%3D%22receipt-check%22%3E%20%20%20%3Crect%20width%3D%2264%22%20height%3D%2264%22%20fill%3D%22%23fff%22%2F%3E%20%20%20%3Cpath%20d%3D%22M21%2031.5%2028.5%2039%2044%2023%22%20fill%3D%22none%22%20stroke%3D%22%23000%22%20stroke-width%3D%226%22%20%20%20%20%20%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%20%20%3C%2Fmask%3E%20%20%3Cpath%20fill%3D%22%25232f3aa8%22%20mask%3D%22url%28%23receipt-check%29%22%20%20%20%20%20d%3D%22M11%205a1%201%200%200%201%201-1h40a1%201%200%200%201%201%201v50.6a1%201%200%200%201-1.6.8L45.5%2052l-5.9%204.4a1%201%200%200%201-1.2%200L32.5%2052%20%20%20%20%20%20l-5.9%204.4a1%201%200%200%201-1.2%200L19.5%2052l-5.9%204.4A1%201%200%200%201%2011%2055.6z%22%2F%3E%20%3C%2Fsvg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -38,6 +39,8 @@
   /* ── masthead ─────────────────────────────────────────────────────── */
   .band{background:var(--carbon); color:#fff; padding:20px 0 22px; margin-bottom:26px}
   .band .wrap{padding-bottom:0; display:flex; flex-wrap:wrap; gap:16px; align-items:baseline; justify-content:space-between}
+  .brand{display:flex; align-items:center; gap:16px}
+  .brand .logo{line-height:0; color:#fff}
   .band h1{font-size:27px; font-weight:700; letter-spacing:.26em; text-indent:.26em}
   .band p{color:#c6cbf4; font-size:14px; margin-top:5px; max-width:62ch}
   .live{display:flex; align-items:center; gap:9px; font-size:13px; color:#c6cbf4; white-space:nowrap}
@@ -142,8 +145,20 @@
 
 <div class="band">
   <div class="wrap">
-    <div>
+    <div class="brand">
+      <span class="logo"><svg width="40" height="40"  xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Receipt">
+  <mask id="rc-page">
+    <rect width="64" height="64" fill="#fff"/>
+    <path d="M21 31.5 28.5 39 44 23" fill="none" stroke="#000" stroke-width="6"
+          stroke-linecap="round" stroke-linejoin="round"/>
+  </mask>
+  <path fill="currentColor" mask="url(#rc-page)"
+        d="M11 5a1 1 0 0 1 1-1h40a1 1 0 0 1 1 1v50.6a1 1 0 0 1-1.6.8L45.5 52l-5.9 4.4a1 1 0 0 1-1.2 0L32.5 52
+           l-5.9 4.4a1 1 0 0 1-1.2 0L19.5 52l-5.9 4.4A1 1 0 0 1 11 55.6z"/>
+</svg></span>
       <h1>RECEIPT</h1>
+    </div>
+    <div>
       <p>Conditional settlement for x402. The money waits in escrow and moves only if the response passes checks the buyer signed. Every verdict below is on a public ledger you can read without asking us.</p>
     </div>
     <div class="live"><span class="dot" id="dot"></span><span id="live-text">connecting…</span></div>

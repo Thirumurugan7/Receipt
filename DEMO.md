@@ -1,6 +1,6 @@
 # DEMO.md: the film, and what to say over it
 
-`demo/receipt-demo.mp4` is 3:42, 1920×1080, no audio.
+`demo/receipt-demo.mp4` is 3:40, 1920×1080, no audio.
 
 Every figure in it came off a live run against Hedera testnet: real settlement,
 real escrow, real release and refund, real data bought from The Graph. Nothing
@@ -35,9 +35,9 @@ script cannot drift out of sync with what is on screen.
 | 2:29 | second opinion | And again in Python, no dependencies, written from the written spec. Same answer, same hash, and it is the hash the escrow recorded on chain. |
 | 2:40 | the receipts | All of it is public. Here is half an HBAR leaving the escrow, on HashScan. And here is the reasoning: every check result, published, for every deal. |
 | 2:54 | architecture | Here is the whole path. The buyer signs, Blocky402 settles the payment, Hedera holds it in escrow, the seller answers with Graph data, the checks run, and all of it lands on a public log. Money only moves at two of those steps. |
-| 3:11 | sponsors | Every sponsor here is load-bearing. Hedera holds the money and carries the log. The Graph is the thing being bought. Blocky402 moves every payment. Bazantic makes it callable by an agent. Chainlink we have not claimed. |
-| 3:25 | what we cannot prove | There is one thing we cannot prove. How fast the seller answered is our own stopwatch, so we publish it and let it gate no money at all. |
-| 3:34 | close | x402 has no refund. Appointing a judge has been tried. It does five users a day. Receipt has no judge, because the answer is arithmetic. |
+| 3:11 | sponsors | Every sponsor here is load-bearing. Hedera holds the money and carries the log. The Graph is the thing being bought. Blocky402 moves every payment. Bazantic makes it callable by an agent. |
+| 3:23 | what we cannot prove | There is one thing we cannot prove. How fast the seller answered is our own stopwatch, so we publish it and let it gate no money at all. |
+| 3:32 | close | x402 has no refund. Appointing a judge has been tried. It does five users a day. Receipt has no judge, because the answer is arithmetic. |
 
 Pace is about 2.5 words a second. A countdown in the top corner tells the
 viewer how long until something actually runs, and the first real purchase

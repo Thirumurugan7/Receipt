@@ -1,0 +1,14 @@
+<!-- Receipt. A till receipt with a torn bottom edge, and the verdict struck
+     through it as a check. The check is knocked out rather than painted white,
+     so the mark works in one colour on any background. Solid, so it survives
+     being 24px in a browser tab. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Receipt">
+  <mask id="receipt-check">
+    <rect width="64" height="64" fill="#fff"/>
+    <path d="M21 31.5 28.5 39 44 23" fill="none" stroke="#000" stroke-width="6"
+          stroke-linecap="round" stroke-linejoin="round"/>
+  </mask>
+  <path fill="currentColor" mask="url(#receipt-check)"
+        d="M11 5a1 1 0 0 1 1-1h40a1 1 0 0 1 1 1v50.6a1 1 0 0 1-1.6.8L45.5 52l-5.9 4.4a1 1 0 0 1-1.2 0L32.5 52
+           l-5.9 4.4a1 1 0 0 1-1.2 0L19.5 52l-5.9 4.4A1 1 0 0 1 11 55.6z"/>
+</svg>

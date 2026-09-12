@@ -1,3 +1,5 @@
+<img src="assets/logo.svg" width="72" alt="">
+
 # Receipt
 
 [![CI](https://github.com/Thirumurugan7/Receipt/actions/workflows/ci.yml/badge.svg)](https://github.com/Thirumurugan7/Receipt/actions/workflows/ci.yml)
@@ -6,7 +8,7 @@
 
 Live on Hedera testnet. Settlement runs through the Blocky402 x402 facilitator, every verdict is published to a public Hedera Consensus Service topic, and anyone can re-run the adjudicator offline and check the result against the hash recorded on chain.
 
-**Demo: [`demo/receipt-demo.mp4`](demo/receipt-demo.mp4)**, 3:42. Every figure in it came off a live run: real settlement, real escrow, real release and refund. [`DEMO.md`](DEMO.md) is the narration, and [`demo/README.md`](demo/README.md) explains how the film is rendered without recording a screen.
+**Demo: [`demo/receipt-demo.mp4`](demo/receipt-demo.mp4)**, 3:40. Every figure in it came off a live run: real settlement, real escrow, real release and refund. [`DEMO.md`](DEMO.md) is the narration, and [`demo/README.md`](demo/README.md) explains how the film is rendered without recording a screen.
 
 **Nothing here needs to be taken on trust.** Every deal links to the transaction that moved the money on [HashScan](https://hashscan.io/testnet/contract/0x3483B3761ebe3C2fC2eB3EfE8215a7CF90634071) and to the raw bytes of its terms, response and verdict on the Hedera mirror node. `pnpm verify --all` recomputes every verdict from that public log with no cooperation from the facilitator, and `verify-py/` does it again in a second implementation that shares no code with the first. The live ledger at `/` goes further: **every deal has a button that recomputes its verdict in your own browser**, fetching the inputs straight from Hedera's mirror node so our server cannot influence the answer, and it will run a real deal for you too. See [`DEPLOYMENTS.md`](DEPLOYMENTS.md) for the current URL.
 
@@ -172,7 +174,6 @@ cooperation: every link is a public record and every command runs against it.
 | **The Graph** | Two products are composed into the thing being sold, and the terms assert both by name | `sources.balances: token-api` and `sources.markets: subgraph` are required by the signed terms. Drop either and the sale fails. See any `terms` message on the topic |
 | **Blocky402** | Every payment is a real x402 settlement, and the buyer pays no gas | In every run the buyer's balance moves by **exactly** the transfer amount. Gas came from fee payer `0.0.7162784` |
 | **Bazantic** | The whole thing is callable by an agent that knows nothing about x402 | Two published Recipes. `price-a-swap-on-data-you-actually-verified` binds **two** gateways, Receipt and 1inch, which is what the "Recipe using sponsor APIs" track asks for |
-| **Chainlink** | **Not claimed.** | Confidential Workflows is the right fix for publishing raw responses. It is not built, and the honesty section below says so |
 
 The single strongest check, if you only run one thing:
 
@@ -211,8 +212,6 @@ Load-bearing, not decorative. Remove any one of these and the project stops work
 - The buyer's acceptance terms are written against its shape and the adjudicator decides payment by validating it: a non-empty holdings array where every entry carries a 20-byte contract address and an integer-string amount, a `source` of exactly `the-graph`, a `sources` object naming **both** products by name (`balances: token-api`, `markets: subgraph`), and a snapshot fresh within the hour. A well-formed JSON response that is not token data does not get paid for.
 - The raw Graph response goes to HCS, so **the purchase is a verifiable receipt for a Graph query**: anyone can pull the response off the public topic, re-run the checks, and confirm the money moved for the right reason.
 - The seller refuses to fabricate. With no API key it returns 502 rather than inventing token data, and a test asserts no canned payload exists in the module.
-
-**Chainlink**, see "What is not done" below. Not claimed.
 
 ---
 
@@ -390,15 +389,13 @@ surfacing as an unexplained `BadSignature` during a live paid request.
 
 **The facilitator custodies for one hop.** x402 on Hedera settles a native transfer to an account; the escrow is an EVM contract. Those are two address spaces and they do not compose, so the payment lands in the facilitator's account and the facilitator funds `open()` in the same request handler. Both legs, the Hedera settlement transaction id and the EVM `open()` hash, are published to HCS, so the window is publicly measurable. The mitigation is that `open()` verifies the buyer's EIP-712 signature on chain: the facilitator cannot open a deal the buyer did not sign, and cannot alter the amount, payee, deadline or terms on the way through. Tests `test_open_revertsWhenFacilitatorInflatesTheAmount` and `..._redirectsThePayee` cover exactly that. Everything after `open()` is trustless.
 
-**Response bodies are public.** The topic carries the raw body, which is what makes verification real and is also wrong for a business selling data. The right answer is to evaluate inside a TEE and publish only the verdict, which is what the Chainlink Confidential Workflows track is for. That is not built.
+**Response bodies are public.** The topic carries the raw body, which is what makes verification real and is also wrong for a business selling data. The right answer is to evaluate inside a confidential enclave and publish only the verdict. That is not built.
 
 **Bodies are capped at 4 KB.** Above the cap the facilitator records `bodyTooLarge` and refuses rather than truncating: a truncated body produces a verdict nobody can reproduce, which is worse than a failure. Production would put the body in a content-addressed store and publish the CID.
 
 **A hung seller is not auto-refunded.** With no response there is nothing to judge, so the facilitator publishes no verdict rather than inventing one nobody could reproduce. The deadline is the remedy and `claimExpired` is permissionless. This is a deliberate choice, not an omission, but it does mean the buyer waits for the deadline instead of being refunded immediately.
 
 **The Bazantic gateway points at a tunnel.** The gateway and recipe are live, but the upstream is an ngrok tunnel to a facilitator running on a laptop, so the gateway works only while that tunnel does. A real deployment would put the facilitator on a stable host. Nothing about the integration is mocked, the tooling is simply pointed at a development machine.
-
-**No Chainlink integration.** Confidential Workflows is a private beta gated behind a Chainlink account team, not a self-serve grant, so it was never on the critical path.
 
 **The dashboard is a prop.** It is a single static file served by the facilitator at `/`, with no build step and no third-party scripts. It reads deployment identifiers from `/health` and deal state from `/stream`, so it needs no configuration, but it is read-only, keeps state in memory, and is not something to point at production.
 
