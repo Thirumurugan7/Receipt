@@ -140,3 +140,34 @@ passing deal (`DealReleased`) and a failing one (`DealRefunded`).
 Not proven: `observedLatencyMs`. It is the facilitator's own stopwatch and no
 third party can recompute it — which is exactly why it lives in `attested` and
 gates nothing. It is reported, never trusted.
+
+
+## Bazantic — live
+
+| | |
+|---|---|
+| Gateway | `Receipt` — **LIVE** |
+| Slug | `2g6od7kdczdp7p5wr3ywz2vhlu` |
+| Payment gateway | https://2g6od7kdczdp7p5wr3ywz2vhlu.bazgateway.com |
+| MCP endpoint | https://2g6od7kdczdp7p5wr3ywz2vhlu.bazgateway.com/mcp |
+| Tools | `buyWithTerms`, `getDeal`, `health`, `info` |
+| Recipe | `buy-data-you-can-refuse-to-pay-for` — **published** |
+| Model | `openai/gpt-5-nano` |
+
+Pricing: `POST /proxy` $0.01, `GET /deals/{dealId}` free, `GET /health` free.
+Auth: none — the x402 payment *is* the authorization.
+
+Verified end to end through the gateway's MCP server:
+
+```
+tools/call health ->
+  HTTP GET /2g6od7kdczdp7p5wr3ywz2vhlu/health
+  Status: 200
+  {"status":"ok","adjudicator":"0x66347975…","escrow":"0x3483B376…",
+    "topic":"0.0.10495465","network":"hedera:testnet",
+    "settlesThrough":"https://api.testnet.blocky402.com"}
+```
+
+An MCP client reached the Bazantic gateway, which reached the facilitator, which
+answered with the live escrow address and audit topic. The upstream is a tunnel
+to a local facilitator, so the gateway is live only while that tunnel is.

@@ -7,27 +7,8 @@
     "properties": {
       "resource": {
         "type": "string",
-        "description": "URL of the priced resource to buy"
-      },
-      "required_paths": {
-        "type": "array",
-        "items": {
-          "type": "string"
-        },
-        "description": "JSONPath expressions that must resolve to a non-null value, e.g. $.data",
-        "default": [
-          "$.data"
-        ]
-      },
-      "max_price_tinybars": {
-        "type": "string",
-        "description": "Most the caller will pay, in tinybars (1 HBAR = 100000000)",
-        "default": "50000000"
-      },
-      "freshness_seconds": {
-        "type": "integer",
-        "description": "Reject data whose $.timestamp is older than this",
-        "default": 120
+        "format": "uri",
+        "description": "URL of the priced resource to buy. The recipe will state acceptance terms for it, pay, and refuse to hand back data that fails those terms."
       }
     },
     "required": [
@@ -36,13 +17,7 @@
     "additionalProperties": false
   },
   "input_example": {
-    "resource": "https://receipt.example/api/quote",
-    "required_paths": [
-      "$.data",
-      "$.timestamp"
-    ],
-    "max_price_tinybars": "50000000",
-    "freshness_seconds": 120
+    "resource": "http://localhost:8787/api/quote?mode=honest"
   },
   "output_example": {
     "settled": false,
@@ -79,11 +54,11 @@
   "model": "openai/gpt-5-nano",
   "tool_bindings": [
     {
-      "gateway_slug": "gatewayslugreplacemexxxxxx",
+      "gateway_slug": "2g6od7kdczdp7p5wr3ywz2vhlu",
       "tool_name": "buyWithTerms"
     },
     {
-      "gateway_slug": "gatewayslugreplacemeyyyyyy",
+      "gateway_slug": "2g6od7kdczdp7p5wr3ywz2vhlu",
       "tool_name": "getDeal"
     }
   ]

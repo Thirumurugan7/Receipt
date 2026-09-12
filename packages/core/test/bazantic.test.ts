@@ -103,9 +103,20 @@ describe('recipe create file', () => {
     }
   })
 
-  test('it chains more than one API, which is what a Recipe is for', () => {
-    const slugs = new Set(recipe.tool_bindings.map((b: Record<string, string>) => b.gateway_slug))
-    expect(slugs.size).toBeGreaterThanOrEqual(2)
+  test('it chains more than one tool, which is what a Recipe is for', () => {
+    // Both tools live on the Receipt gateway: buy, then verify what you
+    // bought. Chaining across *gateways* would additionally satisfy
+    // Bazantic's "multiple sponsor APIs" track; this recipe targets
+    // "Agentify a New API" instead, and says so.
+    const tools = new Set(recipe.tool_bindings.map((b: Record<string, string>) => b.tool_name))
+    expect(tools.size).toBeGreaterThanOrEqual(2)
+  })
+
+  test('every bound tool exists on the live gateway', () => {
+    // Confirmed against https://<slug>.bazgateway.com/mcp tools/list:
+    // buyWithTerms, getDeal, health, info
+    const live = ['buyWithTerms', 'getDeal', 'health', 'info']
+    for (const b of recipe.tool_bindings) expect(live).toContain(b.tool_name)
   })
 
   test('compact UTF-8 JSON fits inside the 24 KiB limit', () => {
@@ -149,8 +160,16 @@ describe('gateway manifest', () => {
     }
   })
 
-  test('placeholders that must be replaced before deploy are obvious, not plausible', () => {
-    expect(manifest).toMatch(/REPLACE_WITH_PAYOUT_ACCOUNT_UUID/)
-    for (const b of recipe.tool_bindings) expect(b.gateway_slug).toMatch(/replaceme/)
+  test('the recipe binds to the real, activated gateway', () => {
+    // The gateway is live; these were placeholders until it was activated.
+    for (const b of recipe.tool_bindings) {
+      expect(b.gateway_slug).not.toMatch(/replaceme/)
+      expect(b.gateway_slug).toBe('2g6od7kdczdp7p5wr3ywz2vhlu')
+    }
+  })
+
+  test('the manifest records the deployed gateway rather than a template', () => {
+    expect(manifest).toMatch(/2g6od7kdczdp7p5wr3ywz2vhlu/)
+    expect(manifest).not.toMatch(/none of that is done/)
   })
 })

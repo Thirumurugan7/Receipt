@@ -4,11 +4,12 @@
 # terms, the other reads back the verdict so the agent can confirm the purchase
 # was adjudicated and settled the way it was told.
 #
-# Before `baz` can deploy this you must:
-#   1. have a bazantic.com account with a provider listing approved
-#   2. expose the facilitator on a public URL and set PUBLIC_URL
-#   3. paste the payout account uuid the dashboard assigns
-# See "Bazantic status" in README.md — none of that is done.
+# LIVE. The gateway is activated on bazantic.com:
+#   slug     2g6od7kdczdp7p5wr3ywz2vhlu
+#   gateway  https://2g6od7kdczdp7p5wr3ywz2vhlu.bazgateway.com
+#   mcp      https://2g6od7kdczdp7p5wr3ywz2vhlu.bazgateway.com/mcp
+# This file remains the declarative record of what was deployed; the dashboard
+# is the source of truth for the running gateway.
 
 version: 1
 
