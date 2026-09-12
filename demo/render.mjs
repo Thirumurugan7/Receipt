@@ -82,6 +82,14 @@ async function main() {
   })
   if (!fontOk.result.value) throw new Error('IBM Plex Mono did not load; refusing to render')
 
+  // The evidence scene plays back dozens of captured frames. Screenshotting
+  // one before it has decoded would put a blank rectangle in the finished
+  // film, so wait for every image the page holds.
+  await call('Runtime.evaluate', {
+    expression: `Promise.all([...document.images].map((i) => i.complete ? null : i.decode().catch(() => null)))`,
+    awaitPromise: true,
+  })
+
   const total = (await call('Runtime.evaluate', {
     expression: 'window.TOTAL_MS', returnByValue: true,
   })).result.value

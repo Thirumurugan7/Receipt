@@ -117,11 +117,23 @@
   td.ev{color:var(--faded); font-size:15px; white-space:nowrap}
   .ok{color:var(--paid)} .nope{color:var(--returned)}
 
+  /* architecture: what each piece does, and what it is built on */
+  .arch2{margin-top:20px; max-width:1560px}
+  .arow{display:grid; grid-template-columns:30px 168px 1fr 158px; gap:16px; align-items:baseline;
+        padding:8px 0; border-bottom:1px dotted var(--hair)}
+  .arow .n{color:var(--carbon); font-weight:700; font-size:14px}
+  .arow .nm{font-weight:700; font-size:16.5px; letter-spacing:.02em}
+  .arow .what{font-size:16px; color:var(--ink); line-height:1.4}
+  .arow .tech{font-size:14px; font-weight:600; text-align:right; white-space:nowrap}
+  .arow .tech.s{color:var(--carbon)}
+  .arow .tech.none{color:var(--rule); font-weight:400}
+
   /* evidence: real captures of the explorer, shown at size */
   /* the captures are 1500x1000; the box keeps that ratio so nothing is
      squashed and nothing overflows onto the caption. */
-  .shot{position:relative; width:1050px; height:700px}
-  .shot img{position:absolute; inset:0; width:100%; height:100%; border:1px solid var(--rule);
+  .shot{position:relative; width:1140px; height:730px}
+  .shot img{position:absolute; inset:0; width:100%; height:100%; object-fit:contain;
+            object-position:top center; border:1px solid var(--rule);
             border-radius:3px; box-shadow:0 2px 10px rgba(25,29,43,.10)}
   .shot .cap{position:absolute; left:0; right:0; bottom:-40px; font-size:16.5px; color:var(--faded)}
   .shot .cap b{color:var(--carbon); font-weight:600}
@@ -177,16 +189,27 @@ function checkRows(v){
     const cls = c.pass ? 'p' : 'f';
     const mark = c.pass ? '✓' : '✗';
     const detail = c.skipped ? 'not required by these terms' : (c.detail ?? '');
-    return `<div class="row ${cls}"><span class="mk">${mark}</span><span class="nm">${esc(c.check)}</span>` +
+    return `<div class="row ${cls}" data-reveal><span class="mk">${mark}</span><span class="nm">${esc(c.check)}</span>` +
            `<span class="vd">${c.pass ? 'pass' : 'fail'}</span><span class="dt">${esc(detail)}</span></div>`;
   });
   const a = v.attested?.[0];
   if (a) {
-    rows.push(`<div class="row att"><span class="mk">·</span><span class="nm">${esc(a.check)}</span>` +
+    rows.push(`<div class="row att" data-reveal><span class="mk">·</span><span class="nm">${esc(a.check)}</span>` +
       `<span class="vd">${a.observed}ms</span><span class="dt">attested, not reproducible — gates nothing</span></div>`);
   }
   return `<div class="checks">${rows.join('')}</div>`;
 }
+
+/**
+ * Frames of a real session on the live ledger, captured by demo/interact.mjs:
+ * the button pressed, the transcript streaming, each transaction link landing,
+ * and then the explorer page for that exact transaction. Preloaded as elements
+ * rather than swapped into one src, so a frame can never be captured mid-load.
+ * A test keeps this count honest against the directory.
+ */
+const RUN_FRAMES = 86;
+const runFrames = Array.from({ length: RUN_FRAMES }, (_, i) =>
+  `<img data-run="${i}" src="shots/run/f${String(i).padStart(3, '0')}.jpg" alt="">`).join('');
 
 const SCENES = [
 
@@ -200,7 +223,7 @@ const SCENES = [
       every figure in this film came off a real run</p>
   </div>`},
 
-{ n:'problem', dur:17000, html:`
+{ n:'problem', dur:15000, html:`
   <h2 class="wide">An agent pays. The API returns HTTP 200 and garbage. The money is already gone.</h2>
   <ul>
     <li><span class="m">—</span><span>x402 has <b>no refund primitive</b>. There is no dispute step anywhere in the stack.</span></li>
@@ -210,15 +233,19 @@ const SCENES = [
   </ul>
   <p class="punch">The evaluator is what broke it. Who judges? Who pays the judge?</p>`},
 
-{ n:'design', dur:14000, html:`
-  <h2>Receipt has no judge.</h2>
-  <p class="lede">Every check is a pure function of (terms, response). The buyer can compute it, the seller can compute it before answering, and so can a stranger with the public log.</p>
-  <div class="flow">
-    <div class="b">BUYER signs Terms with EIP-712 — the shape of token data it will pay for: real contract addresses, integer amounts, a snapshot indexed past a stated block</div>
-    <div class="a">one URL change, one header</div>
-    <div class="b hot">RECEIPT settles through Blocky402 → escrows on Hedera → calls the seller → adjudicates → releases or refunds</div>
-    <div class="a">terms + raw response + verdict</div>
-    <div class="b">HEDERA CONSENSUS SERVICE — public, ordered, replayable by anyone</div>
+{ n:'architecture', dur:22000, revealMs:1250, html:`
+  <h3 style="max-width:82ch">Receipt has no judge. Here is every piece, and what it is built on.</h3>
+  <div class="arch2">
+    <div class="arow" data-reveal><span class="n">01</span><span class="nm">BUYER</span><span class="what">Signs Terms with EIP-712 — the exact shape of data it will pay for, before any money moves.</span><span class="tech s">x402</span></div>
+    <div class="arow" data-reveal><span class="n">02</span><span class="nm">RECEIPT</span><span class="what">A drop-in facilitator. The seller points its x402 middleware at this URL and changes nothing else.</span><span class="tech none">this project</span></div>
+    <div class="arow" data-reveal><span class="n">03</span><span class="nm">SETTLEMENT</span><span class="what">Performs the real payment. The buyer signs a <b>partial</b> transfer and pays no gas.</span><span class="tech s">Blocky402</span></div>
+    <div class="arow" data-reveal><span class="n">04</span><span class="nm">ESCROW</span><span class="what">Holds the HBAR between payment and verdict, and verifies the buyer&rsquo;s signature on-chain so the facilitator cannot alter the deal.</span><span class="tech s">Hedera EVM</span></div>
+    <div class="arow" data-reveal><span class="n">05</span><span class="nm">SELLER</span><span class="what">An ordinary x402 resource server — which runs the buyer&rsquo;s own checks on itself before answering, and may decline.</span><span class="tech s">x402</span></div>
+    <div class="arow" data-reveal><span class="n">06</span><span class="nm">THE DATA</span><span class="what">Holdings from the Token API, pools from the Subgraph gateway. <b>This is what is being bought.</b></span><span class="tech s">The Graph</span></div>
+    <div class="arow" data-reveal><span class="n">07</span><span class="nm">ADJUDICATOR</span><span class="what">A pure function of (terms, response). Seven checks decide the money; latency is attested and decides nothing.</span><span class="tech none">this project</span></div>
+    <div class="arow" data-reveal><span class="n">08</span><span class="nm">AUDIT LOG</span><span class="what">Publishes the terms, the raw response and the verdict for every deal, in consensus order.</span><span class="tech s">Hedera HCS</span></div>
+    <div class="arow" data-reveal><span class="n">09</span><span class="nm">ANYONE</span><span class="what">Replays all of it from the mirror node: the CLI, a zero-dependency Python verifier, or your own browser.</span><span class="tech s">Mirror Node</span></div>
+    <div class="arow" data-reveal><span class="n">10</span><span class="nm">AGENTS</span><span class="what">A gateway and two Recipes, so an agent can use every one of these without knowing x402 exists.</span><span class="tech s">Bazantic</span></div>
   </div>`},
 
 termScene('honest', 'the honest case — buying live token data from The Graph &nbsp;<b>pnpm buy honest</b>', 'honest', 'open', { needle: 'funds released', to: 'rel' }),
@@ -247,23 +274,23 @@ termScene('replay', 'replaying every verdict on the public log &nbsp;<b>pnpm ver
 
 termScene('second impl', 'a second implementation, sharing no code with the first &nbsp;<b>python3 verify.py</b>', 'python', null),
 
-{ n:'evidence', dur:18000, shots:3, html:`
-  <h3 style="max-width:62ch; margin-bottom:22px">Every figure in this film is on a public ledger. Here is where to find it.</h3>
+{ n:'evidence', dur:24000, beats:[6000, 12000, 24000], runBeat:2, html:`
+  <h3 style="max-width:62ch; margin-bottom:18px">Every figure in this film is on a public ledger. Here is where to find it.</h3>
   <div class="shot">
     <img data-shot="0" src="shots/tx-release.png" alt="the release transaction on HashScan">
     <img data-shot="1" src="shots/topic-messages.png" alt="the audit topic messages on HashScan">
-    <img data-shot="2" src="shots/ledger.png" alt="the live ledger">
+    ${runFrames}
     <p class="cap" data-cap="0"><b>release()</b> on HashScan — 0.50000000 ℏ leaves the escrow contract for the seller</p>
     <p class="cap" data-cap="1"><b>the audit log</b> — terms, the raw response and the verdict, published for every deal</p>
-    <p class="cap" data-cap="2"><b>the live ledger</b> — runs a real deal for you, and recomputes any verdict in your own browser</p>
+    <p class="cap" data-cap="2"><b>a real session</b> — one press, and every link is a transaction that just happened</p>
   </div>`},
 
-{ n:'conform', dur:10000, html:`
+{ n:'conform', dur:9000, html:`
   <h2 class="wide">Two implementations. Same verdicts, same hashes.</h2>
   <p class="lede">The Python verifier is 600 lines with no dependencies — its own keccak, its own JCS canonicaliser, written from SPEC.md rather than from the TypeScript. If the spec were ambiguous these would disagree.</p>
   <div class="term" style="background:var(--term-bg); color:var(--term-fg); padding:22px 26px; margin-top:24px; font-size:15px; max-width:92ch" data-static="conformance"></div>`},
 
-{ n:'sponsors', dur:15000, html:`
+{ n:'sponsors', dur:13000, html:`
   <h3 style="max-width:60ch">Where each sponsor technology actually carries weight.</h3>
   <table>
     <tr><th>sponsor</th><th>what it does here</th><th>evidence</th></tr>
@@ -290,8 +317,8 @@ termScene('second impl', 'a second implementation, sharing no code with the firs
 ];
 
 // terminal scenes get their duration from how much there is to read
-const TERM_DUR = { honest:23000, garbage:15000, subtle:13000, selfcheck:14000, dead:14000,
-                   verifyAll:16000, python:15000 };
+const TERM_DUR = { honest:21000, garbage:13000, subtle:12000, selfcheck:13000, dead:13000,
+                   verifyAll:15000, python:14000 };
 for (const s of SCENES) if (s.type) s.dur = TERM_DUR[s.type] ?? 16000;
 
 const TOTAL_MS = SCENES.reduce((a, s) => a + s.dur, 0);
@@ -362,24 +389,36 @@ function seek(ms){
   }
 
   // checks tick down one at a time, then the stamp lands once
-  // three captures in one scene: each holds, then hands over to the next
-  if (s.shots) {
-    const per = s.dur / s.shots;
-    const idx = Math.min(s.shots - 1, Math.floor(st / per));
-    const into = (st - idx * per) / 260;
+  // Several captures in one scene, with their own lengths: two stills to read,
+  // then a recorded session played back.
+  if (s.beats) {
+    let idx = s.beats.findIndex((end) => st < end);
+    if (idx === -1) idx = s.beats.length - 1;
+    const from = idx === 0 ? 0 : s.beats[idx - 1];
+    const u = (st - from) / (s.beats[idx] - from);
+    const into = easeOut((st - from) / 260);
+
     for (const img of kids[i].querySelectorAll('[data-shot]')) {
-      const j = Number(img.dataset.shot);
-      img.style.opacity = j === idx ? String(easeOut(into)) : (j < idx ? '0' : '0');
+      img.style.opacity = Number(img.dataset.shot) === idx ? String(into) : '0';
     }
+
+    // On the run beat, play the captured frames; otherwise hide them all.
+    const runIdx = idx === s.runBeat
+      ? Math.min(RUN_FRAMES - 1, Math.floor(u * RUN_FRAMES))
+      : -1;
+    for (const img of kids[i].querySelectorAll('[data-run]')) {
+      img.style.opacity = Number(img.dataset.run) === runIdx ? String(into) : '0';
+    }
+
     for (const cap of kids[i].querySelectorAll('[data-cap]')) {
-      cap.style.opacity = Number(cap.dataset.cap) === idx ? String(easeOut(into)) : '0';
+      cap.style.opacity = Number(cap.dataset.cap) === idx ? String(into) : '0';
     }
-    sig.push('s' + idx, Math.round(easeOut(into) * 100));
+    sig.push('b' + idx, runIdx, Math.round(into * 100));
   }
 
-  const rows = kids[i].querySelectorAll('.checks .row');
+  const rows = kids[i].querySelectorAll('[data-reveal]');
   if (rows.length) {
-    const per = 520;
+    const per = s.revealMs ?? 520;
     const shown = clamp(Math.floor((st - 350) / per) + 1, 0, rows.length);
     rows.forEach((r, j) => { r.style.opacity = j < shown ? '1' : '0' });
     sig.push(shown);

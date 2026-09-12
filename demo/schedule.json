@@ -9,72 +9,72 @@
     {
       "n": "problem",
       "start": 9000,
-      "dur": 17000
+      "dur": 15000
     },
     {
-      "n": "design",
-      "start": 26000,
-      "dur": 14000
+      "n": "architecture",
+      "start": 24000,
+      "dur": 22000
     },
     {
       "n": "honest",
-      "start": 40000,
-      "dur": 23000
+      "start": 46000,
+      "dur": 21000
     },
     {
       "n": "verdict",
-      "start": 63000,
+      "start": 67000,
       "dur": 10000
     },
     {
       "n": "garbage",
-      "start": 73000,
-      "dur": 15000
+      "start": 77000,
+      "dur": 13000
     },
     {
       "n": "refund",
-      "start": 88000,
+      "start": 90000,
       "dur": 11000
     },
     {
       "n": "stale",
-      "start": 99000,
-      "dur": 13000
+      "start": 101000,
+      "dur": 12000
     },
     {
       "n": "declined",
-      "start": 112000,
-      "dur": 14000
+      "start": 113000,
+      "dur": 13000
     },
     {
       "n": "expired",
       "start": 126000,
-      "dur": 14000
+      "dur": 13000
     },
     {
       "n": "replay",
-      "start": 140000,
-      "dur": 16000
+      "start": 139000,
+      "dur": 15000
     },
     {
       "n": "second impl",
-      "start": 156000,
-      "dur": 15000
+      "start": 154000,
+      "dur": 14000
     },
     {
       "n": "evidence",
-      "start": 171000,
-      "dur": 18000
+      "start": 168000,
+      "dur": 24000
     },
     {
       "n": "conform",
-      "start": 189000,
-      "dur": 10000
+      "start": 192000,
+      "dur": 9000
     },
     {
       "n": "sponsors",
-      "start": 199000,
-      "dur": 15000
+      "start": 201000,
+      "dur": 13000
     },
     {
       "n": "limits",

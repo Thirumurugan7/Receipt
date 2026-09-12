@@ -11,6 +11,7 @@ Nothing here records a screen. Two steps, both reproducible:
 ```bash
 node demo/capture.mjs     # runs every scene for real -> demo-data.js
 node demo/shot.mjs        # captures the explorer pages the film shows -> shots/
+node demo/interact.mjs    # records a real session on the live page -> shots/run/
 node demo/render.mjs      # renders the film -> receipt-demo.mp4, schedule.json
 ```
 
@@ -28,6 +29,14 @@ the real explorer is how that claim is made checkable on screen rather than
 asserted. It declines cookies rather than accepting them, which is both the
 privacy-preserving answer and the one that does not leave a banner across the
 middle of the shot.
+
+**`interact.mjs`** records the ledger page actually being used. A still proves
+the page exists; this presses the run button, lets a real deal go through, and
+captures the screen while the transcript streams and each transaction link
+lands — then follows one of those links to HashScan. The film plays the frames
+back, so what a viewer sees is a real session rather than a mock-up of one. The
+frames are shrunk before they are committed, and a test keeps the film's frame
+count honest against the directory.
 
 **`render.mjs`** drives headless Chrome over the DevTools Protocol and
 assembles the frames with ffmpeg. It has no dependencies: the WebSocket client
@@ -71,7 +80,9 @@ Renders just those moments into `demo/.frames/` and exits.
 | `demo-data.js` | captured transcripts and verdicts — generated, not hand-edited |
 | `render.mjs` | headless Chrome + ffmpeg, no dependencies |
 | `shot.mjs` | captures the explorer pages the *evidence* scene shows |
+| `interact.mjs` | records a real session on the live ledger, frame by frame |
 | `cdp.mjs` | the DevTools Protocol client both of those share |
 | `shots/` | those captures, committed so the film can be rebuilt offline |
+| `shots/run/` | the recorded session, one JPEG per frame |
 | `schedule.json` | the running order, written by the renderer; `DEMO.md` is tested against it |
 | `receipt-demo.mp4` | the rendered film |
