@@ -104,3 +104,4 @@ Renders just those moments into `demo/.frames/` and exits.
 | `shots/memes/` | blank meme templates, captioned by the film in its own type |
 | `schedule.json` | the running order, written by the renderer; `DEMO.md` is tested against it |
 | `receipt-demo.mp4` | the rendered film |
+| `receipt-demo-v1.mp4` | the earlier cut, kept on request: same content, longer runway, emoji art |

@@ -5,7 +5,7 @@
 <title>Receipt demo</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
   /*
    * Rules for this film, learned the hard way:
@@ -31,11 +31,11 @@
   html,body{height:100%; overflow:hidden}
   body{
     background:var(--paper); color:var(--ink);
-    font:400 17px/1.5 "IBM Plex Sans", system-ui, sans-serif;
+    font:400 17px/1.5 Archivo, system-ui, sans-serif;
     font-variant-numeric:tabular-nums;
     -webkit-font-smoothing:antialiased;
   }
-  .mono{font-family:"IBM Plex Mono", ui-monospace, Menlo, monospace}
+  .mono{font-family:"JetBrains Mono", ui-monospace, Menlo, monospace}
 
   #stage{position:relative; width:100vw; height:100vh}
   .scene{position:absolute; inset:0; display:none; flex-direction:column; justify-content:center;
@@ -47,18 +47,18 @@
   #rail{position:absolute; left:0; top:0; bottom:0; width:var(--gutter); z-index:4;
         padding:64px 0 64px 40px; display:flex; flex-direction:column; justify-content:space-between}
   #rail:before{content:''; position:absolute; left:24px; top:0; bottom:0; border-left:1px dotted var(--rule)}
-  #rail .num{font-size:14px; font-weight:700; letter-spacing:.06em; color:var(--muted); font-family:"IBM Plex Mono",monospace}
+  #rail .num{font-size:14px; font-weight:700; letter-spacing:.06em; color:var(--muted); font-family:"JetBrains Mono",monospace}
   #rail .nm{font-size:12.5px; color:var(--muted); margin-top:6px}
-  #rail .clock{font-size:12.5px; color:var(--muted); font-family:"IBM Plex Mono",monospace}
+  #rail .clock{font-size:12.5px; color:var(--muted); font-family:"JetBrains Mono",monospace}
   .chip{display:inline-block; max-width:80px; margin-bottom:14px; padding:5px 8px 4px;
         font-size:11px; font-weight:700; letter-spacing:.08em; line-height:1.35;
-        border:1.5px solid currentColor; transform-origin:left center; font-family:"IBM Plex Mono",monospace}
+        border:1.5px solid currentColor; transform-origin:left center; font-family:"JetBrains Mono",monospace}
   .chip.open{color:var(--held)} .chip.rel{color:var(--paid)} .chip.ref{color:var(--returned)}
 
-  h1{font-size:80px; font-weight:700; letter-spacing:.28em; text-indent:.28em; line-height:1; font-family:"IBM Plex Mono",monospace}
-  h2{font-size:46px; font-weight:700; line-height:1.18; max-width:24ch; letter-spacing:-.02em}
+  h1{font-size:74px; font-weight:800; letter-spacing:.26em; text-indent:.28em; line-height:1; font-family:"JetBrains Mono",monospace}
+  h2{font-size:47px; font-weight:800; line-height:1.14; max-width:24ch; letter-spacing:-.028em}
   h2.wide{max-width:34ch}
-  h3{font-size:30px; font-weight:700; line-height:1.25; max-width:40ch; letter-spacing:-.015em}
+  h3{font-size:31px; font-weight:700; line-height:1.22; max-width:40ch; letter-spacing:-.02em}
   .lede{color:var(--muted); font-size:21px; margin-top:16px; max-width:60ch; line-height:1.5}
 
   /* comic strip: three panels, a picture each */
@@ -69,11 +69,11 @@
   /* one art height for every panel, so the captions below them line up
      whether the art is emoji or a photograph */
   .panel .art{height:210px; margin-bottom:16px; display:flex; align-items:center;
-              justify-content:center; overflow:hidden; font-size:74px; line-height:1.15}
+              justify-content:center; gap:12px; overflow:hidden}
   .panel .art img{width:100%; height:100%; object-fit:contain; border-radius:4px}
   .panel .say{font-size:21px; font-weight:600; line-height:1.35}
   .panel .note{color:var(--muted); font-size:16px; margin-top:10px; line-height:1.4}
-  .panel .code{font-family:"IBM Plex Mono",monospace; font-size:15px; background:var(--tty-bg);
+  .panel .code{font-family:"JetBrains Mono",monospace; font-size:15px; background:var(--tty-bg);
                color:#ff9d90; padding:8px 12px; border-radius:4px; margin-top:12px; word-break:break-all}
   .panel.bad{border-color:var(--returned)}
 
@@ -93,35 +93,40 @@
   .tty .bar i{width:12px; height:12px; border-radius:50%; display:block}
   .tty .bar i:nth-child(1){background:#ff5f57} .tty .bar i:nth-child(2){background:#febc2e}
   .tty .bar i:nth-child(3){background:#28c840}
-  .tty .bar span{color:var(--tty-dim); font-size:14px; margin-left:10px; font-family:"IBM Plex Mono",monospace}
-  .tty .body{padding:24px 28px 28px; font-family:"IBM Plex Mono",monospace; color:var(--tty-fg)}
+  .tty .bar span{color:var(--tty-dim); font-size:14px; margin-left:10px; font-family:"JetBrains Mono",monospace}
+  .tty .body{padding:24px 28px 28px; font-family:"JetBrains Mono",monospace; color:var(--tty-fg)}
   .tty .cmd{font-size:26px; font-weight:500; margin-bottom:18px}
   .tty .cmd .p{color:#5ed99b; margin-right:10px}
   .cur{display:inline-block; width:11px; height:22px; background:var(--tty-fg); vertical-align:-3px}
   .tty .out{display:grid; grid-template-columns:300px 1fr; gap:22px; align-items:baseline;
             padding:7px 0; font-size:21px}
-  .tty .out .what{color:var(--tty-dim); font-size:18px; font-family:"IBM Plex Sans",sans-serif}
+  .tty .out .what{color:var(--tty-dim); font-size:18px; font-family:Archivo,sans-serif}
   .tty .out .val{font-weight:500; word-break:break-word}
   .tty .out .val.g{color:#5ed99b} .tty .out .val.r{color:#ff8d80} .tty .out .val.y{color:#f2c069}
   .tty .out .val.big{font-size:28px; font-weight:700}
   .tty .rule{height:1px; background:#2d3340; margin:14px 0}
 
   /* where the money is */
-  .flow3{position:relative; display:grid; grid-template-columns:1fr 90px 1fr 90px 1fr;
-         align-items:center; margin-top:40px; max-width:1300px}
+  .flow3{display:grid; grid-template-columns:1fr 90px 1fr 90px 1fr;
+         align-items:center; margin-top:36px; max-width:1300px}
+  /* the coin travels on its own lane under the boxes, so it never sits on a label */
+  .track{position:relative; max-width:1300px; height:52px; margin-top:6px}
+  .track:before{content:''; position:absolute; left:6%; right:6%; top:24px; height:3px;
+                background:var(--rule); border-radius:2px}
   .node{border:2px solid var(--rule); border-radius:8px; background:#fff; padding:30px 18px; text-align:center}
   .node.hot{border-color:var(--held); background:var(--held-soft)}
-  .node .ic{font-size:70px; line-height:1.1}
+  .node .ic{line-height:0; margin-bottom:4px}
   .node .nm{font-weight:700; font-size:19px; letter-spacing:.04em; margin-top:8px}
   .node .sub{color:var(--muted); font-size:15.5px; margin-top:4px}
   .wire{height:3px; background:var(--rule); border-radius:2px}
-  .coin{position:absolute; top:50%; font-size:46px; line-height:1; transform:translate(-50%,-50%);
-        filter:drop-shadow(0 3px 6px rgba(25,29,43,.25))}
+  .coin{position:absolute; top:2px; line-height:0; transform:translateX(-50%);
+        background:var(--paper); border-radius:50%; padding:3px;
+        filter:drop-shadow(0 3px 8px rgba(25,29,43,.22))}
   .flowcap{margin-top:26px; font-size:22px; font-weight:600; min-height:32px}
 
   /* big numbers */
   .nums{display:flex; gap:74px; margin-top:34px; align-items:flex-start}
-  .num .v{font-size:104px; font-weight:700; line-height:.95; letter-spacing:-.04em; font-family:"IBM Plex Mono",monospace}
+  .num .v{font-size:104px; font-weight:700; line-height:.95; letter-spacing:-.04em; font-family:"JetBrains Mono",monospace}
   .num .k{color:var(--muted); font-size:17px; margin-top:10px; max-width:26ch}
   .num.ok .v{color:var(--paid)} .num.no .v{color:var(--returned)}
 
@@ -130,7 +135,7 @@
   .side{border:2px solid var(--rule); border-radius:8px; background:#fff; padding:22px 24px}
   .side .who{font-weight:700; font-size:21px}
   .side .meta{color:var(--muted); font-size:16px; margin-top:3px}
-  .side .hash{font-family:"IBM Plex Mono",monospace; font-size:16px; word-break:break-all; margin-top:16px;
+  .side .hash{font-family:"JetBrains Mono",monospace; font-size:16px; word-break:break-all; margin-top:16px;
               background:var(--paid-soft); color:var(--paid); padding:10px 12px; border-radius:5px; font-weight:600}
   .verdictline{margin-top:22px; font-size:26px; font-weight:700; color:var(--paid)}
 
@@ -140,9 +145,9 @@
   .checks .row{display:grid; grid-template-columns:42px 1fr 230px 118px; align-items:baseline; gap:14px}
   .checks .mk{font-weight:700; font-size:22px}
   .checks .say{font-size:21px; font-weight:500}
-  .checks .nm{font-size:17px; color:var(--muted); font-family:"IBM Plex Mono",monospace}
-  .checks .vd{font-weight:700; font-size:20px; text-align:right; font-family:"IBM Plex Mono",monospace}
-  .checks .dt{color:var(--returned); font-size:16px; margin:4px 0 0 56px; font-family:"IBM Plex Mono",monospace;
+  .checks .nm{font-size:17px; color:var(--muted); font-family:"JetBrains Mono",monospace}
+  .checks .vd{font-weight:700; font-size:20px; text-align:right; font-family:"JetBrains Mono",monospace}
+  .checks .dt{color:var(--returned); font-size:16px; margin:4px 0 0 56px; font-family:"JetBrains Mono",monospace;
               overflow:hidden; white-space:nowrap; text-overflow:ellipsis; max-width:104ch}
   .checks .row.p .mk,.checks .row.p .vd{color:var(--paid)}
   .checks .row.f .mk,.checks .row.f .vd{color:var(--returned)}
@@ -150,7 +155,7 @@
   .checks .row.att .say{color:var(--muted)}
   .stamp{display:inline-block; padding:10px 22px 9px; border:3px solid currentColor; border-radius:3px;
          font-size:24px; font-weight:700; letter-spacing:.14em; text-transform:uppercase;
-         transform-origin:center; font-family:"IBM Plex Mono",monospace}
+         transform-origin:center; font-family:"JetBrains Mono",monospace}
   .stamp.paid{color:var(--paid); background:var(--paid-soft)}
   .stamp.returned{color:var(--returned); background:var(--returned-soft)}
 
@@ -162,11 +167,33 @@
   /* a chevron in each gap, so the order is not left to guesswork */
   .abox + .abox:before{content:'›'; position:absolute; left:-19px; top:50%; transform:translateY(-50%);
                        color:var(--rule); font-size:30px; font-weight:700; line-height:1}
-  .abox .ic{font-size:42px; line-height:1.1}
+  .abox .ic{line-height:0; margin-bottom:2px}
   .abox .nm{font-weight:700; font-size:17px; margin-top:8px}
   .abox .sub{color:var(--muted); font-size:14.5px; margin-top:6px; line-height:1.35}
   .abox .tech{margin-top:auto; padding-top:12px; font-size:13px; font-weight:700; color:var(--carbon)}
   .archnote{margin-top:26px; font-size:20px; max-width:96ch; line-height:1.45}
+
+  /* the live app, shown as a browser window at the address it really runs on */
+  .scene.full{padding:34px 40px; justify-content:center}
+  .browser{width:1560px; margin:0 auto; border-radius:12px; overflow:hidden;
+           border:1px solid #cfc9bd; box-shadow:0 22px 54px rgba(25,29,43,.20)}
+  .chrome{height:54px; background:#e8e3db; display:flex; align-items:center; gap:9px; padding:0 16px}
+  .chrome i{width:12px; height:12px; border-radius:50%; display:block}
+  .chrome .addr{flex:1; margin-left:16px; background:#fff; border:1px solid #d6d0c4; border-radius:8px;
+                padding:8px 16px; font:500 16px "JetBrains Mono",monospace; color:#3a4154;
+                white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+  .chrome .livedot{font:700 13px Archivo,sans-serif; letter-spacing:.12em; color:var(--returned);
+                   padding-left:14px}
+  .viewport{position:relative; height:766px; background:#fff}
+  .viewport img{position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:top center}
+  .livecap{margin:18px auto 0; width:1560px; font-size:21px; font-weight:600; min-height:30px}
+
+  /* countdown to the demo */
+  #countdown{position:absolute; top:34px; right:44px; z-index:7; display:flex; align-items:center; gap:10px;
+             border:1.5px solid var(--carbon); border-radius:999px; padding:9px 18px 8px;
+             font:700 15px "JetBrains Mono",monospace; color:var(--carbon); letter-spacing:.04em;
+             background:var(--carbon-soft)}
+  #countdown b{font-weight:700}
 
   /* real captures */
   .shot{position:relative; width:1180px; height:700px}
@@ -189,6 +216,7 @@
 <div id="stage"></div>
 <div id="rail"><div><div class="num"></div><div class="nm"></div></div>
 <div><div class="state"></div><div class="clock"></div></div></div>
+<div id="countdown"></div>
 <div id="bar"></div>
 
 <script>
@@ -200,6 +228,27 @@ const easeBack = (x) => { const u = clamp(x, 0, 1), c = 1.7;
   return 1 + (c + 1) * Math.pow(u - 1, 3) + c * Math.pow(u - 1, 2); };
 const easeInOut = (x) => { const u = clamp(x, 0, 1);
   return u < 0.5 ? 4 * u * u * u : 1 - Math.pow(-2 * u + 2, 3) / 2; };
+
+
+/**
+ * A small drawn icon set. Emoji were doing this job and looked like clip art
+ * glued onto a designed page; these are one stroke weight, one palette, and
+ * they sit in the same visual language as everything else.
+ */
+const ICON = {
+  agent: '<path d="M16 26h32v20a4 4 0 0 1-4 4H20a4 4 0 0 1-4-4z"/><path d="M32 26V16"/><circle cx="32" cy="12" r="4"/><path d="M25 36h2M37 36h2"/><path d="M26 44h12"/>',
+  vault: '<rect x="8" y="12" width="48" height="40" rx="5"/><circle cx="32" cy="32" r="11"/>' +
+         '<path d="M32 21v7M32 36v7M21 32h7M36 32h7"/><path d="M14 52v5M50 52v5"/>',
+  server: '<rect x="13" y="15" width="38" height="14" rx="3"/><rect x="13" y="35" width="38" height="14" rx="3"/><path d="M21 22h.02M21 42h.02"/>',
+  scales: '<path d="M32 14v36M20 50h24"/><path d="M14 24h36"/><path d="M14 24l-6 13a6 6 0 0 0 12 0z"/><path d="M50 24l-6 13a6 6 0 0 0 12 0z"/>',
+  log: '<path d="M17 12h22l10 10v30a3 3 0 0 1-3 3H17a3 3 0 0 1-3-3V15a3 3 0 0 1 3-3z"/><path d="M38 12v11h11"/><path d="M22 32h20M22 40h20M22 24h8"/>',
+  money: '<rect x="10" y="19" width="44" height="26" rx="4"/><circle cx="32" cy="32" r="7"/><path d="M18 26h.02M46 38h.02"/>',
+  bin: '<path d="M17 20h30M27 20v-5h10v5M21 20l2 30a3 3 0 0 0 3 3h12a3 3 0 0 0 3-3l2-30"/><path d="M28 28v17M36 28v17"/>',
+  arrow: '<path d="M14 32h34M36 20l12 12-12 12"/>',
+};
+const icon = (name, size = 62, color = 'var(--carbon)') =>
+  `<svg viewBox="0 0 64 64" width="${size}" height="${size}" fill="none" stroke="${color}" ` +
+  `stroke-width="3" stroke-linecap="round" stroke-linejoin="round">${ICON[name]}</svg>`;
 
 /** Pull a real line out of a captured transcript, so nothing here is retyped. */
 function realLine(key, re) {
@@ -227,13 +276,13 @@ function tty(title, cmd, rows) {
 
 const FLOW = `
   <div class="flow3">
-    <div class="node"><div class="ic">🤖</div><div class="nm">BUYER</div><div class="sub">writes the checks, then pays</div></div>
+    <div class="node"><div class="ic">${icon('agent', 56)}</div><div class="nm">BUYER</div><div class="sub">writes the checks, then pays</div></div>
     <div class="wire"></div>
-    <div class="node hot"><div class="ic">🏦</div><div class="nm">ESCROW</div><div class="sub">holds it while the checks run</div></div>
+    <div class="node hot"><div class="ic">${icon('vault', 56, 'var(--held)')}</div><div class="nm">ESCROW</div><div class="sub">holds it while the checks run</div></div>
     <div class="wire"></div>
-    <div class="node"><div class="ic">📦</div><div class="nm">SELLER</div><div class="sub">sends the data</div></div>
-    <div class="coin" data-coin>💰</div>
-  </div>`;
+    <div class="node"><div class="ic">${icon('server', 56)}</div><div class="nm">SELLER</div><div class="sub">sends the data</div></div>
+  </div>
+  <div class="track"><div class="coin" data-coin>${icon('money', 42, 'var(--held)')}</div></div>`;
 
 /** What each check means, for someone who has never read the code. */
 const MEANS = {
@@ -267,31 +316,31 @@ function checkRows(v) {
   return `<div class="checks">${rows.join('')}</div>`;
 }
 
-const RUN_FRAMES = 86;
+const RUN_FRAMES = 60;
 const runFrames = Array.from({ length: RUN_FRAMES }, (_, i) =>
   `<img data-run="${i}" src="shots/run/f${String(i).padStart(3, '0')}.jpg" alt="">`).join('');
 
 const SCENES = [
 
-{ n:'title', dur:7000, enter:'cut', html:`
+{ n:'title', dur:6000, enter:'cut', html:`
   <div style="text-align:center; padding-right:50px">
-    <div data-in="0" style="font-size:82px; line-height:1">🧾</div>
+    <div data-in="0">${icon('log', 78, 'var(--carbon)')}</div>
     <h1 style="margin-top:14px">${'RECEIPT'.split('').map((c, i) =>
       `<span data-in="${260 + i * 68}" style="display:inline-block">${c}</span>`).join('')}</h1>
     <p data-in="900" class="lede" style="margin:22px auto 0; max-width:46ch; color:var(--ink); font-size:26px">
       Pay for an API call. Get your money back automatically if the answer is junk.</p>
   </div>`},
 
-{ n:'the problem', dur:12000, enter:'rise', html:`
+{ n:'the problem', dur:10000, enter:'rise', html:`
   <h2 class="wide">An AI agent pays first, and looks at what it bought second.</h2>
   <div class="strip">
     <div class="panel" data-in="700">
-      <div class="art">🤖 💸 ➡️ 📦</div>
+      <div class="art">${icon('agent')}${icon('arrow', 40, 'var(--rule)')}${icon('money')}${icon('arrow', 40, 'var(--rule)')}${icon('server')}</div>
       <p class="say">The agent pays 50 cents for live token data.</p>
       <p class="note">This is how x402 works today. Money first.</p>
     </div>
     <div class="panel bad" data-in="1700">
-      <div class="art">📦 ➡️ 🗑️</div>
+      <div class="art">${icon('server')}${icon('arrow', 40, 'var(--rule)')}${icon('bin', 62, 'var(--returned)')}</div>
       <p class="say">The API answers HTTP 200, with junk.</p>
       <p class="code">{"error":"upstream rate limited"}</p>
     </div>
@@ -302,7 +351,7 @@ const SCENES = [
     </div>
   </div>`},
 
-{ n:'why not sue', dur:11000, enter:'rise', html:`
+{ n:'why not sue', dur:9000, enter:'rise', html:`
   <h2 class="wide">"Just dispute it."</h2>
   <div style="display:grid; grid-template-columns:430px 1fr; gap:52px; align-items:center; margin-top:26px">
     <div class="meme" data-in="500">
@@ -320,7 +369,7 @@ const SCENES = [
     </div>
   </div>`},
 
-{ n:'so instead', dur:9000, enter:'rise', html:`
+{ n:'so instead', dur:8000, enter:'rise', html:`
   <div style="display:grid; grid-template-columns:640px 1fr; gap:60px; align-items:center">
     <div class="meme" data-in="400">
       <img src="shots/memes/drake.jpg" alt="">
@@ -336,40 +385,10 @@ const SCENES = [
     </div>
   </div>`},
 
-{ n:'the idea', dur:13000, enter:'rise', coin:[[0,14],[2600,14],[4400,50],[8400,50],[11000,86]], html:`
+{ n:'the idea', dur:11000, enter:'rise', coin:[[0,14],[2600,14],[4400,50],[8400,50],[11000,86]], html:`
   <h2 class="wide">So nobody judges. The buyer says what "good" means, before paying.</h2>
   ${FLOW}
   <p class="flowcap" data-flowcap></p>`},
-
-{ n:'the checks', dur:11000, enter:'rise', html:`
-  <h3 style="max-width:52ch">The buyer signs seven checks before paying. A machine runs them. That is the whole product.</h3>
-  <ul class="bullets">
-    <li data-in="500"><span class="m">1</span><span>Did it answer <b>HTTP 200</b>, as JSON, and not empty?</span></li>
-    <li data-in="1100"><span class="m">2</span><span>Does the body really contain the fields that were asked for?</span></li>
-    <li data-in="1700"><span class="m">3</span><span>Are the contract addresses real, and the amounts whole numbers?</span></li>
-    <li data-in="2300"><span class="m">4</span><span>Is the snapshot <b>fresh</b>, and indexed past a block the buyer named?</span></li>
-  </ul>
-  <p class="lede" data-in="3300" style="color:var(--ink); font-size:22px; max-width:80ch">
-    Every one is arithmetic on the answer. The buyer can run it, the seller can run it,
-    and so can a stranger. There is nothing left to argue about.</p>`},
-
-{ n:'architecture', dur:16000, enter:'rise', revealMs:900, html:`
-  <h3 style="max-width:62ch">What is actually running, and whose technology does each part.</h3>
-  <div class="arch">
-    <div class="abox" data-reveal><div class="ic">🤖</div><div class="nm">Buyer</div>
-      <div class="sub">Signs the seven checks, then pays.</div><div class="tech">x402</div></div>
-    <div class="abox" data-reveal><div class="ic">🏦</div><div class="nm">Escrow</div>
-      <div class="sub">Holds real HBAR until the checks have run.</div><div class="tech">Hedera</div></div>
-    <div class="abox" data-reveal><div class="ic">📦</div><div class="nm">Seller</div>
-      <div class="sub">Sells live token data. Grades itself first.</div><div class="tech">The Graph</div></div>
-    <div class="abox" data-reveal><div class="ic">⚖️</div><div class="nm">Adjudicator</div>
-      <div class="sub">Runs the checks. Arithmetic, not opinion.</div><div class="tech">Receipt</div></div>
-    <div class="abox" data-reveal><div class="ic">📜</div><div class="nm">Public log</div>
-      <div class="sub">Publishes the terms, the answer and the verdict.</div><div class="tech">Hedera HCS</div></div>
-  </div>
-  <p class="archnote" data-in="5400">
-    Payments settle through <b>Blocky402</b>, so the buyer signs a partial transfer and pays no gas.
-    <b>Bazantic</b> wraps all of it as a tool an agent can call without knowing any of this exists.</p>`},
 
 { n:'it works', dur:12000, enter:'push', chip:'open', flipAt:0.72, flipTo:'rel',
   html: tty('buyer', 'pnpm buy honest', [
@@ -424,7 +443,18 @@ const SCENES = [
     ['result', 'deal is now Refunded', 'g'],
   ])},
 
-{ n:'check it yourself', dur:11000, enter:'rise', html:`
+{ n:'the live app', dur:30000, enter:'cut', session:true, html:`
+  <div class="browser">
+    <div class="chrome">
+      <i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i>
+      <div class="addr" data-addr></div>
+      <div class="livedot">LIVE</div>
+    </div>
+    <div class="viewport">${runFrames}</div>
+  </div>
+  <p class="livecap" data-livecap></p>`},
+
+{ n:'check it yourself', dur:10000, enter:'rise', html:`
   <h2 class="wide">Do not trust our verdicts. Re-run every one of them.</h2>
   <p class="lede" data-in="500" style="font-size:22px; max-width:80ch">
     Every deal published its terms, the raw answer and the verdict to a public Hedera topic.
@@ -436,7 +466,7 @@ const SCENES = [
       <div class="k">no verdict, because the seller never answered</div></div>
   </div>`},
 
-{ n:'second opinion', dur:12000, enter:'rise', html:`
+{ n:'second opinion', dur:11000, enter:'rise', html:`
   <h3 style="max-width:60ch">Written twice, sharing no code. Same answer, same hash.</h3>
   <div class="twin">
     <div class="side" data-in="600">
@@ -453,21 +483,37 @@ const SCENES = [
   <p class="verdictline" data-in="2800">Identical. And it is the hash the escrow recorded on chain.</p>
   <p class="lede" data-in="3600" style="font-size:19px">If the rules were vague these two would disagree. Across twelve test cases they never do.</p>`},
 
-{ n:'the receipts', dur:24000, enter:'rise', beats:[6500, 13000, 24000], runBeat:2,
-  focus:{ 0:{ x:11, y:-34, scale:1.85, at:0.42, over:0.32 },
-          1:{ x:-14, y:-12, scale:1.80, at:0.42, over:0.32 } },
+{ n:'the receipts', dur:14000, enter:'rise', beats:[7000, 14000],
+  focus:{ 0:{ x:11, y:-34, scale:1.85, at:0.40, over:0.34 },
+          1:{ x:-14, y:-12, scale:1.80, at:0.40, over:0.34 } },
   html:`
   <h3 style="max-width:56ch; margin-bottom:16px">All of it is public. Here is where to look.</h3>
   <div class="shot">
     <div class="frame">
       <img data-shot="0" src="shots/tx-release.png" alt="the release transaction on HashScan">
       <img data-shot="1" src="shots/topic-messages.png" alt="the audit topic on HashScan">
-      ${runFrames}
     </div>
     <p class="cap" data-cap="0"><b>The money moving.</b> Half an HBAR leaving the escrow for the seller, on HashScan.</p>
     <p class="cap" data-cap="1"><b>The reasoning.</b> Every check result, published, for every deal.</p>
-    <p class="cap" data-cap="2"><b>A real session.</b> One button, a real deal, and every link is a transaction that just happened.</p>
   </div>`},
+
+{ n:'architecture', dur:14000, enter:'rise', revealMs:900, html:`
+  <h3 style="max-width:62ch">What is actually running, and whose technology does each part.</h3>
+  <div class="arch">
+    <div class="abox" data-reveal><div class="ic">${icon('agent', 44)}</div><div class="nm">Buyer</div>
+      <div class="sub">Signs the seven checks, then pays.</div><div class="tech">x402</div></div>
+    <div class="abox" data-reveal><div class="ic">${icon('vault', 44, 'var(--held)')}</div><div class="nm">Escrow</div>
+      <div class="sub">Holds real HBAR until the checks have run.</div><div class="tech">Hedera</div></div>
+    <div class="abox" data-reveal><div class="ic">${icon('server', 44)}</div><div class="nm">Seller</div>
+      <div class="sub">Sells live token data. Grades itself first.</div><div class="tech">The Graph</div></div>
+    <div class="abox" data-reveal><div class="ic">${icon('scales', 44)}</div><div class="nm">Adjudicator</div>
+      <div class="sub">Runs the checks. Arithmetic, not opinion.</div><div class="tech">Receipt</div></div>
+    <div class="abox" data-reveal><div class="ic">${icon('log', 44)}</div><div class="nm">Public log</div>
+      <div class="sub">Publishes the terms, the answer and the verdict.</div><div class="tech">Hedera HCS</div></div>
+  </div>
+  <p class="archnote" data-in="5400">
+    Payments settle through <b>Blocky402</b>, so the buyer signs a partial transfer and pays no gas.
+    <b>Bazantic</b> wraps all of it as a tool an agent can call without knowing any of this exists.</p>`},
 
 { n:'what we cannot prove', dur:9000, enter:'rise', html:`
   <h2 class="wide">One thing we cannot prove, so we let it decide nothing.</h2>
@@ -502,14 +548,27 @@ const railClock = rail.querySelector('.clock');
 
 SCENES.forEach((s) => {
   const el = document.createElement('section');
-  el.className = 'scene';
+  el.className = 'scene' + (s.session ? ' full' : '');
   el.innerHTML = `<div class="inner">${s.html}</div>`;
   stage.appendChild(el);
 });
 
 const ENTER_MS = 420;
+/** When the first real demo starts, so the corner can count down to it. */
+const DEMO_AT = starts[SCENES.findIndex((x) => x.n === 'it works')];
+const countdown = document.getElementById('countdown');
 const mmss = (ms) => { const x = Math.floor(ms / 1000);
   return `${Math.floor(x / 60)}:${String(x % 60).padStart(2, '0')}`; };
+
+/** What is happening in the recorded session, by frame. */
+const SESSION_SAYS = [
+  [0,  'This page is public. Anyone can open it and press a button.'],
+  [4,  'Pressing "honest" starts a real purchase with real testnet HBAR.'],
+  [12, 'The buyer signs its checks, pays, and the money lands in escrow.'],
+  [26, 'The new deal appears below, held in escrow, nothing released yet.'],
+  [40, 'Checks passed. The money goes to the seller, and every leg is linked.'],
+  [50, 'Following one of those links: the transaction, on HashScan.'],
+];
 
 /** What the coin is doing, in words, at each stop. */
 const COIN_SAYS = [
@@ -592,6 +651,30 @@ function seek(ms){
     sig.push(Math.round(pos * 4));
   }
 
+  // the live app: the recorded session, filling the frame
+  if (s.session) {
+    const idx = Math.min(RUN_FRAMES - 1, Math.floor(clamp(st / (s.dur - 900), 0, 1) * RUN_FRAMES));
+    for (const img of kids[i].querySelectorAll('[data-run]')) {
+      img.style.opacity = Number(img.dataset.run) === idx ? '1' : '0';
+    }
+    // The browser really does navigate part way through, so the address bar
+    // has to follow it. Leaving the app URL up while HashScan is on screen
+    // would be the one dishonest frame in the film.
+    const addr = kids[i].querySelector('[data-addr]');
+    if (addr) {
+      addr.textContent = idx >= 52
+        ? 'hashscan.io/testnet/transaction/0xbf68e5dc65b6750067f16affef8ee936d0b3d70662d4c5d192a82f1ddcf15c93'
+        : '0700-2406-7400-c4-858a-d876-37d7-a720-7be3.ngrok-free.app';
+    }
+    const cap = kids[i].querySelector('[data-livecap]');
+    if (cap) {
+      let say = SESSION_SAYS[0][1];
+      for (const c of SESSION_SAYS) if (idx >= c[0]) say = c[1];
+      cap.textContent = say;
+    }
+    sig.push('r' + idx);
+  }
+
   if (s.beats) {
     let idx = s.beats.findIndex((end) => st < end);
     if (idx === -1) idx = s.beats.length - 1;
@@ -650,6 +733,18 @@ function seek(ms){
   if (chipEl && settledTo && changedAt !== null) {
     chipEl.style.transform = `scale(${(1 + (1 - easeBack(clamp((st - changedAt) / 300, 0, 1))) * 0.45).toFixed(3)})`;
   }
+  // Tell the viewer how long until something actually runs. A demo that opens
+  // with three minutes of argument loses the room; this promises an end to it.
+  if (t < DEMO_AT) {
+    const left = Math.ceil((DEMO_AT - t) / 1000);
+    countdown.style.display = 'flex';
+    countdown.innerHTML = `live demo in <b>0:${String(left).padStart(2, '0')}</b>`;
+    sig.push('c' + left);
+  } else {
+    countdown.style.display = 'none';
+    sig.push('c-');
+  }
+
   railClock.textContent = `${mmss(t)} / ${mmss(TOTAL_MS)}`;
   bar.style.width = `${(t / TOTAL_MS) * 100}%`;
   sig.push(Math.floor(t / 1000), settledTo || '-');

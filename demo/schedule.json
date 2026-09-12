@@ -1,94 +1,94 @@
 {
-  "totalMs": 208000,
+  "totalMs": 205000,
   "scenes": [
     {
       "n": "title",
       "start": 0,
-      "dur": 7000
+      "dur": 6000
     },
     {
       "n": "the problem",
-      "start": 7000,
-      "dur": 12000
+      "start": 6000,
+      "dur": 10000
     },
     {
       "n": "why not sue",
-      "start": 19000,
-      "dur": 11000
-    },
-    {
-      "n": "so instead",
-      "start": 30000,
+      "start": 16000,
       "dur": 9000
     },
     {
-      "n": "the idea",
-      "start": 39000,
-      "dur": 13000
+      "n": "so instead",
+      "start": 25000,
+      "dur": 8000
     },
     {
-      "n": "the checks",
-      "start": 52000,
+      "n": "the idea",
+      "start": 33000,
       "dur": 11000
     },
     {
-      "n": "architecture",
-      "start": 63000,
-      "dur": 16000
-    },
-    {
       "n": "it works",
-      "start": 79000,
+      "start": 44000,
       "dur": 12000
     },
     {
       "n": "seven checks",
-      "start": 91000,
+      "start": 56000,
       "dur": 10000
     },
     {
       "n": "junk answer",
-      "start": 101000,
+      "start": 66000,
       "dur": 12000
     },
     {
       "n": "refunded",
-      "start": 113000,
+      "start": 78000,
       "dur": 10000
     },
     {
       "n": "seller says no",
-      "start": 123000,
+      "start": 88000,
       "dur": 10000
     },
     {
       "n": "seller vanishes",
-      "start": 133000,
+      "start": 98000,
       "dur": 11000
+    },
+    {
+      "n": "the live app",
+      "start": 109000,
+      "dur": 30000
     },
     {
       "n": "check it yourself",
-      "start": 144000,
-      "dur": 11000
+      "start": 139000,
+      "dur": 10000
     },
     {
       "n": "second opinion",
-      "start": 155000,
-      "dur": 12000
+      "start": 149000,
+      "dur": 11000
     },
     {
       "n": "the receipts",
-      "start": 167000,
-      "dur": 24000
+      "start": 160000,
+      "dur": 14000
+    },
+    {
+      "n": "architecture",
+      "start": 174000,
+      "dur": 14000
     },
     {
       "n": "what we cannot prove",
-      "start": 191000,
+      "start": 188000,
       "dur": 9000
     },
     {
       "n": "close",
-      "start": 200000,
+      "start": 197000,
       "dur": 8000
     }
   ]

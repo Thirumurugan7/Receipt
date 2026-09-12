@@ -1,6 +1,6 @@
 # DEMO.md: the film, and what to say over it
 
-`demo/receipt-demo.mp4` is 3:28, 1920×1080, no audio.
+`demo/receipt-demo.mp4` is 3:25, 1920×1080, no audio.
 
 Every figure in it came off a live run against Hedera testnet: real settlement,
 real escrow, real release and refund, real data bought from The Graph. Nothing
@@ -20,27 +20,29 @@ script cannot drift out of sync with what is on screen.
 | at | screen | what to say |
 |---|---|---|
 | 0:00 | title | Receipt. Pay for an API call, and get your money back automatically if the answer is junk. |
-| 0:07 | the problem | Right now an AI agent pays first and checks what it bought second. If the API answers with junk, the money has already gone. x402 has no refund step in it at all. |
-| 0:19 | why not sue | You cannot arbitrate a forty six cent payment. Bonds and gas cost more than the thing. So people appoint a judge instead, and that product does five users a day. |
-| 0:30 | so instead | So instead of arguing after the fact, the buyer says what a good answer is first, and only then pays. That is the whole idea. |
-| 0:39 | the idea | So nobody judges. The buyer writes down what a good answer looks like, before paying. The money waits in escrow while a machine checks the answer against exactly that. |
-| 0:52 | the checks | Seven questions, signed before any money moves. Did it answer two hundred. Is it really JSON. Are the addresses real. Is the data fresh. All of it arithmetic, so anyone can redo it. |
-| 1:03 | architecture | Here is what actually runs. The buyer signs the checks. Hedera holds the money. The seller sells live Graph data and grades itself first. Everything lands on a public log. Blocky402 moves the money, and Bazantic makes it a tool any agent can call. |
-| 1:19 | it works | A real purchase. The seller answers two hundred with live token data, all seven checks pass, and the money goes to the seller. Half an HBAR, really spent. |
-| 1:31 | seven checks | These are the seven, and anyone can recompute every one. The last line is how fast it answered. That one is our own stopwatch, so we let it decide nothing. |
-| 1:41 | junk answer | Same buyer, same terms. This time the seller answers two hundred with an error blob. The checks fail and the money comes back in seconds. No human, no dispute. |
-| 1:53 | refunded | Nothing was wrong at the HTTP layer. Status passed. The shape of the data is what failed, and you can see exactly which fields were missing. |
-| 2:03 | seller says no | Because the checks are only arithmetic, the seller can run them too. Here it grades itself, sees it would fail, and refuses the sale rather than take money it cannot keep. |
-| 2:13 | seller vanishes | If the seller never answers, no verdict gets invented. The escrow expires, and a complete stranger can unlock it. The money can only go back to the buyer. |
-| 2:24 | check it yourself | Now do not believe any of it. This replays every verdict ever published, straight from the public log, with no help from us. Twenty eight reproduce. Zero mismatch. |
-| 2:35 | second opinion | And again in Python, no dependencies, written from the written spec. Same answer, same hash, and it is the hash the escrow recorded on chain. |
-| 2:47 | the receipts | All of it is public. Here is half an HBAR leaving the escrow, on HashScan. Here is the reasoning, every check result published for every deal. And here is a real session on the live page: one button, a real deal, and every link is a transaction that just happened. |
-| 3:11 | what we cannot prove | There is one thing we cannot prove. How fast the seller answered is our own stopwatch, so we publish it and let it gate no money at all. |
-| 3:20 | close | x402 has no refund. Appointing a judge has been tried. It does five users a day. Receipt has no judge, because the answer is arithmetic. |
+| 0:06 | the problem | An AI agent pays first and checks what it bought second. If the API answers with junk, the money is already gone. x402 has no refund step in it. |
+| 0:16 | why not sue | You cannot arbitrate a forty six cent payment. So people appoint a judge instead, and that product does five users a day. |
+| 0:25 | so instead | So instead of arguing after the fact, the buyer says what a good answer is first, and only then pays. That is the whole idea. |
+| 0:33 | the idea | So nobody judges. The buyer writes down what a good answer looks like, before paying. The money waits in escrow while a machine checks the answer against exactly that. |
+| 0:44 | it works | A real purchase. The seller answers two hundred with live token data, all seven checks pass, and the money goes to the seller. Half an HBAR, really spent. |
+| 0:56 | seven checks | These are the seven, and anyone can recompute every one. The last line is how fast it answered. That one is our own stopwatch, so we let it decide nothing. |
+| 1:06 | junk answer | Same buyer, same terms. This time the seller answers two hundred with an error blob. The checks fail and the money comes back in seconds. No human, no dispute. |
+| 1:18 | refunded | Nothing was wrong at the HTTP layer. Status passed. The shape of the data is what failed, and you can see exactly which fields were missing. |
+| 1:28 | seller says no | Because the checks are only arithmetic, the seller can run them too. Here it grades itself, sees it would fail, and refuses the sale rather than take money it cannot keep. |
+| 1:38 | seller vanishes | If the seller never answers, no verdict gets invented. The escrow expires, and a complete stranger can unlock it. The money can only go back to the buyer. |
+| 1:49 | the live app | And here is the whole thing running on a public URL that anyone can open right now. One button starts a real purchase with real testnet HBAR. The buyer signs its checks, the money lands in escrow, and the new deal appears below, held. The checks pass, the money goes to the seller, and every leg becomes a link. Follow one and you are looking at the transaction on HashScan. |
+| 2:19 | check it yourself | Now do not believe any of it. This replays every verdict ever published, straight from the public log, with no help from us. Twenty eight reproduce. Zero mismatch. |
+| 2:29 | second opinion | And again in Python, no dependencies, written from the written spec. Same answer, same hash, and it is the hash the escrow recorded on chain. |
+| 2:40 | the receipts | All of it is public. Here is half an HBAR leaving the escrow, on HashScan. And here is the reasoning: every check result, published, for every deal. |
+| 2:54 | architecture | Here is what actually runs. The buyer signs the checks. Hedera holds the money. The seller sells live Graph data and grades itself first. Everything lands on a public log. Blocky402 moves the money, and Bazantic makes it a tool any agent can call. |
+| 3:08 | what we cannot prove | There is one thing we cannot prove. How fast the seller answered is our own stopwatch, so we publish it and let it gate no money at all. |
+| 3:17 | close | x402 has no refund. Appointing a judge has been tried. It does five users a day. Receipt has no judge, because the answer is arithmetic. |
 
-Pace is about 2.5 words a second. If you run long, cut **why not sue** and
-**what we cannot prove**. Never cut **check it yourself** or **second
-opinion**: those two are the reason to believe any of the rest.
+Pace is about 2.5 words a second. A countdown in the top corner tells the
+viewer how long until something actually runs, and the first real purchase
+happens at 0:44. If you run long, cut **why not sue** and **what we cannot
+prove**. Never cut **the live app**, **check it yourself** or **second
+opinion**: those three are the reason to believe any of the rest.
 
 ---
 

@@ -23,12 +23,17 @@ const HERE = dirname(fileURLToPath(import.meta.url))
 const OUT = join(HERE, 'shots', 'run')
 /** Captured full size here first; ffmpeg cannot safely rewrite in place. */
 const RAW = join(OUT, 'raw')
-const WIDTH = 1400
-const HEIGHT = 900
-const EVERY_MS = 380              // ~2.6 frames a second of real time
-const MAX_FRAMES = 90
-const SHRINK_TO = 1120          // committed, so keep them light
-const FACILITATOR = process.env.RECEIPT_FACILITATOR_URL ?? 'http://localhost:8080'
+const WIDTH = 1840
+const HEIGHT = 904
+const EVERY_MS = 620              // ~1.6 frames a second of real time
+const MAX_FRAMES = 96
+const SHRINK_TO = 1472          // committed, so keep them light
+/**
+ * Point this at the public URL, not localhost: the film shows the address so a
+ * judge can see where this is actually running, and a shot of localhost proves
+ * nothing to anyone but us.
+ */
+const FACILITATOR = process.env.RECEIPT_DEMO_URL ?? process.env.RECEIPT_FACILITATOR_URL ?? 'http://localhost:8080'
 
 /** Click the run button for a given mode. */
 const CLICK_RUN = (mode) =>
@@ -61,11 +66,19 @@ async function main() {
 
   try {
     await browser.goto(FACILITATOR)
-    await sleep(3500)                       // let the ledger stream in
+    await sleep(2500)
+    // A free ngrok tunnel shows an interstitial before the site. Click through
+    // it, or every frame is a screenshot of ngrok rather than of the product.
+    await browser.evaluate(`(() => {
+      const b = [...document.querySelectorAll('button, a')]
+        .find((x) => /visit site/i.test(x.textContent || ''));
+      if (b) { b.click(); return true; } return false;
+    })()`)
+    await sleep(4000)                       // let the ledger stream in
     // Put the run panel in view and keep it there; the interesting things all
     // happen inside it.
     await browser.evaluate(
-      `document.getElementById('runbar').scrollIntoView({ block: 'start' }); window.scrollBy(0, -90); true`,
+      `document.getElementById('runbar').scrollIntoView({ block: 'start' }); window.scrollBy(0, -250); true`,
     )
     await sleep(600)
 
