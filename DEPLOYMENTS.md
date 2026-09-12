@@ -21,7 +21,7 @@ Constructor arguments:
 | Argument | Value | Meaning |
 |---|---|---|
 | `adjudicator_` | `0x66347975c63d6d7d6992740c6adf30858101d4fd` | may call `release` / `refund` |
-| `valueScale_` | `1` | `msg.value` units per signed `amount` unit — both tinybars on Hedera |
+| `valueScale_` | `1` | `msg.value` units per signed `amount` unit, both tinybars on Hedera |
 
 Read back from the live contract after deploy:
 
@@ -43,7 +43,7 @@ compatibility and divides by 1e10 at the boundary, so Solidity sees `msg.value`
 in **tinybars**. x402 `amount` is also tinybars, so the two already agree and the
 correct `valueScale` is **1**.
 
-Callers still send weibars on the wire — `tinybarsToWeibars` in
+Callers still send weibars on the wire, `tinybarsToWeibars` in
 `packages/core/src/units.ts` converts for the RPC field, not for the comparison.
 
 This is exactly the silent 1e10 error DECISIONS-01 predicted; it surfaced loudly
@@ -51,7 +51,7 @@ only because `open()` compares `msg.value` against the buyer-signed amount.
 
 That last value matches `packages/contracts/test/fixtures/eip712.json` exactly, so the
 EIP-712 payload the TypeScript buyer signs is the one the deployed bytecode recovers
-against — confirmed against the chain, not only in tests.
+against, confirmed against the chain, not only in tests.
 
 ## Accounts (Hedera testnet, all ECDSA with EVM aliases)
 
@@ -86,7 +86,7 @@ Settlement goes through the Blocky402 facilitator. Values confirmed live from
 | Mirror Node | https://testnet.mirrornode.hedera.com/api/v1/topics/0.0.10495465/messages |
 
 Three messages per deal: `terms`, `observation` (status + headers + the full raw
-response body), and `verdict`. The observation is what makes `pnpm verify` real —
+response body), and `verdict`. The observation is what makes `pnpm verify` real , 
 see DECISIONS-01 Q2.
 
 Messages above 1024 bytes are split by the SDK and arrive as several Mirror Node
@@ -104,7 +104,7 @@ reproduce when it is in fact correct.
 | `open()` | `0x5b637ebb484cc2af56ed9c98945ac7af034232871927c1cda7d34a9c19fb0b30` |
 | `release()` | `0x728a26100789c79db8a5e72986bc7edfe3c57c589428d9dc1a23073df44b0801` |
 | Verdict | pass, all seven reproducible checks |
-| Buyer delta | -0.5 ℏ, and no network fee — Blocky402's fee payer covered gas |
+| Buyer delta | -0.5 ℏ, and no network fee, Blocky402's fee payer covered gas |
 
 
 ## All scenes, verified on testnet
@@ -117,13 +117,13 @@ scene really waits for a deadline to pass.
 | 2 | honest | all 7 reproducible checks pass, `release()` pays the seller | −0.5 ℏ |
 | 3 | garbage | **HTTP 200** with a useless body; `requiredPaths` fails, `refund()` | 0.0 ℏ |
 | 4 | dead | no verdict is invented; a stranger calls `claimExpired` | 0.0 ℏ after claim |
-| 5 | — | `pnpm verify` recomputes both verdicts and prints MATCH | — |
+| 5 |, | `pnpm verify` recomputes both verdicts and prints MATCH |, |
 
 Scene 3 is the one naive payment rails cannot catch: the HTTP layer is entirely
 healthy, the status check passes, and the body is still worthless.
 
 Scene 4 deliberately does **not** auto-refund. A verdict is a pure function of
-(terms, response), and there is no response here — so publishing one would mean
+(terms, response), and there is no response here, so publishing one would mean
 publishing something nobody could reproduce. The facilitator declines, leaves the
 deal open, and the deadline does the work. `claimExpired` is callable by anyone
 and can only pay the payer, so the money is recoverable even if this facilitator
@@ -138,11 +138,11 @@ published document and the hash the escrow recorded on chain. Confirmed for a
 passing deal (`DealReleased`) and a failing one (`DealRefunded`).
 
 Not proven: `observedLatencyMs`. It is the facilitator's own stopwatch and no
-third party can recompute it — which is exactly why it lives in `attested` and
+third party can recompute it, which is exactly why it lives in `attested` and
 gates nothing. It is reported, never trusted.
 
 
-## The live ledger — public, and it will run a deal for you
+## The live ledger, public, and it will run a deal for you
 
 | | |
 |---|---|
@@ -168,24 +168,24 @@ convenience: if the page can be reconstructed from the public log, the log
 demonstrably contains what the page claims.
 
 This is an ngrok tunnel to a local facilitator, so it is live only while that
-tunnel is. **The URL changes when the tunnel restarts** — if it is dead, run
+tunnel is. **The URL changes when the tunnel restarts**, if it is dead, run
 `pnpm facilitator` and open http://localhost:8080, which is the same page.
 
-## Bazantic — live
+## Bazantic, live
 
 | | |
 |---|---|
-| Gateway | `Receipt` — **LIVE** |
+| Gateway | `Receipt`, **LIVE** |
 | Slug | `2g6od7kdczdp7p5wr3ywz2vhlu` |
 | Payment gateway | https://2g6od7kdczdp7p5wr3ywz2vhlu.bazgateway.com |
 | MCP endpoint | https://2g6od7kdczdp7p5wr3ywz2vhlu.bazgateway.com/mcp |
 | Tools | `buyWithTerms`, `getDeal`, `health`, `info` |
-| Recipe | `buy-data-you-can-refuse-to-pay-for` — **published** |
-| Recipe | `price-a-swap-on-data-you-actually-verified` — **published**, two sponsors |
+| Recipe | `buy-data-you-can-refuse-to-pay-for`, **published** |
+| Recipe | `price-a-swap-on-data-you-actually-verified`, **published**, two sponsors |
 | Model | `openai/gpt-5-nano` |
 
 Pricing: `POST /proxy` $0.01, `GET /deals/{dealId}` free, `GET /health` free.
-Auth: none — the x402 payment *is* the authorization.
+Auth: none, the x402 payment *is* the authorization.
 
 Verified end to end through the gateway's MCP server:
 
@@ -215,7 +215,7 @@ gateways and needs both to produce an answer:
 Receipt buys a holdings snapshot under acceptance terms and escrows the payment;
 1inch prices a Classic Swap route for the largest holding that passed its checks.
 If the snapshot fails its terms the payment refunds and the recipe quotes no
-route at all — a route built on unverified numbers is worse than no route.
+route at all, a route built on unverified numbers is worse than no route.
 
 Inputs: `resource` (URI, required), `swap_to` (string, required).
 Source of truth for the definition: `recipes/swap-on-verified-data.bazantic.json`.

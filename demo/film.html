@@ -162,6 +162,25 @@
   .stamp.paid{color:var(--paid); background:var(--paid-soft)}
   .stamp.returned{color:var(--returned); background:var(--returned-soft)}
 
+  /* architecture, as the path the money and the proof actually take */
+  .steps{display:grid; grid-template-columns:repeat(7, 1fr); gap:11px; margin-top:30px; max-width:1640px}
+  .step{border:2px solid var(--rule); border-radius:8px; background:#fff; padding:16px 14px;
+        display:flex; flex-direction:column}
+  .step .sn{font:800 15px "JetBrains Mono",monospace; color:var(--carbon)}
+  .step .snm{font-weight:800; font-size:18px; margin-top:6px; line-height:1.2}
+  .step .ssub{color:var(--muted); font-size:14px; margin-top:7px; line-height:1.35}
+  .step .stech{margin-top:auto; padding-top:11px; font-size:13px; font-weight:700; color:var(--carbon)}
+
+  /* the evidence table */
+  table.ev{border-collapse:collapse; width:100%; max-width:1620px; margin-top:24px}
+  table.ev th{text-align:left; font-size:14px; font-weight:700; letter-spacing:.1em;
+              text-transform:uppercase; color:var(--muted); padding:0 20px 12px 0}
+  table.ev td{padding:14px 20px 14px 0; border-top:1px dotted var(--hair); font-size:19px;
+              vertical-align:top; line-height:1.4}
+  table.ev td.who{font-weight:800; font-size:22px; white-space:nowrap; width:200px}
+  table.ev td.how{color:var(--carbon); font-weight:600; font-size:17px; white-space:nowrap; width:330px}
+  table.ev td.no, table.ev td.who.no{color:var(--muted); font-weight:500}
+
   /* architecture */
   .arch{display:grid; grid-template-columns:repeat(5, 1fr); gap:16px; margin-top:34px; max-width:1560px}
   .arch{position:relative}
@@ -527,23 +546,42 @@ const SCENES = [
     <p class="livecap" data-cap="1"><b>The reasoning.</b> Every check result, published, for every deal.</p>
   </div>`},
 
-{ n:'architecture', dur:14000, enter:'rise', revealMs:900, html:`
-  <h3 style="max-width:62ch">What is actually running, and whose technology does each part.</h3>
-  <div class="arch">
-    <div class="abox" data-reveal><div class="nm">Buyer</div>
-      <div class="sub">Signs the seven checks, then pays.</div><div class="tech">x402</div></div>
-    <div class="abox" data-reveal><div class="nm">Escrow</div>
-      <div class="sub">Holds real HBAR until the checks have run.</div><div class="tech">Hedera</div></div>
-    <div class="abox" data-reveal><div class="nm">Seller</div>
-      <div class="sub">Sells live token data. Grades itself first.</div><div class="tech">The Graph</div></div>
-    <div class="abox" data-reveal><div class="nm">Adjudicator</div>
-      <div class="sub">Runs the checks. Arithmetic, not opinion.</div><div class="tech">Receipt</div></div>
-    <div class="abox" data-reveal><div class="nm">Public log</div>
-      <div class="sub">Publishes the terms, the answer and the verdict.</div><div class="tech">Hedera HCS</div></div>
+{ n:'architecture', dur:17000, enter:'rise', revealMs:800, html:`
+  <h3 style="max-width:66ch">End to end, and whose technology does each step.</h3>
+  <div class="steps">
+    <div class="step" data-reveal><div class="sn">1</div><div class="snm">Buyer signs</div><div class="ssub">Seven checks, as EIP-712 terms, before any money moves.</div><div class="stech">x402</div></div>
+    <div class="step" data-reveal><div class="sn">2</div><div class="snm">Payment settles</div><div class="ssub">A partial transfer the buyer signs. It pays no gas.</div><div class="stech">Blocky402</div></div>
+    <div class="step" data-reveal><div class="sn">3</div><div class="snm">Escrow holds</div><div class="ssub">Real HBAR, and it checks the signature on chain.</div><div class="stech">Hedera EVM</div></div>
+    <div class="step" data-reveal><div class="sn">4</div><div class="snm">Seller answers</div><div class="ssub">Holdings from the Token API, pools from a subgraph.</div><div class="stech">The Graph</div></div>
+    <div class="step" data-reveal><div class="sn">5</div><div class="snm">Checks run</div><div class="ssub">A pure function of the terms and the answer.</div><div class="stech">Receipt</div></div>
+    <div class="step" data-reveal><div class="sn">6</div><div class="snm">All of it published</div><div class="ssub">Terms, raw answer and verdict, in consensus order.</div><div class="stech">Hedera HCS</div></div>
+    <div class="step" data-reveal><div class="sn">7</div><div class="snm">Anyone replays it</div><div class="ssub">From the mirror node: the CLI, Python, or your browser.</div><div class="stech">Hedera</div></div>
   </div>
-  <p class="archnote" data-in="5400">
-    Payments settle through <b>Blocky402</b>, so the buyer signs a partial transfer and pays no gas.
-    <b>Bazantic</b> wraps all of it as a tool an agent can call without knowing any of this exists.</p>`},
+  <p class="archnote" data-in="6600">
+    Money only moves at step 3 and step 5. Everything else is public record,
+    which is why step 7 is possible at all.</p>`},
+
+{ n:'sponsors', dur:14000, enter:'rise', revealMs:850, html:`
+  <h3 style="max-width:64ch">Each of these is load-bearing. Remove one and it stops working.</h3>
+  <table class="ev">
+    <tr><th>Sponsor</th><th>What it carries here</th><th>How you check it</th></tr>
+    <tr data-reveal><td class="who">Hedera</td>
+      <td>Holds the money between payment and verdict, and carries the public log the whole argument rests on.</td>
+      <td class="how">Read topic 0.0.10495465</td></tr>
+    <tr data-reveal><td class="who">The Graph</td>
+      <td>Is the thing being bought. Two products composed, and the signed terms name both.</td>
+      <td class="how">Drop either and the sale fails</td></tr>
+    <tr data-reveal><td class="who">Blocky402</td>
+      <td>Performs every real payment. The buyer signs a partial transfer and pays no gas.</td>
+      <td class="how">Buyer balance moves by exactly the amount</td></tr>
+    <tr data-reveal><td class="who">Bazantic</td>
+      <td>Makes all of it one tool an agent can call. Two published Recipes, one chaining Receipt and 1inch.</td>
+      <td class="how">Both are live and published</td></tr>
+    <tr data-reveal><td class="who no">Chainlink</td>
+      <td class="no">Not claimed. Confidential Workflows is the right fix for publishing raw answers, and it is not built.</td>
+      <td class="how no">Said out loud, next screen</td></tr>
+  </table>`},
+
 
 { n:'what we cannot prove', dur:9000, enter:'rise', html:`
   <h2 class="wide">One thing we cannot prove, so we let it decide nothing.</h2>

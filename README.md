@@ -6,9 +6,9 @@
 
 Live on Hedera testnet. Settlement runs through the Blocky402 x402 facilitator, every verdict is published to a public Hedera Consensus Service topic, and anyone can re-run the adjudicator offline and check the result against the hash recorded on chain.
 
-**Demo: [`demo/receipt-demo.mp4`](demo/receipt-demo.mp4)**, 3:25. Every figure in it came off a live run: real settlement, real escrow, real release and refund. [`DEMO.md`](DEMO.md) is the narration, and [`demo/README.md`](demo/README.md) explains how the film is rendered without recording a screen.
+**Demo: [`demo/receipt-demo.mp4`](demo/receipt-demo.mp4)**, 3:42. Every figure in it came off a live run: real settlement, real escrow, real release and refund. [`DEMO.md`](DEMO.md) is the narration, and [`demo/README.md`](demo/README.md) explains how the film is rendered without recording a screen.
 
-**Nothing here needs to be taken on trust.** Every deal links to the transaction that moved the money on [HashScan](https://hashscan.io/testnet/contract/0x3483B3761ebe3C2fC2eB3EfE8215a7CF90634071) and to the raw bytes of its terms, response and verdict on the Hedera mirror node. `pnpm verify --all` recomputes every verdict from that public log with no cooperation from the facilitator, and `verify-py/` does it again in a second implementation that shares no code with the first. The live ledger at `/` goes further: **every deal has a button that recomputes its verdict in your own browser**, fetching the inputs straight from Hedera's mirror node so our server cannot influence the answer — and it will run a real deal for you too. See [`DEPLOYMENTS.md`](DEPLOYMENTS.md) for the current URL.
+**Nothing here needs to be taken on trust.** Every deal links to the transaction that moved the money on [HashScan](https://hashscan.io/testnet/contract/0x3483B3761ebe3C2fC2eB3EfE8215a7CF90634071) and to the raw bytes of its terms, response and verdict on the Hedera mirror node. `pnpm verify --all` recomputes every verdict from that public log with no cooperation from the facilitator, and `verify-py/` does it again in a second implementation that shares no code with the first. The live ledger at `/` goes further: **every deal has a button that recomputes its verdict in your own browser**, fetching the inputs straight from Hedera's mirror node so our server cannot influence the answer, and it will run a real deal for you too. See [`DEPLOYMENTS.md`](DEPLOYMENTS.md) for the current URL.
 
 ---
 
@@ -77,7 +77,7 @@ This is the part that matters, so here is the precise claim.
 The adjudicator is software on our server. You should not take its word for anything. You do not have to:
 
 1. The **terms** are signed by the buyer with EIP-712 and hashed with JCS (RFC 8785), so key order and number formatting cannot change the hash. `termsHash` goes on chain in `open()`.
-2. The **full raw response** — status, content-type and body — is published to the HCS topic. Not a digest. A digest would make verification circular: you cannot re-run a JSON-schema check against a hash.
+2. The **full raw response**, status, content-type and body, is published to the HCS topic. Not a digest. A digest would make verification circular: you cannot re-run a JSON-schema check against a hash.
 3. The **verdict document** is published to HCS and its hash goes on chain in `release()` / `refund()`.
 4. The adjudicator is a **pure function**: no network, no filesystem, no clock, no randomness. Asserted mechanically in `packages/core/test/purity.test.ts`, not left to code review.
 
@@ -101,7 +101,7 @@ MATCH
   the verdict follows from the published terms and response, and its hash is the one the escrow recorded.
 ```
 
-It needs no credentials, no API key, and no cooperation from us. If we had lied about a verdict, the recomputed hash would differ from the one the escrow recorded — and that hash is what moved the money.
+It needs no credentials, no API key, and no cooperation from us. If we had lied about a verdict, the recomputed hash would differ from the one the escrow recorded, and that hash is what moved the money.
 
 ### The part we cannot prove, stated plainly
 
@@ -121,21 +121,21 @@ We can tell you exactly which part of our verdict you have to take on faith, and
 | **Metered refunds** (e.g. Pinout, a Hedera x402 bounty winner) | Refunds unused **quantity**: prepay for a session, use less, get the remainder back. Credit burning, tiers, mid-job top-ups. | Silent on quality. A call that returns HTTP 200 with garbage is correctly billed as consumed, and the buyer keeps nothing. |
 | **x402r** | The only native x402 refund attempt. | ~1 GitHub star per repo; Solana contracts self-described as unaudited pilot code. |
 | **Google AP2 / ERC-8004** | Signed audit trails and agent identity. | Both stop at evidence and hand the remedy to whatever rail you are on. |
-| **Kleros / UMA** | Real dispute resolution with real guarantees. | Bonds, liveness windows and gas — dollars and days against a median ticket near $0.46. |
+| **Kleros / UMA** | Real dispute resolution with real guarantees. | Bonds, liveness windows and gas, dollars and days against a median ticket near $0.46. |
 | **Receipt** | Conditional settlement for the deliverables that **are** machine-checkable, with **no evaluator at all**. | Does not handle subjective deliverables. That is ERC-8183's problem, and we do not pretend to solve it. |
 
 **A meter refunds what you did not use. Receipt refunds what you did use and
-could not.** Those are orthogonal axes, not competing answers — metering asks
-*how much did you consume*, Receipt asks *was it any good* — and they compose:
+could not.** Those are orthogonal axes, not competing answers, metering asks
+*how much did you consume*, Receipt asks *was it any good*, and they compose:
 nothing stops a metered session settling through conditional terms.
 
 The gap we fill is narrow and specific. ERC-8183 scopes itself to work that
-cannot be checked by an HTTP response — and in doing so leaves the much larger
+cannot be checked by an HTTP response and in doing so leaves the much larger
 class that *can* be checked to an evaluator nobody needs. If the acceptance
 criteria are a pure function, the judge is redundant: both parties compute it,
 and so can a stranger.
 
-**Our novelty is not the refund.** Refunds over x402 on Hedera already exist —
+**Our novelty is not the refund.** Refunds over x402 on Hedera already exist , 
 Pinout won a Hedera x402 bounty for exactly that in July 2026. The novelty is
 that **the decision itself is reproducible**: the verdict that moved the money
 can be recomputed from the public log by anyone, in any language, and checked
@@ -156,8 +156,33 @@ against the hash the escrow recorded. Nothing above does that.
 | Settlement asset | `0.0.0` (native HBAR) |
 
 Full detail, including the four testnet accounts and their roles, is in [DEPLOYMENTS.md](DEPLOYMENTS.md).
-The wire format and adjudication semantics are specified in [SPEC.md](SPEC.md) — precise
+The wire format and adjudication semantics are specified in [SPEC.md](SPEC.md), precise
 enough to write a second implementation, and asserted against the code in CI.
+
+---
+
+## For judges: what to check, and how, in under a minute
+
+Each row is a claim and the fastest way to falsify it. Nothing here needs our
+cooperation: every link is a public record and every command runs against it.
+
+| Sponsor | The claim | Check it |
+|---|---|---|
+| **Hedera** | Real HBAR is custodied between payment and verdict, and every terms, response and verdict is on a public consensus topic | Open [topic 0.0.10495465](https://hashscan.io/testnet/topic/0.0.10495465/messages) and read the verdicts. Then [the escrow](https://hashscan.io/testnet/contract/0x3483B3761ebe3C2fC2eB3EfE8215a7CF90634071) for where the money went |
+| **The Graph** | Two products are composed into the thing being sold, and the terms assert both by name | `sources.balances: token-api` and `sources.markets: subgraph` are required by the signed terms. Drop either and the sale fails. See any `terms` message on the topic |
+| **Blocky402** | Every payment is a real x402 settlement, and the buyer pays no gas | In every run the buyer's balance moves by **exactly** the transfer amount. Gas came from fee payer `0.0.7162784` |
+| **Bazantic** | The whole thing is callable by an agent that knows nothing about x402 | Two published Recipes. `price-a-swap-on-data-you-actually-verified` binds **two** gateways, Receipt and 1inch, which is what the "Recipe using sponsor APIs" track asks for |
+| **Chainlink** | **Not claimed.** | Confidential Workflows is the right fix for publishing raw responses. It is not built, and the honesty section below says so |
+
+The single strongest check, if you only run one thing:
+
+```bash
+pnpm verify --all      # replays every verdict from the public log. 28 reproduce, 0 mismatch.
+```
+
+Or press a button on the live ledger and watch a real deal settle, then follow
+the transaction links it produces. See [`DEPLOYMENTS.md`](DEPLOYMENTS.md) for
+the URL.
 
 ---
 
@@ -174,20 +199,20 @@ Load-bearing, not decorative. Remove any one of these and the project stops work
 - Consequence worth seeing: in every scene the buyer's balance moves by **exactly** the transfer amount and pays no network fee. Gas came from Blocky402's fee payer `0.0.7162784`. An agent with no HBAR for gas can still transact.
 
 **Bazantic** is where the whole thing becomes one tool an agent can call.
-- `bazantic.yaml` declares two gateways — one that buys under acceptance terms, one that reads the verdict back — built from the OpenAPI document the facilitator serves at `/openapi.json`.
+- `bazantic.yaml` declares two gateways, one that buys under acceptance terms, one that reads the verdict back, built from the OpenAPI document the facilitator serves at `/openapi.json`.
 - `recipes/receipt.bazantic.json` chains both into a single MCP tool: buy the data, then fetch the adjudication, and return the data *with* the reason it was accepted or refused. The prompt forbids presenting data that failed its checks as if it had passed.
-- Both are validated in CI against every rule `baz recipe --help` states — key set, 24 KiB limit, the single `{{inputs}}` placeholder, binding shape, and the `input_example` run through its own `input_schema`.
-- **Both are live.** The gateway is activated at [`2g6od7kdczdp7p5wr3ywz2vhlu.bazgateway.com`](https://2g6od7kdczdp7p5wr3ywz2vhlu.bazgateway.com), its MCP server exposes `buyWithTerms`, `getDeal`, `health` and `info`, and the recipe `buy-data-you-can-refuse-to-pay-for` is published. Calling `health` through the gateway's MCP endpoint returns the live escrow address and audit topic — an agent reaches Receipt without knowing anything about x402 or Hedera.
+- Both are validated in CI against every rule `baz recipe --help` states, key set, 24 KiB limit, the single `{{inputs}}` placeholder, binding shape, and the `input_example` run through its own `input_schema`.
+- **Both are live.** The gateway is activated at [`2g6od7kdczdp7p5wr3ywz2vhlu.bazgateway.com`](https://2g6od7kdczdp7p5wr3ywz2vhlu.bazgateway.com), its MCP server exposes `buyWithTerms`, `getDeal`, `health` and `info`, and the recipe `buy-data-you-can-refuse-to-pay-for` is published. Calling `health` through the gateway's MCP endpoint returns the live escrow address and audit topic, an agent reaches Receipt without knowing anything about x402 or Hedera.
 
 **The Graph** is what is actually being bought, and **two of its products are composed** to produce it.
-- **Token API** supplies what an address holds. **A subgraph** (Uniswap V3, through the Subgraph Gateway) supplies the markets those holdings actually trade in. Neither answers the question alone — the quote is a composition, not two endpoints stapled together, and the terms assert on *both* halves by name so a seller cannot quietly drop one.
-- The subgraph's `_meta.block.number` gives **provenance in blocks, not wall clock**. The buyer fetches the Ethereum head from a public RPC it picks itself and signs a floor — `indexedBlock >= head - 200`. An indexer lagging the chain fails the sale even when every value in the response is well-formed.
-- That response *is* the product — remove The Graph and there is nothing to purchase.
-- The buyer's acceptance terms are written against its shape and the adjudicator decides payment by validating it: a non-empty holdings array where every entry carries a 20-byte contract address and an integer-string amount, a `source` of exactly `the-graph-token-api`, and a snapshot fresh within the hour. A well-formed JSON response that is not token data does not get paid for.
+- **Token API** supplies what an address holds. **A subgraph** (Uniswap V3, through the Subgraph Gateway) supplies the markets those holdings actually trade in. Neither answers the question alone, the quote is a composition, not two endpoints stapled together, and the terms assert on *both* halves by name so a seller cannot quietly drop one.
+- The subgraph's `_meta.block.number` gives **provenance in blocks, not wall clock**. The buyer fetches the Ethereum head from a public RPC it picks itself and signs a floor, `indexedBlock >= head - 200`. An indexer lagging the chain fails the sale even when every value in the response is well-formed.
+- That response *is* the product, remove The Graph and there is nothing to purchase.
+- The buyer's acceptance terms are written against its shape and the adjudicator decides payment by validating it: a non-empty holdings array where every entry carries a 20-byte contract address and an integer-string amount, a `source` of exactly `the-graph`, a `sources` object naming **both** products by name (`balances: token-api`, `markets: subgraph`), and a snapshot fresh within the hour. A well-formed JSON response that is not token data does not get paid for.
 - The raw Graph response goes to HCS, so **the purchase is a verifiable receipt for a Graph query**: anyone can pull the response off the public topic, re-run the checks, and confirm the money moved for the right reason.
 - The seller refuses to fabricate. With no API key it returns 502 rather than inventing token data, and a test asserts no canned payload exists in the module.
 
-**Chainlink** — see "What is not done" below. Not claimed.
+**Chainlink**, see "What is not done" below. Not claimed.
 
 ---
 
@@ -204,12 +229,12 @@ cp .env.example .env      # then fill in the keys; every value is commented
 ```
 
 You also need a free Token API key from [thegraph.market](https://thegraph.market)
-(no card, instant) in `GRAPH_TOKEN_API_KEY` — the seller has nothing real to sell
+(no card, instant) in `GRAPH_TOKEN_API_KEY`, the seller has nothing real to sell
 without it and will return 502 rather than invent data.
 
 You need four Hedera testnet ECDSA accounts (buyer, seller, facilitator, and one
 unrelated wallet for the expiry scene) from [portal.hedera.com](https://portal.hedera.com).
-ECDSA specifically — only ECDSA accounts get an EVM alias.
+ECDSA specifically, only ECDSA accounts get an EVM alias.
 
 Deploy the escrow and create the audit topic:
 
@@ -223,12 +248,12 @@ cd ../.. && pnpm --filter @receipt/facilitator create-topic
 Then, in three terminals:
 
 ```bash
-pnpm facilitator     # :8080  — start this first, the seller syncs from it
+pnpm facilitator     # :8080 , start this first, the seller syncs from it
 pnpm seller          # :8787
 pnpm scenes          # runs every scene end to end against testnet
 ```
 
-The live ledger is at **http://localhost:8080** — deals appear as they settle,
+The live ledger is at **http://localhost:8080**, deals appear as they settle,
 each stamped held, paid or returned, with every check result and links to
 HashScan.
 
@@ -238,9 +263,9 @@ HashScan.
 |---|---|---|---|
 | 2 | `honest` | live Graph token data, all 7 checks pass, `release()` pays the seller | −0.5 ℏ |
 | 3 | `garbage` | **HTTP 200** with a useless body, `requiredPaths` fails, `refund()` | 0.0 ℏ |
-| 3b | `subtle` | real Graph data, valid shape, **stale snapshot** — only `freshness` catches it | 0.0 ℏ |
+| 3b | `subtle` | real Graph data, valid shape, **stale snapshot**, only `freshness` catches it | 0.0 ℏ |
 | 4 | `dead` | no verdict invented; a stranger calls `claimExpired` | 0.0 ℏ after claim |
-| 5 | — | `pnpm verify` recomputes both verdicts and prints MATCH | — |
+| 5 |, | `pnpm verify` recomputes both verdicts and prints MATCH |, |
 
 Individually:
 
@@ -266,7 +291,7 @@ pnpm mcp        # stdio; point any MCP client at it
 | `get_deal` | verdict and on-chain settlement state for one deal |
 
 Two properties worth noting. `buy_verified_data` returns `data: null` when the
-checks failed — data that did not pass is never handed back as though it had.
+checks failed, data that did not pass is never handed back as though it had.
 And every result carries the audit topic and the command a third party can run
 to re-check the decision, so an agent passing results on can pass on the means
 to verify them too.
@@ -278,7 +303,7 @@ later judged against.
 ### The seller can grade its own work
 
 Because the check is a pure function of (terms, response), the **seller** can
-run it too — on its own response, before returning it — and decline the sale
+run it too, on its own response, before returning it, and decline the sale
 rather than ship something it knows will be rejected:
 
 ```bash
@@ -309,7 +334,7 @@ pnpm verify --all
 ```
   reproduce        24
   mismatch         0
-  no verdict       5   (seller never answered — correct behaviour)
+  no verdict       5   (seller never answered, correct behaviour)
 
 ALL 24 VERDICTS REPRODUCE
 ```
@@ -333,14 +358,14 @@ python3 verify.py --topic 0.0.10495465 --deal 0x… \
 ```
 
 `verify-py/` is written from [SPEC.md](SPEC.md) in Python with **zero
-dependencies** — its own Keccak-256, its own JCS canonicaliser, its own JSON
+dependencies**, its own Keccak-256, its own JCS canonicaliser, its own JSON
 Schema subset, its own JSONPath. It reads the public topic and prints the same
 `verdictHash` the escrow recorded.
 
 Writing it found a real defect in the spec: `detail` strings sit inside the
 hashed document, so two conforming implementations could disagree on the hash
 over a human-readable message. That is now pinned in SPEC.md §5.1 and asserted
-in CI — and it is the kind of thing only a second implementation finds.
+in CI, and it is the kind of thing only a second implementation finds.
 
 ### Tests
 
@@ -363,18 +388,18 @@ surfacing as an unexplained `BadSignature` during a live paid request.
 
 ## What is not done, honestly
 
-**The facilitator custodies for one hop.** x402 on Hedera settles a native transfer to an account; the escrow is an EVM contract. Those are two address spaces and they do not compose, so the payment lands in the facilitator's account and the facilitator funds `open()` in the same request handler. Both legs — the Hedera settlement transaction id and the EVM `open()` hash — are published to HCS, so the window is publicly measurable. The mitigation is that `open()` verifies the buyer's EIP-712 signature on chain: the facilitator cannot open a deal the buyer did not sign, and cannot alter the amount, payee, deadline or terms on the way through. Tests `test_open_revertsWhenFacilitatorInflatesTheAmount` and `..._redirectsThePayee` cover exactly that. Everything after `open()` is trustless.
+**The facilitator custodies for one hop.** x402 on Hedera settles a native transfer to an account; the escrow is an EVM contract. Those are two address spaces and they do not compose, so the payment lands in the facilitator's account and the facilitator funds `open()` in the same request handler. Both legs, the Hedera settlement transaction id and the EVM `open()` hash, are published to HCS, so the window is publicly measurable. The mitigation is that `open()` verifies the buyer's EIP-712 signature on chain: the facilitator cannot open a deal the buyer did not sign, and cannot alter the amount, payee, deadline or terms on the way through. Tests `test_open_revertsWhenFacilitatorInflatesTheAmount` and `..._redirectsThePayee` cover exactly that. Everything after `open()` is trustless.
 
-**Response bodies are public.** The topic carries the raw body, which is what makes verification real and is also wrong for a business selling data. The right answer is to evaluate inside a TEE and publish only the verdict — which is what the Chainlink Confidential Workflows track is for. That is not built.
+**Response bodies are public.** The topic carries the raw body, which is what makes verification real and is also wrong for a business selling data. The right answer is to evaluate inside a TEE and publish only the verdict, which is what the Chainlink Confidential Workflows track is for. That is not built.
 
 **Bodies are capped at 4 KB.** Above the cap the facilitator records `bodyTooLarge` and refuses rather than truncating: a truncated body produces a verdict nobody can reproduce, which is worse than a failure. Production would put the body in a content-addressed store and publish the CID.
 
-**A hung seller is not auto-refunded.** With no response there is nothing to judge, so the facilitator publishes no verdict rather than inventing one nobody could reproduce. The deadline is the remedy and `claimExpired` is permissionless. This is a deliberate choice, not an omission — but it does mean the buyer waits for the deadline instead of being refunded immediately.
+**A hung seller is not auto-refunded.** With no response there is nothing to judge, so the facilitator publishes no verdict rather than inventing one nobody could reproduce. The deadline is the remedy and `claimExpired` is permissionless. This is a deliberate choice, not an omission, but it does mean the buyer waits for the deadline instead of being refunded immediately.
 
-**The Bazantic gateway points at a tunnel.** The gateway and recipe are live, but the upstream is an ngrok tunnel to a facilitator running on a laptop, so the gateway works only while that tunnel does. A real deployment would put the facilitator on a stable host. Nothing about the integration is mocked — the tooling is simply pointed at a development machine.
+**The Bazantic gateway points at a tunnel.** The gateway and recipe are live, but the upstream is an ngrok tunnel to a facilitator running on a laptop, so the gateway works only while that tunnel does. A real deployment would put the facilitator on a stable host. Nothing about the integration is mocked, the tooling is simply pointed at a development machine.
 
 **No Chainlink integration.** Confidential Workflows is a private beta gated behind a Chainlink account team, not a self-serve grant, so it was never on the critical path.
 
-**The dashboard is a prop.** It is a single static file served by the facilitator at `/`, with no build step and no third-party scripts. It reads deployment identifiers from `/health` and deal state from `/stream`, so it needs no configuration — but it is read-only, keeps state in memory, and is not something to point at production.
+**The dashboard is a prop.** It is a single static file served by the facilitator at `/`, with no build step and no third-party scripts. It reads deployment identifiers from `/health` and deal state from `/stream`, so it needs no configuration, but it is read-only, keeps state in memory, and is not something to point at production.
 
 **Testnet only.** Nothing here has been audited, and `ReceiptEscrow` holds real funds only in the sense that testnet HBAR is real.
