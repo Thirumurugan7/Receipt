@@ -23,11 +23,11 @@ const HERE = dirname(fileURLToPath(import.meta.url))
 const OUT = join(HERE, 'shots', 'run')
 /** Captured full size here first; ffmpeg cannot safely rewrite in place. */
 const RAW = join(OUT, 'raw')
-const WIDTH = 1840
-const HEIGHT = 904
+const WIDTH = 1920
+const HEIGHT = 1010
 const EVERY_MS = 620              // ~1.6 frames a second of real time
 const MAX_FRAMES = 96
-const SHRINK_TO = 1472          // committed, so keep them light
+const SHRINK_TO = 1920          // full frame: the film shows these edge to edge
 /**
  * Point this at the public URL, not localhost: the film shows the address so a
  * judge can see where this is actually running, and a shot of localhost proves
@@ -123,12 +123,18 @@ async function main() {
     execFileSync('ffmpeg', [
       '-v', 'error', '-y',
       '-start_number', '0', '-i', join(RAW, 'f%03d.jpg'),
-      '-vf', `scale=${SHRINK_TO}:-2`, '-q:v', '6',
+      '-vf', `scale=${SHRINK_TO}:-2`, '-q:v', '7',
       '-start_number', '0', join(OUT, 'f%03d.jpg'),
     ])
     rmSync(RAW, { recursive: true, force: true })
 
     writeFileSync(join(OUT, 'frames.json'), JSON.stringify({ frames: n, everyMs: EVERY_MS }, null, 2) + '\n')
+    // The film reads the count from here rather than holding its own copy.
+    // Two numbers that have to agree will eventually not agree, and the way
+    // that failed before was a broken image icon in the most important scene.
+    writeFileSync(join(HERE, 'run-frames.js'),
+      `// Written by demo/interact.mjs. The number of frames in shots/run/.\n` +
+      `window.RUN_FRAMES = ${n};\n`)
     console.log(`captured ${n} frames -> demo/shots/run/`)
     if (txUrl) console.log(`followed ${txUrl}`)
   } finally {

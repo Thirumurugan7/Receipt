@@ -69,7 +69,10 @@
   /* one art height for every panel, so the captions below them line up
      whether the art is emoji or a photograph */
   .panel .art{height:210px; margin-bottom:16px; display:flex; align-items:center;
-              justify-content:center; gap:12px; overflow:hidden}
+              justify-content:center; overflow:hidden}
+  .panel .figure{font:800 96px/1 Archivo,sans-serif; letter-spacing:-.04em; color:var(--ink)}
+  .panel .blob{font:500 22px/1.5 "JetBrains Mono",monospace; color:#ff9d90; background:var(--tty-bg);
+               padding:20px 22px; border-radius:6px; text-align:left}
   .panel .art img{width:100%; height:100%; object-fit:contain; border-radius:4px}
   .panel .say{font-size:21px; font-weight:600; line-height:1.35}
   .panel .note{color:var(--muted); font-size:16px; margin-top:10px; line-height:1.4}
@@ -113,15 +116,15 @@
   .track{position:relative; max-width:1300px; height:52px; margin-top:6px}
   .track:before{content:''; position:absolute; left:6%; right:6%; top:24px; height:3px;
                 background:var(--rule); border-radius:2px}
-  .node{border:2px solid var(--rule); border-radius:8px; background:#fff; padding:30px 18px; text-align:center}
+  .node{border:2px solid var(--rule); border-radius:8px; background:#fff; padding:34px 18px; text-align:center}
   .node.hot{border-color:var(--held); background:var(--held-soft)}
-  .node .ic{line-height:0; margin-bottom:4px}
-  .node .nm{font-weight:700; font-size:19px; letter-spacing:.04em; margin-top:8px}
+  .node .nm{font-weight:800; font-size:27px; letter-spacing:.02em}
   .node .sub{color:var(--muted); font-size:15.5px; margin-top:4px}
   .wire{height:3px; background:var(--rule); border-radius:2px}
-  .coin{position:absolute; top:2px; line-height:0; transform:translateX(-50%);
-        background:var(--paper); border-radius:50%; padding:3px;
-        filter:drop-shadow(0 3px 8px rgba(25,29,43,.22))}
+  .coin{position:absolute; top:0; transform:translateX(-50%); width:48px; height:48px;
+        border-radius:50%; background:var(--held); color:#fff; display:flex;
+        align-items:center; justify-content:center; font:700 25px Archivo,sans-serif;
+        box-shadow:0 4px 12px rgba(194,116,11,.36)}
   .flowcap{margin-top:26px; font-size:22px; font-weight:600; min-height:32px}
 
   /* big numbers */
@@ -167,11 +170,56 @@
   /* a chevron in each gap, so the order is not left to guesswork */
   .abox + .abox:before{content:'›'; position:absolute; left:-19px; top:50%; transform:translateY(-50%);
                        color:var(--rule); font-size:30px; font-weight:700; line-height:1}
-  .abox .ic{line-height:0; margin-bottom:2px}
-  .abox .nm{font-weight:700; font-size:17px; margin-top:8px}
+  .abox .nm{font-weight:800; font-size:21px}
   .abox .sub{color:var(--muted); font-size:14.5px; margin-top:6px; line-height:1.35}
   .abox .tech{margin-top:auto; padding-top:12px; font-size:13px; font-weight:700; color:var(--carbon)}
   .archnote{margin-top:26px; font-size:20px; max-width:96ch; line-height:1.45}
+
+  /* Scenes that ARE a screen: terminal, the app, the explorer. These fill the
+     frame edge to edge like a screen recording, rather than sitting on a slide
+     inside a window. The slides explain; these show. */
+  .scene.bleed{padding:0}
+  /* .inner carries will-change:transform, which makes it the containing block
+     for absolutely positioned children. Without a size of its own the screen
+     inside it collapses to nothing and only the overflowing title bar paints. */
+  .scene.bleed .inner{position:absolute; inset:0}
+  body[data-bleed="1"] #rail{display:none}
+
+  .screen{position:absolute; inset:0; display:flex; flex-direction:column}
+  .screen .chrome{flex:0 0 70px; display:flex; align-items:center; gap:10px; padding:0 22px}
+  .screen .chrome i{width:13px; height:13px; border-radius:50%; display:block}
+  .screen .chrome .addr{flex:1; margin-left:18px; border-radius:9px; padding:10px 18px;
+                        font:500 18px "JetBrains Mono",monospace;
+                        white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+  .screen .chrome .tag{font:700 14px Archivo,sans-serif; letter-spacing:.14em; padding-left:16px}
+
+  /* a browser, maximised */
+  .screen.web .chrome{background:#e8e3db}
+  .screen.web .chrome .addr{background:#fff; border:1px solid #d6d0c4; color:#3a4154}
+  .screen.web .chrome .tag{color:var(--returned)}
+  .screen.web .viewport{flex:1; position:relative; background:#fff; overflow:hidden}
+  .screen.web .viewport img{position:absolute; inset:0; width:100%; height:100%;
+                            object-fit:cover; object-position:top center; transform-origin:center center}
+
+  /* a terminal, maximised */
+  .screen.term{background:var(--tty-bg)}
+  .screen.term .chrome{background:var(--tty-bar)}
+  .screen.term .chrome .addr{background:transparent; border:none; color:var(--tty-dim); margin-left:14px}
+  .screen.term .body{flex:1; padding:54px 86px; font-family:"JetBrains Mono",monospace; color:var(--tty-fg)}
+  .screen.term .cmd{font-size:38px; font-weight:500; margin-bottom:34px}
+  .screen.term .cmd .p{color:#5ed99b; margin-right:14px}
+  .screen.term .cur{width:15px; height:32px; vertical-align:-4px}
+  .screen.term .out{display:grid; grid-template-columns:400px 1fr; gap:30px; align-items:baseline;
+                    padding:11px 0; font-size:30px}
+  .screen.term .out .what{color:var(--tty-dim); font-size:24px; font-family:Archivo,sans-serif}
+  .screen.term .out .val{font-weight:500; word-break:break-word}
+  .screen.term .out .val.g{color:#5ed99b} .screen.term .out .val.r{color:#ff8d80}
+  .screen.term .out .val.y{color:#f2c069}
+  .screen.term .out .val.big{font-size:40px; font-weight:700}
+  .screen.term .rule{height:1px; background:#2d3340; margin:22px 0}
+  .screen .livecap{position:absolute; left:0; right:0; bottom:0; padding:22px 44px;
+                   background:rgba(23,26,35,.88); color:#fff; font-size:24px; font-weight:600}
+  .screen .livecap b{color:#5ed99b}
 
   /* the live app, shown as a browser window at the address it really runs on */
   .scene.full{padding:34px 40px; justify-content:center}
@@ -213,6 +261,7 @@
 </head>
 <body>
 <script src="demo-data.js"></script>
+<script src="run-frames.js"></script>
 <div id="stage"></div>
 <div id="rail"><div><div class="num"></div><div class="nm"></div></div>
 <div><div class="state"></div><div class="clock"></div></div></div>
@@ -230,26 +279,6 @@ const easeInOut = (x) => { const u = clamp(x, 0, 1);
   return u < 0.5 ? 4 * u * u * u : 1 - Math.pow(-2 * u + 2, 3) / 2; };
 
 
-/**
- * A small drawn icon set. Emoji were doing this job and looked like clip art
- * glued onto a designed page; these are one stroke weight, one palette, and
- * they sit in the same visual language as everything else.
- */
-const ICON = {
-  agent: '<path d="M16 26h32v20a4 4 0 0 1-4 4H20a4 4 0 0 1-4-4z"/><path d="M32 26V16"/><circle cx="32" cy="12" r="4"/><path d="M25 36h2M37 36h2"/><path d="M26 44h12"/>',
-  vault: '<rect x="8" y="12" width="48" height="40" rx="5"/><circle cx="32" cy="32" r="11"/>' +
-         '<path d="M32 21v7M32 36v7M21 32h7M36 32h7"/><path d="M14 52v5M50 52v5"/>',
-  server: '<rect x="13" y="15" width="38" height="14" rx="3"/><rect x="13" y="35" width="38" height="14" rx="3"/><path d="M21 22h.02M21 42h.02"/>',
-  scales: '<path d="M32 14v36M20 50h24"/><path d="M14 24h36"/><path d="M14 24l-6 13a6 6 0 0 0 12 0z"/><path d="M50 24l-6 13a6 6 0 0 0 12 0z"/>',
-  log: '<path d="M17 12h22l10 10v30a3 3 0 0 1-3 3H17a3 3 0 0 1-3-3V15a3 3 0 0 1 3-3z"/><path d="M38 12v11h11"/><path d="M22 32h20M22 40h20M22 24h8"/>',
-  money: '<rect x="10" y="19" width="44" height="26" rx="4"/><circle cx="32" cy="32" r="7"/><path d="M18 26h.02M46 38h.02"/>',
-  bin: '<path d="M17 20h30M27 20v-5h10v5M21 20l2 30a3 3 0 0 0 3 3h12a3 3 0 0 0 3-3l2-30"/><path d="M28 28v17M36 28v17"/>',
-  arrow: '<path d="M14 32h34M36 20l12 12-12 12"/>',
-};
-const icon = (name, size = 62, color = 'var(--carbon)') =>
-  `<svg viewBox="0 0 64 64" width="${size}" height="${size}" fill="none" stroke="${color}" ` +
-  `stroke-width="3" stroke-linecap="round" stroke-linejoin="round">${ICON[name]}</svg>`;
-
 /** Pull a real line out of a captured transcript, so nothing here is retyped. */
 function realLine(key, re) {
   const hit = (D[key] ?? '').split('\n').find((l) => re.test(l));
@@ -259,14 +288,15 @@ function realValue(key, re, strip) {
   return realLine(key, re).replace(strip, '').trim();
 }
 
-/** A terminal window: title bar, prompt, and a handful of readable lines. */
+/** A terminal, filling the screen, the way a screen recording of one would. */
 function tty(title, cmd, rows) {
   const out = rows.map((r, i) => r[0] === '-'
     ? `<div class="rule" data-line="${i}"></div>`
     : `<div class="out" data-line="${i}"><span class="what">${r[0]}</span>` +
       `<span class="val ${r[2] ?? ''}">${esc(r[1])}</span></div>`).join('');
-  return `<div class="tty">
-    <div class="bar"><i></i><i></i><i></i><span>${esc(title)}</span></div>
+  return `<div class="screen term">
+    <div class="chrome"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i>` +
+    `<i style="background:#28c840"></i><div class="addr">${esc(title)}</div></div>
     <div class="body">
       <p class="cmd"><span class="p">$</span><span data-cmd="${esc(cmd)}"></span><span class="cur"></span></p>
       ${out}
@@ -276,13 +306,13 @@ function tty(title, cmd, rows) {
 
 const FLOW = `
   <div class="flow3">
-    <div class="node"><div class="ic">${icon('agent', 56)}</div><div class="nm">BUYER</div><div class="sub">writes the checks, then pays</div></div>
+    <div class="node"><div class="nm">BUYER</div><div class="sub">writes the checks, then pays</div></div>
     <div class="wire"></div>
-    <div class="node hot"><div class="ic">${icon('vault', 56, 'var(--held)')}</div><div class="nm">ESCROW</div><div class="sub">holds it while the checks run</div></div>
+    <div class="node hot"><div class="nm">ESCROW</div><div class="sub">holds it while the checks run</div></div>
     <div class="wire"></div>
-    <div class="node"><div class="ic">${icon('server', 56)}</div><div class="nm">SELLER</div><div class="sub">sends the data</div></div>
+    <div class="node"><div class="nm">SELLER</div><div class="sub">sends the data</div></div>
   </div>
-  <div class="track"><div class="coin" data-coin>${icon('money', 42, 'var(--held)')}</div></div>`;
+  <div class="track"><div class="coin" data-coin>&#8462;</div></div>`;
 
 /** What each check means, for someone who has never read the code. */
 const MEANS = {
@@ -316,7 +346,8 @@ function checkRows(v) {
   return `<div class="checks">${rows.join('')}</div>`;
 }
 
-const RUN_FRAMES = 60;
+/** Written by demo/interact.mjs, so it cannot disagree with the directory. */
+const RUN_FRAMES = window.RUN_FRAMES ?? 0;
 const runFrames = Array.from({ length: RUN_FRAMES }, (_, i) =>
   `<img data-run="${i}" src="shots/run/f${String(i).padStart(3, '0')}.jpg" alt="">`).join('');
 
@@ -324,7 +355,6 @@ const SCENES = [
 
 { n:'title', dur:6000, enter:'cut', html:`
   <div style="text-align:center; padding-right:50px">
-    <div data-in="0">${icon('log', 78, 'var(--carbon)')}</div>
     <h1 style="margin-top:14px">${'RECEIPT'.split('').map((c, i) =>
       `<span data-in="${260 + i * 68}" style="display:inline-block">${c}</span>`).join('')}</h1>
     <p data-in="900" class="lede" style="margin:22px auto 0; max-width:46ch; color:var(--ink); font-size:26px">
@@ -335,14 +365,14 @@ const SCENES = [
   <h2 class="wide">An AI agent pays first, and looks at what it bought second.</h2>
   <div class="strip">
     <div class="panel" data-in="700">
-      <div class="art">${icon('agent')}${icon('arrow', 40, 'var(--rule)')}${icon('money')}${icon('arrow', 40, 'var(--rule)')}${icon('server')}</div>
-      <p class="say">The agent pays 50 cents for live token data.</p>
-      <p class="note">This is how x402 works today. Money first.</p>
+      <div class="art"><div class="figure">50&#162;</div></div>
+      <p class="say">The agent pays, up front, for live token data.</p>
+      <p class="note">This is how x402 works today. Money first, look later.</p>
     </div>
     <div class="panel bad" data-in="1700">
-      <div class="art">${icon('server')}${icon('arrow', 40, 'var(--rule)')}${icon('bin', 62, 'var(--returned)')}</div>
+      <div class="art"><div class="blob">{"error":<br>"upstream rate limited"}</div></div>
       <p class="say">The API answers HTTP 200, with junk.</p>
-      <p class="code">{"error":"upstream rate limited"}</p>
+      <p class="note">A perfectly valid response, carrying nothing.</p>
     </div>
     <div class="panel bad" data-in="2700">
       <div class="art"><img src="shots/memes/fine.jpg" alt=""></div>
@@ -390,7 +420,7 @@ const SCENES = [
   ${FLOW}
   <p class="flowcap" data-flowcap></p>`},
 
-{ n:'it works', dur:12000, enter:'push', chip:'open', flipAt:0.72, flipTo:'rel',
+{ n:'it works', bleed:true, dur:12000, enter:'push', chip:'open', flipAt:0.72, flipTo:'rel',
   html: tty('buyer', 'pnpm buy honest', [
     ['what it bought', 'live token holdings from The Graph'],
     ['the seller answered', realValue('honest', /seller responded HTTP/, /seller responded\s*/), 'g'],
@@ -406,7 +436,7 @@ const SCENES = [
   ${checkRows(D.verdicts && D.verdicts.honest)}
   <p style="margin-top:22px" data-stamp><span class="stamp paid">released to seller</span></p>`},
 
-{ n:'junk answer', dur:12000, enter:'push', chip:'open', flipAt:0.72, flipTo:'ref',
+{ n:'junk answer', bleed:true, dur:12000, enter:'push', chip:'open', flipAt:0.72, flipTo:'ref',
   html: tty('buyer', 'pnpm buy garbage', [
     ['the seller answered', realValue('garbage', /seller responded HTTP/, /seller responded\s*/), 'g'],
     ['what came back', realLine('garbage', /^body:/).replace(/^body:\s*/, ''), 'r'],
@@ -423,7 +453,7 @@ const SCENES = [
   ${checkRows(D.verdicts && D.verdicts.garbage)}
   <p style="margin-top:22px" data-stamp><span class="stamp returned">returned to buyer</span></p>`},
 
-{ n:'seller says no', dur:10000, enter:'push', chip:'open', flipAt:0.70, flipTo:'ref',
+{ n:'seller says no', bleed:true, dur:10000, enter:'push', chip:'open', flipAt:0.70, flipTo:'ref',
   html: tty('buyer', 'pnpm buy subtle-selfcheck', [
     ['the twist', 'the seller ran the buyer’s own checks on itself, first'],
     ['it saw it would fail', 'its data was an hour stale', 'y'],
@@ -433,7 +463,7 @@ const SCENES = [
     ['the money', 'never left the buyer', 'g'],
   ])},
 
-{ n:'seller vanishes', dur:11000, enter:'push', chip:'open', flipAt:0.74, flipTo:'ref',
+{ n:'seller vanishes', bleed:true, dur:11000, enter:'push', chip:'open', flipAt:0.74, flipTo:'ref',
   html: tty('a stranger, not the buyer', 'pnpm claim --deal 0x194e3155', [
     ['the seller never answered', 'HTTP 504, no response at all', 'r'],
     ['so no verdict was invented', 'the escrow just stayed open', 'y'],
@@ -444,15 +474,12 @@ const SCENES = [
   ])},
 
 { n:'the live app', dur:30000, enter:'cut', session:true, html:`
-  <div class="browser">
-    <div class="chrome">
-      <i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i>
-      <div class="addr" data-addr></div>
-      <div class="livedot">LIVE</div>
-    </div>
+  <div class="screen web">
+    <div class="chrome"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i>
+      <i style="background:#28c840"></i><div class="addr" data-addr></div><div class="tag">LIVE</div></div>
     <div class="viewport">${runFrames}</div>
-  </div>
-  <p class="livecap" data-livecap></p>`},
+    <p class="livecap" data-livecap></p>
+  </div>`},
 
 { n:'check it yourself', dur:10000, enter:'rise', html:`
   <h2 class="wide">Do not trust our verdicts. Re-run every one of them.</h2>
@@ -483,32 +510,35 @@ const SCENES = [
   <p class="verdictline" data-in="2800">Identical. And it is the hash the escrow recorded on chain.</p>
   <p class="lede" data-in="3600" style="font-size:19px">If the rules were vague these two would disagree. Across twelve test cases they never do.</p>`},
 
-{ n:'the receipts', dur:14000, enter:'rise', beats:[7000, 14000],
-  focus:{ 0:{ x:11, y:-34, scale:1.85, at:0.40, over:0.34 },
-          1:{ x:-14, y:-12, scale:1.80, at:0.40, over:0.34 } },
+{ n:'the receipts', dur:14000, web:true, enter:'cut', beats:[7000, 14000],
+  addrs:['hashscan.io/testnet/transaction/0xbf68e5dc65b6750067f16affef8ee936d0b3d70662d4c5d192a82f1ddcf15c93',
+         'hashscan.io/testnet/topic/0.0.10495465/messages'],
+  focus:{ 0:{ x:8, y:-26, scale:1.7, at:0.42, over:0.34 },
+          1:{ x:-10, y:-8, scale:1.7, at:0.42, over:0.34 } },
   html:`
-  <h3 style="max-width:56ch; margin-bottom:16px">All of it is public. Here is where to look.</h3>
-  <div class="shot">
-    <div class="frame">
+  <div class="screen web">
+    <div class="chrome"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i>
+      <i style="background:#28c840"></i><div class="addr" data-addr></div></div>
+    <div class="viewport">
       <img data-shot="0" src="shots/tx-release.png" alt="the release transaction on HashScan">
       <img data-shot="1" src="shots/topic-messages.png" alt="the audit topic on HashScan">
     </div>
-    <p class="cap" data-cap="0"><b>The money moving.</b> Half an HBAR leaving the escrow for the seller, on HashScan.</p>
-    <p class="cap" data-cap="1"><b>The reasoning.</b> Every check result, published, for every deal.</p>
+    <p class="livecap" data-cap="0"><b>The money moving.</b> Half an HBAR leaving the escrow for the seller.</p>
+    <p class="livecap" data-cap="1"><b>The reasoning.</b> Every check result, published, for every deal.</p>
   </div>`},
 
 { n:'architecture', dur:14000, enter:'rise', revealMs:900, html:`
   <h3 style="max-width:62ch">What is actually running, and whose technology does each part.</h3>
   <div class="arch">
-    <div class="abox" data-reveal><div class="ic">${icon('agent', 44)}</div><div class="nm">Buyer</div>
+    <div class="abox" data-reveal><div class="nm">Buyer</div>
       <div class="sub">Signs the seven checks, then pays.</div><div class="tech">x402</div></div>
-    <div class="abox" data-reveal><div class="ic">${icon('vault', 44, 'var(--held)')}</div><div class="nm">Escrow</div>
+    <div class="abox" data-reveal><div class="nm">Escrow</div>
       <div class="sub">Holds real HBAR until the checks have run.</div><div class="tech">Hedera</div></div>
-    <div class="abox" data-reveal><div class="ic">${icon('server', 44)}</div><div class="nm">Seller</div>
+    <div class="abox" data-reveal><div class="nm">Seller</div>
       <div class="sub">Sells live token data. Grades itself first.</div><div class="tech">The Graph</div></div>
-    <div class="abox" data-reveal><div class="ic">${icon('scales', 44)}</div><div class="nm">Adjudicator</div>
+    <div class="abox" data-reveal><div class="nm">Adjudicator</div>
       <div class="sub">Runs the checks. Arithmetic, not opinion.</div><div class="tech">Receipt</div></div>
-    <div class="abox" data-reveal><div class="ic">${icon('log', 44)}</div><div class="nm">Public log</div>
+    <div class="abox" data-reveal><div class="nm">Public log</div>
       <div class="sub">Publishes the terms, the answer and the verdict.</div><div class="tech">Hedera HCS</div></div>
   </div>
   <p class="archnote" data-in="5400">
@@ -548,7 +578,7 @@ const railClock = rail.querySelector('.clock');
 
 SCENES.forEach((s) => {
   const el = document.createElement('section');
-  el.className = 'scene' + (s.session ? ' full' : '');
+  el.className = 'scene' + (s.bleed || s.session || s.web ? ' bleed' : '');
   el.innerHTML = `<div class="inner">${s.html}</div>`;
   stage.appendChild(el);
 });
@@ -589,6 +619,7 @@ function seek(ms){
 
   const kids = stage.children;
   for (let j = 0; j < kids.length; j++) kids[j].classList.toggle('on', j === i);
+  document.body.dataset.bleed = (s.bleed || s.session || s.web) ? '1' : '0';
 
   const inner = kids[i].firstElementChild;
   const enter = s.enter || 'rise';
@@ -681,6 +712,9 @@ function seek(ms){
     const from = idx === 0 ? 0 : s.beats[idx - 1];
     const u = (st - from) / (s.beats[idx] - from);
     const into = easeOut((st - from) / 260);
+
+    const addr2 = kids[i].querySelector('[data-addr]');
+    if (addr2 && s.addrs) addr2.textContent = s.addrs[idx];
 
     const focus = s.focus && s.focus[idx];
     let fx = '';

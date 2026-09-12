@@ -14,10 +14,16 @@ const film = readFileSync(`${root}demo/film.html`, 'utf8')
 const runDir = `${root}demo/shots/run`
 
 describe('the recorded session the film plays back', () => {
-  test('the frame count in the film is the number of frames captured', () => {
-    const declared = Number(/const RUN_FRAMES = (\d+)/.exec(film)?.[1])
+  test('the frame count comes from the capture, not a second copy in the film', () => {
+    // Two numbers that must agree eventually will not. The film reads the
+    // count from run-frames.js, which interact.mjs writes; the only thing to
+    // check is that the written number matches what is on disk.
+    const declared = Number(/window\.RUN_FRAMES = (\d+)/
+      .exec(readFileSync(`${root}demo/run-frames.js`, 'utf8'))?.[1])
     const onDisk = readdirSync(runDir).filter((f) => /^f\d+\.jpg$/.test(f)).length
     expect(declared, 'run: node demo/interact.mjs').toBe(onDisk)
+    expect(film, 'the film should not hold its own copy of the count')
+      .not.toMatch(/const RUN_FRAMES = \d+/)
   })
 
   test('the frames are numbered from zero with no gaps', () => {

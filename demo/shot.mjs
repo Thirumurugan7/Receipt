@@ -18,8 +18,8 @@ import { launch, sleep } from './cdp.mjs'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
 const OUT = join(HERE, 'shots')
-const WIDTH = 1500
-const HEIGHT = 1000
+const WIDTH = 1920
+const HEIGHT = 1010
 
 const FACILITATOR = process.env.RECEIPT_FACILITATOR_URL ?? 'http://localhost:8080'
 

@@ -42,6 +42,17 @@ count honest against the directory.
 assembles the frames with ffmpeg. It has no dependencies: the WebSocket client
 is the one built into Node, and the page is served by `node:http`.
 
+## Two kinds of screen
+
+Slides explain, and look like slides: paper, a margin rail, typography doing
+the work. Recordings show, and look like recordings: the terminal, the live
+app and the block explorer fill the frame edge to edge, with a title bar or an
+address bar and nothing else. A judge should never be in doubt about which one
+they are looking at, or have to squint at a window floating on a slide.
+
+The app and explorer frames are captured at 1920x1010 for exactly this reason:
+they are displayed at their own size, so nothing is upscaled.
+
 ## How each screen is built
 
 One idea per screen, and nothing on it that does not serve that idea. Every
@@ -102,6 +113,7 @@ Renders just those moments into `demo/.frames/` and exits.
 | `shots/` | those captures, committed so the film can be rebuilt offline |
 | `shots/run/` | the recorded session, one JPEG per frame |
 | `shots/memes/` | blank meme templates, captioned by the film in its own type |
+| `run-frames.js` | the frame count, written by `interact.mjs` so the film cannot hold a stale copy |
 | `schedule.json` | the running order, written by the renderer; `DEMO.md` is tested against it |
 | `receipt-demo.mp4` | the rendered film |
 | `receipt-demo-v1.mp4` | the earlier cut, kept on request: same content, longer runway, emoji art |
