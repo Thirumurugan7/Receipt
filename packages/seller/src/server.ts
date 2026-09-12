@@ -27,9 +27,10 @@ const NETWORK = need('BLOCKY402_NETWORK') as `${string}:${string}`
 const ASSET = need('SETTLEMENT_ASSET')
 const PRICE_TINYBARS = process.env.SELLER_PRICE_TINYBARS ?? '50000000' // 0.5 ℏ
 const MIRROR = need('HEDERA_MIRROR_URL')
-/** The address whose token holdings this seller quotes. Vitalik's, because it
- *  always has holdings and nobody has to trust a wallet we control. */
-const QUOTE_ADDRESS = process.env.GRAPH_QUOTE_ADDRESS ?? '0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045'
+/** The address whose token holdings this seller quotes. A large exchange hot
+ *  wallet: holdings are recognisable rather than airdrop spam, and nobody has
+ *  to trust a wallet we control. */
+const QUOTE_ADDRESS = process.env.GRAPH_QUOTE_ADDRESS ?? '0x28C6c06298d514Db089934071355E5743bf21d60'
 const QUOTE_NETWORK = process.env.GRAPH_QUOTE_NETWORK ?? 'mainnet'
 
 /** Receipt, not Blocky402. This single line is the integration. */

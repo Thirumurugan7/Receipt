@@ -14,16 +14,25 @@
  */
 const BASE = process.env.GRAPH_API_BASE ?? 'https://api.pinax.network/v1'
 
+/**
+ * One row as the Token API actually returns it.
+ *
+ * The published docs sample shows `timestamp` / `block_num`; the live EVM
+ * balances endpoint returns `last_update_timestamp` / `last_update_block_num`.
+ * These names are taken from a real response, not the sample.
+ */
 export interface TokenBalance {
-  block_num: number
-  datetime: string
-  timestamp: number
+  last_update: string
+  last_update_block_num: number
+  last_update_timestamp: number
+  address: string
   contract: string
   amount: string
-  decimals?: number
-  symbol?: string
-  network: string
   value?: number
+  name?: string
+  symbol?: string
+  decimals?: number
+  network: string
 }
 
 export class GraphError extends Error {
@@ -85,13 +94,15 @@ export function toQuote(raw: { data: TokenBalance[] }, address: string, network:
   const data = (raw.data ?? []).map((b) => ({
     contract: b.contract,
     symbol: b.symbol ?? null,
+    name: b.name ?? null,
     amount: b.amount,
     decimals: b.decimals ?? null,
     value: b.value ?? null,
-    blockNum: b.block_num,
+    blockNum: b.last_update_block_num,
+    lastUpdate: b.last_update,
     network: b.network ?? network,
   }))
-  const newest = (raw.data ?? []).reduce((m, b) => Math.max(m, b.timestamp ?? 0), 0)
+  const newest = (raw.data ?? []).reduce((m, b) => Math.max(m, b.last_update_timestamp ?? 0), 0)
   return {
     source: 'the-graph-token-api',
     address,

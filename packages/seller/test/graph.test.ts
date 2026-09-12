@@ -7,9 +7,10 @@ import { toQuote, type TokenBalance } from '../src/graph.js'
  * seller stops getting paid for good data — so the shape is pinned here.
  */
 const balance = (over: Partial<TokenBalance> = {}): TokenBalance => ({
-  block_num: 21_000_000,
-  datetime: '2026-09-12 10:00:00',
-  timestamp: 1_789_200_000,
+  last_update: '2026-09-12 10:00:00',
+  last_update_block_num: 21_000_000,
+  last_update_timestamp: 1_789_200_000,
+  address: '0xd8da6bf26964af9d7eed9e03e53415d37aa96045',
   contract: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
   amount: '1250000000',
   decimals: 6,
@@ -34,7 +35,7 @@ describe('toQuote', () => {
 
   test('lifts the newest block timestamp so the freshness check is meaningful', () => {
     const q = toQuote(
-      { data: [balance({ timestamp: 1_789_200_000 }), balance({ timestamp: 1_789_209_999 })] },
+      { data: [balance({ last_update_timestamp: 1_789_200_000 }), balance({ last_update_timestamp: 1_789_209_999 })] },
       '0xabc',
       'mainnet',
     )
@@ -43,7 +44,7 @@ describe('toQuote', () => {
 
   test('a stale upstream response yields a stale timestamp rather than a fresh lie', () => {
     const old = 1_700_000_000
-    expect(toQuote({ data: [balance({ timestamp: old })] }, '0xabc', 'mainnet').timestamp).toBe(old)
+    expect(toQuote({ data: [balance({ last_update_timestamp: old })] }, '0xabc', 'mainnet').timestamp).toBe(old)
   })
 
   test('an empty result stays empty, so minItems fails instead of being padded', () => {

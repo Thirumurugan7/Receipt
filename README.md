@@ -138,9 +138,13 @@ Load-bearing, not decorative. Remove any one of these and the project stops work
 - `recipes/receipt.bazantic.json` chains both into a single MCP tool: buy the data, then fetch the adjudication, and return the data *with* the reason it was accepted or refused. The prompt forbids presenting data that failed its checks as if it had passed.
 - Both files are validated in CI against every rule `baz recipe --help` states — key set, 24 KiB limit, the single `{{inputs}}` placeholder, binding shape, and the `input_example` is run through its own `input_schema`. **They are written and valid but not published**; see below.
 
-**Chainlink** — see "What is not done" below. Not claimed.
+**The Graph** is what is actually being bought.
+- The seller sells live ERC-20 holdings from The Graph's Token API. That response *is* the product — remove The Graph and there is nothing to purchase.
+- The buyer's acceptance terms are written against its shape and the adjudicator decides payment by validating it: a non-empty holdings array where every entry carries a 20-byte contract address and an integer-string amount, a `source` of exactly `the-graph-token-api`, and a snapshot fresh within the hour. A well-formed JSON response that is not token data does not get paid for.
+- The raw Graph response goes to HCS, so **the purchase is a verifiable receipt for a Graph query**: anyone can pull the response off the public topic, re-run the checks, and confirm the money moved for the right reason.
+- The seller refuses to fabricate. With no API key it returns 502 rather than inventing token data, and a test asserts no canned payload exists in the module.
 
-**The Graph** — see "What is not done" below. Not claimed.
+**Chainlink** — see "What is not done" below. Not claimed.
 
 ---
 
@@ -153,8 +157,12 @@ git clone --recurse-submodules https://github.com/Thirumurugan7/Receipt.git
 cd Receipt
 pnpm install
 
-cp .env.example .env      # then fill in the Hedera keys; every value is commented
+cp .env.example .env      # then fill in the keys; every value is commented
 ```
+
+You also need a free Token API key from [thegraph.market](https://thegraph.market)
+(no card, instant) in `GRAPH_TOKEN_API_KEY` — the seller has nothing real to sell
+without it and will return 502 rather than invent data.
 
 You need four Hedera testnet ECDSA accounts (buyer, seller, facilitator, and one
 unrelated wallet for the expiry scene) from [portal.hedera.com](https://portal.hedera.com).
@@ -185,7 +193,7 @@ HashScan.
 
 | Scene | Seller mode | Outcome | Buyer delta |
 |---|---|---|---|
-| 2 | `honest` | all 7 reproducible checks pass, `release()` pays the seller | −0.5 ℏ |
+| 2 | `honest` | live Graph token data, all 7 checks pass, `release()` pays the seller | −0.5 ℏ |
 | 3 | `garbage` | **HTTP 200** with a useless body, `requiredPaths` fails, `refund()` | 0.0 ℏ |
 | 4 | `dead` | no verdict invented; a stranger calls `claimExpired` | 0.0 ℏ after claim |
 | 5 | — | `pnpm verify` recomputes both verdicts and prints MATCH | — |
@@ -230,8 +238,6 @@ surfacing as an unexplained `BadSignature` during a live paid request.
 **The Bazantic recipe is not live.** The manifest and recipe are written and pass every documented validation rule, but publishing them needs three things this build does not have: a provider listing (a manual application the Bazantic team reviews within two business days), the 26-character `gateway_slug` the platform assigns when a gateway is created, and a payout account uuid. The files carry obvious placeholders — `REPLACE_WITH_PAYOUT_ACCOUNT_UUID` and slugs containing `replaceme` — rather than plausible-looking fakes, and a test asserts they stay obvious. The facilitator would also need a public URL; it runs on localhost.
 
 **No Chainlink integration.** Confidential Workflows is a private beta gated behind a Chainlink account team, not a self-serve grant, so it was never on the critical path.
-
-**No Graph integration.** The seller returns real live data, but from the Hedera Mirror Node rather than The Graph's Token API. It is real data, not a fixture — just not that sponsor's data.
 
 **The dashboard is a prop.** It is a single static file served by the facilitator at `/`, with no build step and no third-party scripts. It reads deployment identifiers from `/health` and deal state from `/stream`, so it needs no configuration — but it is read-only, keeps state in memory, and is not something to point at production.
 
