@@ -13,8 +13,8 @@
  * pure, so the same inputs must give the same verdict. `verify-py/` is the
  * genuinely independent implementation, and agrees.
  */
-import { adjudicate, attestedLatencyOf, hashVerdict, jcs, rebuildForHashing } from '@receipt/core'
-import type { Terms, Verdict } from '@receipt/core'
+import { adjudicate, attestedLatencyOf, hashVerdict, jcs, rebuildForHashing, recordsFromLog } from '@receipt/core'
+import type { LedgerDeal, LogRow, Terms, Verdict } from '@receipt/core'
 import { observationFromMessage, readTopic } from '@receipt/core/hcs-read'
 import type { HcsMessage } from '@receipt/core/hcs-read'
 
@@ -125,9 +125,28 @@ export async function verifyDeal(opts: {
   }
 }
 
+/**
+ * The whole ledger, rebuilt in the browser from the public topic.
+ *
+ * This is what lets the hosted site have no backend at all: it asks Hedera's
+ * mirror node for the audit topic and reconstructs every deal from it, with
+ * the same function the facilitator runs on boot. A page that can do this is
+ * itself the argument, since it shows the log carries what the ledger claims.
+ */
+export async function loadLedger(opts: {
+  topicId: string
+  network?: string
+  mirrorUrl?: string
+}): Promise<LedgerDeal[]> {
+  const net = (opts.network ?? 'testnet').split(':').pop() ?? 'testnet'
+  const mirrorUrl = opts.mirrorUrl ?? MIRROR[net] ?? MIRROR.testnet!
+  const rows = (await readTopic(mirrorUrl, opts.topicId)) as LogRow[]
+  return recordsFromLog(rows)
+}
+
 /*
  * Published on the global object rather than `window`, so this file needs no
  * DOM lib: pulling that into the program conflicts with the Node types the
  * rest of the workspace is built against. In a browser globalThis IS window.
  */
-;(globalThis as unknown as Record<string, unknown>).ReceiptVerify = { verifyDeal }
+;(globalThis as unknown as Record<string, unknown>).ReceiptVerify = { verifyDeal, loadLedger }

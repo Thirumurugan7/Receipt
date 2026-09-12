@@ -1,0 +1,454 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Receipt, live ledger</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%20role%3D%22img%22%20aria-label%3D%22Receipt%22%3E%20%20%3Cmask%20id%3D%22receipt-check%22%3E%20%20%20%3Crect%20width%3D%2264%22%20height%3D%2264%22%20fill%3D%22%23fff%22%2F%3E%20%20%20%3Cpath%20d%3D%22M21%2031.5%2028.5%2039%2044%2023%22%20fill%3D%22none%22%20stroke%3D%22%23000%22%20stroke-width%3D%226%22%20%20%20%20%20%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%20%20%3C%2Fmask%3E%20%20%3Cpath%20fill%3D%22%25232f3aa8%22%20mask%3D%22url%28%23receipt-check%29%22%20%20%20%20%20d%3D%22M11%205a1%201%200%200%201%201-1h40a1%201%200%200%201%201%201v50.6a1%201%200%200%201-1.6.8L45.5%2052l-5.9%204.4a1%201%200%200%201-1.2%200L32.5%2052%20%20%20%20%20%20l-5.9%204.4a1%201%200%200%201-1.2%200L19.5%2052l-5.9%204.4A1%201%200%200%201%2011%2055.6z%22%2F%3E%20%3C%2Fsvg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  /*
+   * A multi-part receipt: warm paper, carbon-copy blue for structure, and
+   * three saturated stamp colours that mean exactly one thing each -- amber
+   * for money held by nobody, green for released, red for returned. Colour is
+   * load-bearing here, not decoration: the state of the money is the whole
+   * product, so it is the only thing allowed to be loud.
+   */
+  :root{
+    --paper:#faf7f2; --card:#ffffff; --ink:#191d2b; --muted:#6b7486;
+    --rule:#e2d9cc; --rule-soft:#efe9e0;
+    --carbon:#2f3aa8; --carbon-soft:#eceefb;
+    --held:#c2740b; --held-soft:#fdf3e2;
+    --paid:#13894f; --paid-soft:#e8f6ee;
+    --returned:#cf2f24; --returned-soft:#fdeceb;
+    --term-bg:#14171f; --term-fg:#dfe4ee; --term-dim:#7c879d;
+  }
+  *{box-sizing:border-box; margin:0; padding:0}
+  body{
+    background:var(--paper); color:var(--ink);
+    font:400 15px/1.55 "IBM Plex Mono", ui-monospace, Menlo, monospace;
+    font-variant-numeric:tabular-nums;
+    -webkit-font-smoothing:antialiased;
+  }
+  a{color:var(--carbon); text-decoration:none; border-bottom:1px solid #c3c8ee}
+  a:hover{border-bottom-color:var(--carbon)}
+  .wrap{max-width:1180px; margin:0 auto; padding:0 20px 72px}
+
+  /* ── masthead ─────────────────────────────────────────────────────── */
+  .band{background:var(--carbon); color:#fff; padding:20px 0 22px; margin-bottom:26px}
+  .band .wrap{padding-bottom:0; display:flex; flex-wrap:wrap; gap:16px; align-items:baseline; justify-content:space-between}
+  .brand{display:flex; align-items:center; gap:16px}
+  .brand .logo{line-height:0; color:#fff}
+  .band h1{font-size:27px; font-weight:700; letter-spacing:.26em; text-indent:.26em}
+  .band p{color:#c6cbf4; font-size:14px; margin-top:5px; max-width:62ch}
+  .live{display:flex; align-items:center; gap:9px; font-size:13px; color:#c6cbf4; white-space:nowrap}
+  .dot{width:8px; height:8px; border-radius:50%; background:#8a93d8}
+  .dot.on{background:#5ef0a6; box-shadow:0 0 0 4px rgba(94,240,166,.22)}
+
+  h2{font-size:13px; font-weight:700; letter-spacing:.13em; text-transform:uppercase; color:var(--muted); margin-bottom:12px}
+  .card{background:var(--card); border:1px solid var(--rule); border-radius:3px; padding:18px 20px}
+  section{margin-bottom:30px}
+
+  /* ── check it yourself ────────────────────────────────────────────── */
+  .proof{display:grid; grid-template-columns:repeat(auto-fit,minmax(268px,1fr)); gap:12px}
+  .proof a{display:block; border:1px solid var(--rule); border-bottom:1px solid var(--rule);
+           border-left:3px solid var(--carbon); background:var(--card); padding:13px 15px; border-radius:3px}
+  .proof a:hover{background:var(--carbon-soft); border-bottom-color:var(--rule)}
+  .proof .t{font-weight:600; color:var(--ink); font-size:14px}
+  .proof .d{color:var(--muted); font-size:12.5px; margin-top:4px; line-height:1.45}
+  .proof .u{color:var(--carbon); font-size:12px; margin-top:7px; word-break:break-all}
+
+  /* ── run panel ────────────────────────────────────────────────────── */
+  .runbar{display:flex; flex-wrap:wrap; gap:9px; align-items:center; margin-bottom:14px}
+  button{
+    font:600 13.5px/1 "IBM Plex Mono", monospace; letter-spacing:.02em;
+    background:var(--card); color:var(--ink); border:1.5px solid var(--ink);
+    padding:10px 15px; border-radius:3px; cursor:pointer;
+  }
+  button:hover:not(:disabled){background:var(--ink); color:#fff}
+  button:disabled{opacity:.4; cursor:not-allowed}
+  button.go{background:var(--carbon); border-color:var(--carbon); color:#fff}
+  button.go:hover:not(:disabled){background:#232c85}
+  .budget{color:var(--muted); font-size:12.5px; margin-left:auto}
+
+  .term{background:var(--term-bg); color:var(--term-fg); border-radius:3px; padding:16px 18px;
+        font-size:13px; line-height:1.62; white-space:pre-wrap; word-break:break-word;
+        min-height:132px; max-height:340px; overflow-y:auto}
+  .term .g{color:#5ed99b} .term .r{color:#ff8d80} .term .y{color:#f2c069}
+  .term .dim{color:var(--term-dim)} .term .w{color:#fff; font-weight:600}
+  .term .idle{color:var(--term-dim)}
+
+  /* transaction chips, as each leg lands */
+  .chips{display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; min-height:1px}
+  .chip{display:inline-flex; align-items:center; gap:7px; border:1px solid var(--rule);
+        background:var(--card); border-radius:3px; padding:7px 11px; font-size:12.5px}
+  .chip b{font-weight:600; color:var(--muted); letter-spacing:.04em; text-transform:uppercase; font-size:11px}
+  .chip a{border-bottom:none; font-weight:600}
+  .chip .new{animation:land .5s ease both}
+  @keyframes land{from{opacity:0; transform:translateY(-4px)}to{opacity:1; transform:none}}
+
+  /* ── ledger ───────────────────────────────────────────────────────── */
+  .entry{background:var(--card); border:1px solid var(--rule); border-radius:3px;
+         padding:17px 19px; margin-bottom:12px; border-left:4px solid var(--rule)}
+  .entry[data-state="held"]{border-left-color:var(--held)}
+  .entry[data-state="paid"]{border-left-color:var(--paid)}
+  .entry[data-state="returned"]{border-left-color:var(--returned)}
+  .entry[data-state="failed"]{border-left-color:var(--muted)}
+  .head{display:flex; flex-wrap:wrap; gap:14px; justify-content:space-between; align-items:flex-start}
+  .deal{font-weight:700; font-size:14.5px; word-break:break-all}
+  .resource{color:var(--muted); font-size:12.5px; margin-top:3px; word-break:break-all}
+  .amount{font-size:22px; font-weight:700; white-space:nowrap}
+  .stamp{display:inline-block; margin-top:9px; padding:5px 11px 4px; border:2px solid currentColor;
+         border-radius:2px; font-size:11.5px; font-weight:700; letter-spacing:.13em; text-transform:uppercase}
+  .stamp[data-state="held"]{color:var(--held); background:var(--held-soft)}
+  .stamp[data-state="paid"]{color:var(--paid); background:var(--paid-soft)}
+  .stamp[data-state="returned"]{color:var(--returned); background:var(--returned-soft)}
+  .stamp[data-state="failed"]{color:var(--muted); background:#f2f2f2}
+
+  .checks{list-style:none; margin-top:14px; border-top:1px solid var(--rule-soft)}
+  .checks li{border-bottom:1px solid var(--rule-soft); padding:6px 0}
+  .row{display:flex; align-items:baseline; gap:8px; font-size:13.5px}
+  .row .k{color:var(--muted)}
+  .row .lead{flex:1; border-bottom:1px dotted var(--rule); transform:translateY(-3px)}
+  .row .v{font-weight:600}
+  .pass{color:var(--paid)} .fail{color:var(--returned)} .att{color:var(--muted); font-weight:400}
+  .detail{color:var(--muted); font-size:12px; margin-top:3px; padding-left:2px; word-break:break-word}
+  .legs{margin-top:13px}
+
+  .verify{margin-top:13px}
+  button.small{font-size:12px; padding:7px 12px}
+  .vout{margin-top:11px; border:1px solid var(--rule); border-left:3px solid var(--carbon);
+        border-radius:3px; padding:12px 14px; font-size:12.8px; line-height:1.7; background:#fcfbf8}
+  .vout.ok{border-left-color:var(--paid); background:var(--paid-soft)}
+  .vout.bad{border-left-color:var(--returned); background:var(--returned-soft)}
+  .vout .hash{word-break:break-all; font-size:12px}
+  .vout .verdictline{font-weight:700; font-size:13.5px}
+
+  .foot{color:var(--muted); font-size:12.5px; line-height:1.7}
+  code{background:#f0ece5; border-radius:2px; padding:1px 5px; font-size:12.5px; color:var(--ink)}
+  .cmds{background:var(--term-bg); color:var(--term-fg); border-radius:3px; padding:15px 17px;
+        font-size:12.8px; line-height:1.75; white-space:pre-wrap; margin-top:10px}
+  .cmds .c{color:#f2c069}
+
+  @media (prefers-reduced-motion: reduce){
+    *{animation:none !important; transition:none !important}
+  }
+  @media (max-width:620px){
+    .band h1{font-size:21px}
+    .amount{font-size:18px}
+  }
+</style>
+</head>
+<body>
+
+<div class="band">
+  <div class="wrap">
+    <div class="brand">
+      <span class="logo"><svg width="40" height="40"  xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Receipt">
+  <mask id="rc-page">
+    <rect width="64" height="64" fill="#fff"/>
+    <path d="M21 31.5 28.5 39 44 23" fill="none" stroke="#000" stroke-width="6"
+          stroke-linecap="round" stroke-linejoin="round"/>
+  </mask>
+  <path fill="currentColor" mask="url(#rc-page)"
+        d="M11 5a1 1 0 0 1 1-1h40a1 1 0 0 1 1 1v50.6a1 1 0 0 1-1.6.8L45.5 52l-5.9 4.4a1 1 0 0 1-1.2 0L32.5 52
+           l-5.9 4.4a1 1 0 0 1-1.2 0L19.5 52l-5.9 4.4A1 1 0 0 1 11 55.6z"/>
+</svg></span>
+      <h1>RECEIPT</h1>
+    </div>
+    <div>
+      <p>Conditional settlement for x402. The money waits in escrow and moves only if the response passes checks the buyer signed. Every verdict below is on a public ledger you can read without asking us.</p>
+    </div>
+    <div class="live"><span class="dot on"></span><span>read from Hedera, live</span></div>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <section>
+    <h2>Check this yourself</h2>
+    <div class="proof" id="proof"></div>
+  </section>
+
+  <section>
+    <h2>Where this page gets its data</h2>
+    <div class="card foot">
+      <p id="chainnote">reading the audit topic from Hedera's mirror node…</p>
+      <p style="margin-top:10px">
+        This is a static page. There is no server of ours behind it: every deal below was
+        rebuilt in your browser from the public topic, and the
+        <b>recompute</b> button on each one re-runs the adjudicator here, locally, against
+        the same bytes. If the log did not carry what this page claims, this page could not exist.
+      </p>
+      <p style="margin-top:10px">
+        To run a <b>new</b> deal you need the facilitator, which spends real testnet HBAR and
+        takes about twenty seconds per purchase. Clone the repo and run
+        <code>pnpm facilitator</code>, then open <code>localhost:8080</code>, where the same
+        page gains four buttons that each start one.
+      </p>
+    </div>
+  </section>
+
+  <section>
+    <h2>The ledger <span id="count" style="font-weight:400; letter-spacing:0; text-transform:none"></span></h2>
+    <div id="ledger"></div>
+  </section>
+
+  <section>
+    <h2>Do not trust any of this — recompute it</h2>
+    <div class="card foot">
+      Every deal publishes its terms, the raw response and the verdict to the audit topic, and the escrow records the verdict hash on chain. Nothing above needs to be believed: fetch the messages from the mirror node and re-run the adjudicator yourself.
+      <div class="cmds"><span class="c">pnpm verify --all</span>        replay every verdict this facilitator ever published
+<span class="c">pnpm verify --deal 0x…</span>   one deal, end to end
+<span class="c">cd verify-py &amp;&amp; python3 verify.py --deal 0x… --topic <span id="cmd-topic">…</span></span>
+                        a second implementation, no dependencies, written from SPEC.md</div>
+    </div>
+  </section>
+
+</div>
+
+<script src="deployment.js"></script>
+<script src="verify.js"></script>
+<script>
+const deals = new Map();
+let net = 'testnet';
+let health = null;
+
+const el = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const short = (s, n = 10) => (typeof s === 'string' && s.length > n * 2 ? s.slice(0, n) + '…' + s.slice(-4) : s ?? '—');
+const hbar = (tinybars) => (Number(tinybars || 0) / 1e8).toFixed(8) + ' ℏ';
+
+/*
+ * Hedera prints a transaction id as 0.0.7162784@1789235851.125983072 and
+ * HashScan routes on 0.0.7162784-1789235851-125983072. Handing the printed
+ * form straight to the explorer gives a page that does not exist, which on a
+ * page whose whole argument is "go and check" is the worst possible bug.
+ * Mirrors packages/core/src/explorer.ts.
+ */
+const EVM_TX = /^0x[0-9a-fA-F]{64}$/;
+const HEDERA_TX = /^(\d+\.\d+\.\d+)@(\d+)\.(\d+)$/;
+function hashscanTx(id) {
+  if (!id) return null;
+  const v = String(id).trim();
+  if (EVM_TX.test(v)) return `https://hashscan.io/${net}/transaction/${v}`;
+  const m = HEDERA_TX.exec(v);
+  if (m) return `https://hashscan.io/${net}/transaction/${m[1]}-${m[2]}-${m[3]}`;
+  return null;
+}
+const hashscanContract = (a) => `https://hashscan.io/${net}/contract/${a}`;
+const hashscanTopicMessages = (t) => `https://hashscan.io/${net}/topic/${t}/messages`;
+const mirrorMessage = (t, seq) => `https://${net}.mirrornode.hedera.com/api/v1/topics/${t}/messages/${seq}`;
+
+const link = (href, text) => href
+  ? `<a href="${esc(href)}" target="_blank" rel="noopener">${esc(text)}</a>`
+  : '<span class="att">—</span>';
+const txLink = (id, label) => {
+  const href = hashscanTx(id);
+  return href ? link(href, label ?? short(id, 8)) : '<span class="att">—</span>';
+};
+
+function row(k, valueHtml) {
+  return `<div class="row"><span class="k">${esc(k)}</span><span class="lead"></span><span class="v">${valueHtml}</span></div>`;
+}
+
+// phase -> what the stamp says. "held" is the interesting state: the money
+// exists and belongs to nobody yet.
+function stampFor(phase) {
+  switch (phase) {
+    case 'released': return { state: 'paid', text: 'released to seller' };
+    case 'refunded': return { state: 'returned', text: 'returned to buyer' };
+    case 'expired': return { state: 'returned', text: 'expired · returned' };
+    case 'awaiting-expiry': return { state: 'held', text: 'awaiting deadline' };
+    case 'failed': return { state: 'failed', text: 'not settled' };
+    case 'terms-verified': case 'payment-verified': case 'settled':
+    case 'escrowed': case 'seller-responded': case 'adjudicated':
+    default: return { state: 'held', text: 'held in escrow' };
+  }
+}
+
+/** The three public-record citations for one deal. */
+function auditLinks(d) {
+  if (!health?.topic) return '';
+  const a = d.audit || {};
+  const parts = [['terms', a.terms], ['response', a.observation], ['verdict', a.verdict]]
+    .filter(([, m]) => m && m.sequenceNumber)
+    .map(([name, m]) => {
+      const seq = link(mirrorMessage(health.topic, m.sequenceNumber), `${name} #${m.sequenceNumber}`);
+      // Deals rebuilt from the log carry no publish transaction id; the
+      // sequence link already reaches the exact message, so say nothing
+      // rather than render an empty pair of brackets.
+      const tx = hashscanTx(m.transactionId);
+      return tx ? `${seq} <span class="att">(${link(tx, 'tx')})</span>` : seq;
+    });
+  return parts.length ? row('audit log', parts.join(' &nbsp;')) : '';
+}
+
+function renderEntry(d) {
+  const s = stampFor(d.phase);
+  const v = d.verdict;
+  const bought = d.bought || null;
+
+  const checks = v ? v.reproducible.map((c) => {
+    const mark = c.skipped ? 'not required' : (c.pass ? 'pass' : 'fail');
+    const cls = c.skipped ? 'att' : (c.pass ? 'pass' : 'fail');
+    return `<li>${row(c.check, `<span class="${cls}">${mark}</span>`)}${c.detail ? `<p class="detail">${esc(c.detail)}</p>` : ''}</li>`;
+  }).join('') : '';
+
+  const attested = v ? v.attested.map((a) =>
+    `<li>${row(a.check + ' — attested, gates nothing', `<span class="att">${esc(String(a.observed))}ms</span>`)}</li>`
+  ).join('') : '';
+
+  const resolveLabel = (d.phase === 'refunded' || d.phase === 'expired') ? 'refund()' : 'release()';
+
+  return `
+  <article class="entry" data-state="${s.state}" data-deal="${esc(d.dealId)}">
+    <div class="head">
+      <div>
+        <div class="deal">${esc(short(d.dealId, 14))}</div>
+        <p class="resource">${esc(d.terms?.resource ?? '')}</p>
+        <span class="stamp" data-state="${s.state}">${esc(s.text)}</span>
+      </div>
+      <div class="amount">${hbar(d.terms?.amount)}</div>
+    </div>
+    ${v ? `<ul class="checks">${checks}${attested}</ul>`
+        : `<ul class="checks"><li>${row('phase', `<span class="att">${esc(d.phase)}</span>`)}</li></ul>`}
+    <div class="legs">
+      ${bought ? row('bought', esc(bought.products || '—')) : ''}
+      ${bought && bought.indexedBlock ? row('indexed at block', esc(String(bought.indexedBlock))) : ''}
+      ${d.sellerDeclined ? row('seller', '<span class="fail">declined the sale</span>') : ''}
+      ${row('x402 settlement', txLink(d.settlementTxId))}
+      ${row('open()', txLink(d.openTxHash))}
+      ${row(resolveLabel, txLink(d.resolveTxHash))}
+      ${auditLinks(d)}
+      ${v ? row('first failure', v.firstFailure ? `<span class="fail">${esc(v.firstFailure)}</span>` : '<span class="pass">none</span>') : ''}
+    </div>
+    <div class="verify">
+      <button class="small" data-verify="${esc(d.dealId)}">recompute this in your browser</button>
+      <div class="vout" data-vout="${esc(d.dealId)}" hidden></div>
+    </div>
+  </article>`;
+}
+
+function render() {
+  const list = [...deals.values()].sort((a, b) => b.createdAt - a.createdAt);
+  el('count').textContent = list.length ? `· ${list.length} deal${list.length === 1 ? '' : 's'}` : '';
+  el('ledger').innerHTML = list.length
+    ? list.map(renderEntry).join('')
+    : '<div class="card foot">No deals yet. Press a button above and one will appear here as it settles.</div>';
+}
+
+/* ── the public record, up top ─────────────────────────────────────── */
+function renderProof() {
+  if (!health) return;
+  net = String(health.network || 'hedera:testnet').split(':').pop();
+  el('cmd-topic').textContent = health.topic;
+  el('proof').innerHTML = [
+    {
+      t: 'The escrow contract',
+      d: 'Holds the money between payment and verdict. Every open, release and refund is a transaction on it.',
+      href: hashscanContract(health.escrow), u: health.escrow,
+    },
+    {
+      t: 'The audit log',
+      d: 'Terms, the raw response and the verdict, published for every deal. This is what makes re-running the adjudicator possible.',
+      href: hashscanTopicMessages(health.topic), u: `topic ${health.topic}`,
+    },
+    {
+      t: 'Settlement runs through Blocky402',
+      d: 'Every payment is a real x402 settlement. The buyer signs a partial transfer and pays no gas.',
+      href: health.settlesThrough, u: health.settlesThrough,
+    },
+  ].map((p) => `<a href="${esc(p.href)}" target="_blank" rel="noopener">
+      <div class="t">${esc(p.t)}</div>
+      <div class="d">${esc(p.d)}</div>
+      <div class="u">${esc(p.u)} ↗</div>
+    </a>`).join('');
+}
+
+/*
+ * No backend. The deployment identifiers are baked in at build time from
+ * DEPLOYMENTS.md, and every deal below is rebuilt in your browser from
+ * Hedera's mirror node. Nothing on this page asks a server of ours anything.
+ */
+health = window.RECEIPT_DEPLOYMENT;
+renderProof();
+render();
+
+async function loadFromChain() {
+  const note = el('chainnote');
+  try {
+    const deals = await window.ReceiptVerify.loadLedger({
+      topicId: health.topic, network: health.network,
+    });
+    for (const d of deals) deals$set(d);
+    note.textContent = `${deals.length} deals, rebuilt in this browser from topic ${health.topic}.`;
+    render();
+  } catch (e) {
+    note.textContent = 'could not reach the mirror node: ' + String(e);
+  }
+}
+const deals$set = (d) => deals.set(d.dealId, d);
+loadFromChain();
+
+/* ── recompute a verdict in the reader's own browser ───────────────── */
+/*
+ * This is the only thing on the page that does not ask to be believed: it
+ * fetches the terms, the raw response and the published verdict straight from
+ * Hedera's mirror node and re-runs the adjudicator here. No request touches
+ * this server while it runs, so this server cannot influence the answer.
+ */
+async function verifyInBrowser(dealId, btn) {
+  const out = document.querySelector(`[data-vout="${CSS.escape(dealId)}"]`);
+  if (!out || !health?.topic) return;
+  out.hidden = false;
+  out.className = 'vout';
+  out.textContent = 'fetching the public log from the mirror node…';
+  btn.disabled = true;
+  try {
+    const r = await window.ReceiptVerify.verifyDeal({
+      topicId: health.topic, dealId, network: health.network,
+    });
+    const seq = [['terms', r.sequences.terms], ['response', r.sequences.observation],
+                 ['verdict', r.sequences.verdict]]
+      .filter(([, n]) => n).map(([k, n]) => `${k} #${n}`).join(', ');
+
+    if (!r.recomputed) {
+      out.className = 'vout';
+      out.innerHTML = `<div class="verdictline">nothing to recompute</div>${esc(r.note)}`;
+      return;
+    }
+    out.className = 'vout ' + (r.match ? 'ok' : 'bad');
+    out.innerHTML = `
+      <div class="verdictline">${r.match
+        ? 'MATCH — the published verdict follows from the published inputs'
+        : 'MISMATCH — this would mean the published verdict does not follow from its inputs'}</div>
+      <div>${esc(r.note)}</div>
+      <div style="margin-top:7px">${row('messages read from the mirror node', esc(`${r.messages} (${seq})`))}
+      ${row('every check result identical', `<span class="${r.reproducibleMatches ? 'pass' : 'fail'}">${r.reproducibleMatches ? 'yes' : 'no'}</span>`)}
+      ${row('recomputed pass', `<span class="${r.recomputed.pass ? 'pass' : 'fail'}">${r.recomputed.pass}</span>`)}
+      ${row('published pass', `<span class="${r.publishedPass ? 'pass' : 'fail'}">${esc(String(r.publishedPass))}</span>`)}</div>
+      <div class="hash" style="margin-top:7px">recomputed ${esc(r.recomputedHash ?? '—')}<br>published&nbsp; ${esc(r.publishedHash ?? '—')}</div>`;
+  } catch (e) {
+    out.className = 'vout bad';
+    out.textContent = String(e);
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+document.getElementById('ledger').addEventListener('click', (e) => {
+  const btn = e.target.closest('[data-verify]');
+  if (btn) verifyInBrowser(btn.dataset.verify, btn);
+});
+
+/*
+ * There is no live stream here, because there is no server to stream from.
+ * The ledger above was rebuilt once, from the topic, when this page loaded.
+ */
+render();
+</script>
+</body>
+</html>

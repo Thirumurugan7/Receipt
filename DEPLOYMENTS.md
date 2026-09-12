@@ -142,11 +142,38 @@ third party can recompute it, which is exactly why it lives in `attested` and
 gates nothing. It is reported, never trusted.
 
 
-## The live ledger, public, and it will run a deal for you
+## The hosted ledger, on Vercel, no server of ours behind it
 
 | | |
 |---|---|
-| URL | https://0700-2406-7400-c4-858a-d876-37d7-a720-7be3.ngrok-free.app |
+| URL | https://receipt-ledger-zeta.vercel.app |
+| Hosting | Vercel static. No backend, no secrets, nothing to keep running |
+| Where its data comes from | Hedera's mirror node, read by your browser |
+
+This is the link to give a judge. It is a static page: it asks Hedera for the
+audit topic and **rebuilds all 44 deals in the browser**, using the same
+`recordsFromLog` the facilitator runs on boot. Every deal keeps its
+**recompute** button, which re-runs the adjudicator locally against the bytes
+it fetched. Nothing on the page asks a server of ours anything, which is what
+makes "you do not have to trust us" literally true there.
+
+What it cannot do is start a *new* deal. That spends real testnet HBAR from a
+keypair and takes about twenty two seconds per purchase, which is neither a
+static page nor a serverless function shape, and it would mean putting a
+Hedera private key in a hosting provider's environment. Running one stays a
+local action.
+
+```bash
+pnpm build:site     # rebuild the browser bundle and copy it into site/
+pnpm deploy:site    # build, then deploy to Vercel production
+```
+
+## The local ledger, which can also run a deal
+
+| | |
+|---|---|
+| URL | http://localhost:8080 after `pnpm facilitator`, or the tunnel below while it is up |
+| Tunnel | https://0700-2406-7400-c4-858a-d876-37d7-a720-7be3.ngrok-free.app |
 | Serves | the ledger at `/`, the x402 facilitator interface, and the audit links |
 | Run budget | 200 deals, one at a time, 15s apart (`RECEIPT_DEMO_MAX_RUNS`) |
 
