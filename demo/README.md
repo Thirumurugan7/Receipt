@@ -10,6 +10,7 @@ Nothing here records a screen. Two steps, both reproducible:
 
 ```bash
 node demo/capture.mjs     # runs every scene for real -> demo-data.js
+node demo/shot.mjs        # captures the explorer pages the film shows -> shots/
 node demo/render.mjs      # renders the film -> receipt-demo.mp4, schedule.json
 ```
 
@@ -20,6 +21,13 @@ facilitator's own deal record, so the ticks and crosses on screen are the ones
 the adjudicator produced, including the checks that failed *after* the first
 failure. It refuses to write a capture that came back empty, because a blank
 slide in the finished film is worse than a failed build.
+
+**`shot.mjs`** captures the HashScan pages and the live ledger that the
+*evidence* scene shows. The film claims those transactions exist; screenshotting
+the real explorer is how that claim is made checkable on screen rather than
+asserted. It declines cookies rather than accepting them, which is both the
+privacy-preserving answer and the one that does not leave a banner across the
+middle of the shot.
 
 **`render.mjs`** drives headless Chrome over the DevTools Protocol and
 assembles the frames with ffmpeg. It has no dependencies: the WebSocket client
@@ -62,6 +70,8 @@ Renders just those moments into `demo/.frames/` and exits.
 | `capture.mjs` | runs the scenes for real and writes `demo-data.js` |
 | `demo-data.js` | captured transcripts and verdicts — generated, not hand-edited |
 | `render.mjs` | headless Chrome + ffmpeg, no dependencies |
+| `shot.mjs` | captures the explorer pages the *evidence* scene shows |
+| `cdp.mjs` | the DevTools Protocol client both of those share |
+| `shots/` | those captures, committed so the film can be rebuilt offline |
 | `schedule.json` | the running order, written by the renderer; `DEMO.md` is tested against it |
 | `receipt-demo.mp4` | the rendered film |
-| `dashboard.png` | the live ledger, screenshotted with real deals on it |

@@ -1,5 +1,5 @@
 {
-  "totalMs": 231000,
+  "totalMs": 234000,
   "scenes": [
     {
       "n": "title",
@@ -9,76 +9,81 @@
     {
       "n": "problem",
       "start": 9000,
-      "dur": 19000
+      "dur": 17000
     },
     {
       "n": "design",
-      "start": 28000,
+      "start": 26000,
       "dur": 14000
     },
     {
       "n": "honest",
-      "start": 42000,
-      "dur": 25000
+      "start": 40000,
+      "dur": 23000
     },
     {
       "n": "verdict",
-      "start": 67000,
+      "start": 63000,
       "dur": 10000
     },
     {
       "n": "garbage",
-      "start": 77000,
-      "dur": 17000
+      "start": 73000,
+      "dur": 15000
     },
     {
       "n": "refund",
-      "start": 94000,
+      "start": 88000,
       "dur": 11000
     },
     {
       "n": "stale",
-      "start": 105000,
-      "dur": 15000
+      "start": 99000,
+      "dur": 13000
     },
     {
       "n": "declined",
-      "start": 120000,
+      "start": 112000,
       "dur": 14000
     },
     {
       "n": "expired",
-      "start": 134000,
-      "dur": 16000
+      "start": 126000,
+      "dur": 14000
     },
     {
       "n": "replay",
-      "start": 150000,
+      "start": 140000,
       "dur": 16000
     },
     {
       "n": "second impl",
-      "start": 166000,
+      "start": 156000,
       "dur": 15000
     },
     {
+      "n": "evidence",
+      "start": 171000,
+      "dur": 18000
+    },
+    {
       "n": "conform",
-      "start": 181000,
-      "dur": 13000
+      "start": 189000,
+      "dur": 10000
     },
     {
       "n": "sponsors",
-      "start": 194000,
-      "dur": 17000
+      "start": 199000,
+      "dur": 15000
     },
     {
       "n": "limits",
-      "start": 211000,
+      "start": 214000,
       "dur": 11000
     },
     {
       "n": "close",
-      "start": 222000,
+      "start": 225000,
       "dur": 9000
     }
   ]

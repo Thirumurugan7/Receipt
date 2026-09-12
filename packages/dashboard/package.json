@@ -2,5 +2,9 @@
   "name": "@receipt/dashboard",
   "version": "0.1.0",
   "private": true,
-  "description": "Single page served by the facilitator at /"
+  "description": "Single page served by the facilitator at /",
+  "type": "module",
+  "dependencies": {
+    "@receipt/core": "workspace:^"
+  }
 }

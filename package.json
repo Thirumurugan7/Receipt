@@ -15,11 +15,13 @@
     "mcp": "pnpm --filter @receipt/mcp start",
     "verify:py": "cd verify-py && python3 verify.py",
     "conformance": "cd verify-py && python3 keccak.py && python3 test_cross_implementation.py",
-    "verify:all": "pnpm --filter @receipt/verify start --all"
+    "verify:all": "pnpm --filter @receipt/verify start --all",
+    "build:verifier": "esbuild packages/dashboard/src/verify-browser.ts --bundle --format=iife --platform=browser --target=es2022 --minify --outfile=packages/dashboard/public/verify.js"
   },
   "devDependencies": {
     "@bazantic/cli": "0.10.0",
     "@types/node": "^22.20.2",
+    "esbuild": "^0.28.2",
     "typescript": "5.9.2",
     "vitest": "3.2.4"
   }

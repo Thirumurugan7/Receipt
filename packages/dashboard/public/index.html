@@ -114,6 +114,15 @@
   .detail{color:var(--muted); font-size:12px; margin-top:3px; padding-left:2px; word-break:break-word}
   .legs{margin-top:13px}
 
+  .verify{margin-top:13px}
+  button.small{font-size:12px; padding:7px 12px}
+  .vout{margin-top:11px; border:1px solid var(--rule); border-left:3px solid var(--carbon);
+        border-radius:3px; padding:12px 14px; font-size:12.8px; line-height:1.7; background:#fcfbf8}
+  .vout.ok{border-left-color:var(--paid); background:var(--paid-soft)}
+  .vout.bad{border-left-color:var(--returned); background:var(--returned-soft)}
+  .vout .hash{word-break:break-all; font-size:12px}
+  .vout .verdictline{font-weight:700; font-size:13.5px}
+
   .foot{color:var(--muted); font-size:12.5px; line-height:1.7}
   code{background:#f0ece5; border-radius:2px; padding:1px 5px; font-size:12.5px; color:var(--ink)}
   .cmds{background:var(--term-bg); color:var(--term-fg); border-radius:3px; padding:15px 17px;
@@ -181,6 +190,7 @@
 
 </div>
 
+<script src="verify.js"></script>
 <script>
 const deals = new Map();
 let net = 'testnet';
@@ -245,9 +255,14 @@ function auditLinks(d) {
   const a = d.audit || {};
   const parts = [['terms', a.terms], ['response', a.observation], ['verdict', a.verdict]]
     .filter(([, m]) => m && m.sequenceNumber)
-    .map(([name, m]) =>
-      `${link(mirrorMessage(health.topic, m.sequenceNumber), `${name} #${m.sequenceNumber}`)}` +
-      ` <span class="att">(${txLink(m.transactionId, 'tx')})</span>`);
+    .map(([name, m]) => {
+      const seq = link(mirrorMessage(health.topic, m.sequenceNumber), `${name} #${m.sequenceNumber}`);
+      // Deals rebuilt from the log carry no publish transaction id; the
+      // sequence link already reaches the exact message, so say nothing
+      // rather than render an empty pair of brackets.
+      const tx = hashscanTx(m.transactionId);
+      return tx ? `${seq} <span class="att">(${link(tx, 'tx')})</span>` : seq;
+    });
   return parts.length ? row('audit log', parts.join(' &nbsp;')) : '';
 }
 
@@ -289,6 +304,10 @@ function renderEntry(d) {
       ${row(resolveLabel, txLink(d.resolveTxHash))}
       ${auditLinks(d)}
       ${v ? row('first failure', v.firstFailure ? `<span class="fail">${esc(v.firstFailure)}</span>` : '<span class="pass">none</span>') : ''}
+    </div>
+    <div class="verify">
+      <button class="small" data-verify="${esc(d.dealId)}">recompute this in your browser</button>
+      <div class="vout" data-vout="${esc(d.dealId)}" hidden></div>
     </div>
   </article>`;
 }
@@ -439,6 +458,57 @@ for (const b of document.querySelectorAll('#runbar button')) {
 fetch('/demo/status').then((r) => r.json()).then((s) => {
   el('budget').textContent = `${s.remaining} runs left in this demo's budget`;
 }).catch(() => {});
+
+/* ── recompute a verdict in the reader's own browser ───────────────── */
+/*
+ * This is the only thing on the page that does not ask to be believed: it
+ * fetches the terms, the raw response and the published verdict straight from
+ * Hedera's mirror node and re-runs the adjudicator here. No request touches
+ * this server while it runs, so this server cannot influence the answer.
+ */
+async function verifyInBrowser(dealId, btn) {
+  const out = document.querySelector(`[data-vout="${CSS.escape(dealId)}"]`);
+  if (!out || !health?.topic) return;
+  out.hidden = false;
+  out.className = 'vout';
+  out.textContent = 'fetching the public log from the mirror node…';
+  btn.disabled = true;
+  try {
+    const r = await window.ReceiptVerify.verifyDeal({
+      topicId: health.topic, dealId, network: health.network,
+    });
+    const seq = [['terms', r.sequences.terms], ['response', r.sequences.observation],
+                 ['verdict', r.sequences.verdict]]
+      .filter(([, n]) => n).map(([k, n]) => `${k} #${n}`).join(', ');
+
+    if (!r.recomputed) {
+      out.className = 'vout';
+      out.innerHTML = `<div class="verdictline">nothing to recompute</div>${esc(r.note)}`;
+      return;
+    }
+    out.className = 'vout ' + (r.match ? 'ok' : 'bad');
+    out.innerHTML = `
+      <div class="verdictline">${r.match
+        ? 'MATCH — the published verdict follows from the published inputs'
+        : 'MISMATCH — this would mean the published verdict does not follow from its inputs'}</div>
+      <div>${esc(r.note)}</div>
+      <div style="margin-top:7px">${row('messages read from the mirror node', esc(`${r.messages} (${seq})`))}
+      ${row('every check result identical', `<span class="${r.reproducibleMatches ? 'pass' : 'fail'}">${r.reproducibleMatches ? 'yes' : 'no'}</span>`)}
+      ${row('recomputed pass', `<span class="${r.recomputed.pass ? 'pass' : 'fail'}">${r.recomputed.pass}</span>`)}
+      ${row('published pass', `<span class="${r.publishedPass ? 'pass' : 'fail'}">${esc(String(r.publishedPass))}</span>`)}</div>
+      <div class="hash" style="margin-top:7px">recomputed ${esc(r.recomputedHash ?? '—')}<br>published&nbsp; ${esc(r.publishedHash ?? '—')}</div>`;
+  } catch (e) {
+    out.className = 'vout bad';
+    out.textContent = String(e);
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+document.getElementById('ledger').addEventListener('click', (e) => {
+  const btn = e.target.closest('[data-verify]');
+  if (btn) verifyInBrowser(btn.dataset.verify, btn);
+});
 
 /* ── live ledger ───────────────────────────────────────────────────── */
 const source = new EventSource('/stream');

@@ -7,7 +7,8 @@
   "exports": {
     ".": "./src/index.ts",
     "./hcs": "./src/hcs.ts",
-    "./loadenv": "./src/loadenv.ts"
+    "./loadenv": "./src/loadenv.ts",
+    "./hcs-read": "./src/hcs-read.ts"
   },
   "dependencies": {
     "@hiero-ledger/sdk": "2.85.0",

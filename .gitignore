@@ -17,3 +17,6 @@ coverage/
 
 # rendered demo frames (intermediate; the mp4 is the artifact)
 demo/.frames/
+
+# chrome profile used while capturing explorer screenshots
+demo/shots/.profile/

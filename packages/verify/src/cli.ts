@@ -19,7 +19,7 @@
  *     recompute it, which is exactly why it gates nothing. Reported, not proven.
  */
 import '@receipt/core/loadenv'
-import { adjudicate, hashVerdict, jcs } from '@receipt/core'
+import { adjudicate, attestedLatencyOf, hashVerdict, jcs, rebuildForHashing } from '@receipt/core'
 import type { Terms, Verdict } from '@receipt/core'
 import { observationFromMessage, readTopic } from '@receipt/core/hcs'
 import { keccak256, toBytes } from 'viem'
@@ -139,9 +139,9 @@ if (all) {
     const terms = (t.message as { terms: Terms }).terms
     const pub = v.message as { verdict: Verdict; verdictHash: string }
     const om = o.message as Extract<typeof o.message, { kind: 'observation' }>
-    const latency = pub.verdict.attested.find((a) => a.check === 'maxLatencyMs')?.observed ?? 0
+    const latency = attestedLatencyOf(pub.verdict)
     const recomputed = adjudicate(terms, observationFromMessage(om, latency))
-    const rebuilt: Verdict = { ...pub.verdict, reproducible: recomputed.reproducible }
+    const rebuilt: Verdict = rebuildForHashing(pub.verdict, recomputed.reproducible)
     const ok = hashVerdict(rebuilt).toLowerCase() === pub.verdictHash.toLowerCase()
       && jcs(recomputed.reproducible) === jcs(pub.verdict.reproducible)
 
@@ -232,8 +232,7 @@ if (!obsMsg) {
 
 // Re-run the adjudicator on the published inputs. Latency comes from the
 // published verdict because it is attested, not reproducible.
-const attestedLatency =
-  published.verdict.attested.find((a) => a.check === 'maxLatencyMs')?.observed ?? 0
+const attestedLatency = attestedLatencyOf(published.verdict)
 const observation = observationFromMessage(
   obsMsg.message as Extract<typeof obsMsg.message, { kind: 'observation' }>,
   attestedLatency,
@@ -251,7 +250,7 @@ line('pass published', published.verdict.pass)
 // Rebuild the exact published document, substituting our own reproducible
 // array, then hash it. If the facilitator altered a single check result the
 // hash moves and no longer matches what the escrow recorded.
-const rebuilt: Verdict = { ...published.verdict, reproducible: recomputed.reproducible }
+const rebuilt: Verdict = rebuildForHashing(published.verdict, recomputed.reproducible)
 const recomputedHash = hashVerdict(rebuilt)
 
 console.log('\nhashes')

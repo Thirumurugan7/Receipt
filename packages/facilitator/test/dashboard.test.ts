@@ -42,7 +42,10 @@ describe('dashboard', () => {
 
   test('loads no script from a third party', () => {
     const scriptSrcs = [...html.matchAll(/<script[^>]+src="([^"]+)"/g)].map((m) => m[1]!)
-    expect(scriptSrcs).toHaveLength(0)
+    // The browser verifier is served from this origin by the facilitator; a
+    // page that asks you to check its arithmetic should not be fetching the
+    // arithmetic from someone else.
+    for (const src of scriptSrcs) expect(src).not.toMatch(/^(https?:)?\/\//)
   })
 
   /**

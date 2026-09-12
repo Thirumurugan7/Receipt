@@ -1,6 +1,6 @@
 # DEMO.md — the film, and what to say over it
 
-`demo/receipt-demo.mp4` — 3:51, 1920×1080, no audio.
+`demo/receipt-demo.mp4` — 3:54, 1920×1080, no audio.
 
 Every figure in it came off a live run against Hedera testnet: real settlement
 through Blocky402, real escrow, real release and refund, real data bought from
@@ -19,21 +19,22 @@ drift out of sync with what is on screen.
 | at | scene | what to say |
 |---|---|---|
 | 0:00 | title | Receipt is a drop-in x402 facilitator that adds one thing: the money moves only if the response passes checks the buyer wrote. |
-| 0:09 | problem | Today an agent pays first and looks second. If the API returns two hundred and garbage, the money is already gone — x402 has no refund primitive. Arbitration doesn't help: the median ticket is forty-six cents, and Kleros or UMA want bonds and days. The one shipped alternative appoints an evaluator. It does five unique senders a day. |
-| 0:28 | design | Receipt has no evaluator, because there is nothing to judge. Every check is a pure function of the terms and the response. The buyer computes it, the seller computes it, and so can you, from a public log. |
-| 0:42 | honest | Here is a real purchase. The buyer signs terms saying what shape of token data it will pay for — real contract addresses, integer amounts, a snapshot indexed past a stated block. The payment escrows on Hedera instead of going to the seller. The seller answers, the adjudicator runs, and the funds release. |
-| 1:07 | verdict | Seven checks decide where the money goes, and every one is recomputable. Latency is the eighth: measured, published, and gating nothing — we cannot prove our own stopwatch. |
-| 1:17 | garbage | Same buyer, same terms. This time the seller returns HTTP two hundred with a useless body. |
-| 1:34 | refund | Nothing at the HTTP layer was wrong — status passed. The schema caught it, and the money came back in seconds. No human, no evaluator, no dispute. |
-| 1:45 | stale | Harder case. The data is well-formed and correct — it is just an hour old. Every check passes except freshness, and freshness is the one that matters. |
-| 2:00 | declined | And because the check is a pure function, the seller can run it too, before answering. Here it grades its own response, sees it would fail, and declines the sale rather than take a payment it could not keep. |
-| 2:14 | expired | If the seller simply never answers, no verdict is invented. The escrow expires, and an unrelated wallet — not the buyer — calls claimExpired. The funds can only go back to the payer, so anyone is safe to call it. |
-| 2:30 | replay | Now do not trust any of it. This replays every verdict the facilitator ever published, from the public log, with no cooperation from it. Twenty-eight reproduce. Zero mismatch. |
-| 2:46 | second impl | And here it is again in a second implementation — Python, no dependencies, its own keccak, written from the spec rather than from our TypeScript. Same verdict, same hash, and it is the hash the escrow recorded on chain. |
-| 3:01 | conform | Twelve cases, both implementations, identical every time. If the spec were ambiguous, these would disagree. |
-| 3:14 | sponsors | Every sponsor technology is load-bearing. The Graph is what is being bought — two products composed. Hedera holds the money and carries the log. Blocky402 performs every payment. Bazantic exposes it as a gateway, with a Recipe that prices a swap only against holdings that passed. |
-| 3:31 | limits | What we cannot prove, we say. Latency is attested and gates nothing. Publishing the raw response is what makes verification real, and it is wrong for a business selling data. |
-| 3:42 | close | x402 has no refund primitive. The shipped alternative appoints an evaluator. Receipt has no evaluator, because the verdict is a pure function anyone can recompute. |
+| 0:09 | problem | An agent pays first and looks second. If the API returns two hundred and garbage, the money is gone — x402 has no refund primitive at all. Arbitration cannot help at forty-six cents a ticket. The one shipped alternative appoints an evaluator, and does five unique senders a day. |
+| 0:26 | design | Receipt has no evaluator, because there is nothing to judge. Every check is a pure function of the terms and the response. The buyer computes it, the seller computes it, and so can you, from a public log. |
+| 0:40 | honest | Here is a real purchase. The buyer signs terms saying what shape of token data it will pay for — real contract addresses, integer amounts, a snapshot indexed past a stated block. The payment escrows on Hedera instead of going to the seller. The seller answers, the adjudicator runs, and the funds release. |
+| 1:03 | verdict | Seven checks decide where the money goes, and every one is recomputable. Latency is the eighth: measured, published, and gating nothing — we cannot prove our own stopwatch. |
+| 1:13 | garbage | Same buyer, same terms. This time the seller returns HTTP two hundred with a useless body. |
+| 1:28 | refund | Nothing at the HTTP layer was wrong — status passed. The schema caught it, and the money came back in seconds. No human, no evaluator, no dispute. |
+| 1:39 | stale | Harder case. The data is well-formed and correct — it is just an hour old. Every check passes except freshness, and freshness is the one that matters. |
+| 1:52 | declined | And because the check is a pure function, the seller can run it too, before answering. Here it grades its own response, sees it would fail, and declines the sale rather than take a payment it could not keep. |
+| 2:06 | expired | If the seller simply never answers, no verdict is invented. The escrow expires, and an unrelated wallet — not the buyer — calls claimExpired. The funds can only go back to the payer, so anyone is safe to call it. |
+| 2:20 | replay | Now do not trust any of it. This replays every verdict the facilitator ever published, from the public log, with no cooperation from it. Twenty-eight reproduce. Zero mismatch. |
+| 2:36 | second impl | And here it is again in a second implementation — Python, no dependencies, its own keccak, written from the spec rather than from our TypeScript. Same verdict, same hash, and it is the hash the escrow recorded on chain. |
+| 2:51 | evidence | None of this has to be taken on trust. Here is that release on HashScan — half an HBAR leaving the escrow for the seller. Here is the audit log, in the open. And here is a page that runs a deal for you, and recomputes any verdict in your own browser. |
+| 3:09 | conform | Twelve cases, both implementations, identical every time. If the spec were ambiguous, these would disagree. |
+| 3:19 | sponsors | Every sponsor technology is load-bearing. The Graph is what is being bought — two products composed. Hedera holds the money and carries the log. Blocky402 performs every payment. Bazantic exposes it as a gateway, with a Recipe that prices a swap only against holdings that passed. |
+| 3:34 | limits | What we cannot prove, we say. Latency is attested and gates nothing. Publishing the raw response is what makes verification real, and it is wrong for a business selling data. |
+| 3:45 | close | x402 has no refund primitive. The shipped alternative appoints an evaluator. Receipt has no evaluator, because the verdict is a pure function anyone can recompute. |
 
 Pace is about 2.5 words a second. If you run long, the scenes that tolerate
 cutting are **stale** and **conform**; do not cut **replay** or **second

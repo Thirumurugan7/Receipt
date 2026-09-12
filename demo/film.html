@@ -19,9 +19,10 @@
    * offscreen in any order, on any machine, and come out identical.
    */
   :root{
-    --paper:#e6e7e2; --ink:#161a13; --faded:#6c7367; --rule:#c4c8bf; --hair:#d2d6cc;
-    --held:#8a6a2f; --paid:#2b6a4a; --returned:#a8392a;
-    --term-bg:#111309; --term-fg:#d6dacd; --term-dim:#767e6c;
+    --paper:#faf7f2; --ink:#191d2b; --faded:#6b7486; --rule:#e2d9cc; --hair:#efe9e0;
+    --carbon:#2f3aa8; --carbon-soft:#eceefb;
+    --held:#c2740b; --paid:#13894f; --returned:#cf2f24;
+    --term-bg:#14171f; --term-fg:#dfe4ee; --term-dim:#7c879d;
     --gutter:150px;
   }
   *{box-sizing:border-box; margin:0; padding:0}
@@ -47,13 +48,13 @@
         padding:70px 0 70px 44px; display:flex; flex-direction:column; justify-content:space-between}
   #rail:before{content:''; position:absolute; left:26px; top:0; bottom:0;
                border-left:1px dotted var(--rule)}
-  body[data-dark="1"] #rail:before{border-left-color:#3a4034}
+  body[data-dark="1"] #rail:before{border-left-color:#39405a}
   #rail .num{font-size:15px; font-weight:600; letter-spacing:.06em; color:var(--faded)}
   #rail .nm{font-size:13px; color:var(--faded); margin-top:7px; letter-spacing:.04em}
   #rail .clock{font-size:13px; color:var(--faded)}
   body[data-dark="1"] #rail .num,
   body[data-dark="1"] #rail .nm,
-  body[data-dark="1"] #rail .clock{color:#5f6857}
+  body[data-dark="1"] #rail .clock{color:#69748f}
   .chip{display:inline-block; max-width:82px; margin-bottom:16px; padding:5px 8px 4px; font-size:11.5px;
         font-weight:600; letter-spacing:.09em; line-height:1.4; border:1.5px solid currentColor}
   .chip.open{color:var(--held)} .chip.rel{color:var(--paid)} .chip.ref{color:var(--returned)}
@@ -67,8 +68,8 @@
 
   ul{list-style:none; margin-top:30px; display:grid; gap:14px; max-width:78ch}
   li{display:flex; gap:16px; font-size:19.5px; line-height:1.45; align-items:baseline}
-  li b{font-weight:600}
-  li .m{color:var(--rule); flex:0 0 auto}
+  li b{font-weight:700; color:var(--carbon)}
+  li .m{color:var(--carbon); flex:0 0 auto; font-weight:700}
   .punch{margin-top:34px; font-size:26px; font-weight:600; color:var(--returned)}
 
   .stamp{display:inline-block; padding:9px 22px 8px; border:3px solid currentColor;
@@ -78,12 +79,12 @@
 
   /* terminal */
   .term{white-space:pre-wrap; word-break:break-word; line-height:1.62; letter-spacing:.002em}
-  .term .dim{color:var(--term-dim)} .term .g{color:#7fc793} .term .r{color:#e2897a}
-  .term .y{color:#dcb46a} .term .w{color:#fff; font-weight:500}
-  .term .hot{color:#8ede9f; font-weight:600}
-  .term .warn{color:#e6c47a; font-weight:600}
+  .term .dim{color:var(--term-dim)} .term .g{color:#5ed99b} .term .r{color:#ff8d80}
+  .term .y{color:#f2c069} .term .w{color:#fff; font-weight:500}
+  .term .hot{color:#5ef0a6; font-weight:600}
+  .term .warn{color:#f2c069; font-weight:600}
   .slug{color:var(--term-dim); font-size:15.5px; margin-bottom:18px; letter-spacing:.02em}
-  .slug b{color:#dcb46a; font-weight:500}
+  .slug b{color:#f2c069; font-weight:500}
   .cur{display:inline-block; width:9px; height:17px; background:var(--term-fg); vertical-align:-3px}
 
   /* the checklist: the verdict, drawn */
@@ -105,8 +106,8 @@
   .ledger .tot{border-bottom:none; font-weight:700; font-size:25px; padding-top:4px}
 
   .flow{display:grid; gap:11px; margin-top:26px; font-size:18.5px; max-width:86ch; line-height:1.45}
-  .flow .b{border:1.5px solid var(--rule); padding:13px 17px}
-  .flow .b.hot{border-color:var(--held); border-width:2px}
+  .flow .b{border:1.5px solid #cfd4ee; border-left:4px solid var(--carbon); padding:13px 17px}
+  .flow .b.hot{border-color:#eccf9f; border-left-color:var(--held); background:#fdf7ec}
   .flow .a{color:var(--faded); padding-left:24px; font-size:16px}
 
   table{border-collapse:collapse; margin-top:22px; font-size:17px; width:100%; max-width:1430px}
@@ -116,7 +117,16 @@
   td.ev{color:var(--faded); font-size:15px; white-space:nowrap}
   .ok{color:var(--paid)} .nope{color:var(--returned)}
 
-  #bar{position:absolute; left:0; bottom:0; height:2px; background:var(--held); width:0; z-index:6}
+  /* evidence: real captures of the explorer, shown at size */
+  /* the captures are 1500x1000; the box keeps that ratio so nothing is
+     squashed and nothing overflows onto the caption. */
+  .shot{position:relative; width:1050px; height:700px}
+  .shot img{position:absolute; inset:0; width:100%; height:100%; border:1px solid var(--rule);
+            border-radius:3px; box-shadow:0 2px 10px rgba(25,29,43,.10)}
+  .shot .cap{position:absolute; left:0; right:0; bottom:-40px; font-size:16.5px; color:var(--faded)}
+  .shot .cap b{color:var(--carbon); font-weight:600}
+
+  #bar{position:absolute; left:0; bottom:0; height:3px; background:var(--carbon); width:0; z-index:6}
 </style>
 </head>
 <body>
@@ -190,7 +200,7 @@ const SCENES = [
       every figure in this film came off a real run</p>
   </div>`},
 
-{ n:'problem', dur:19000, html:`
+{ n:'problem', dur:17000, html:`
   <h2 class="wide">An agent pays. The API returns HTTP 200 and garbage. The money is already gone.</h2>
   <ul>
     <li><span class="m">—</span><span>x402 has <b>no refund primitive</b>. There is no dispute step anywhere in the stack.</span></li>
@@ -237,12 +247,23 @@ termScene('replay', 'replaying every verdict on the public log &nbsp;<b>pnpm ver
 
 termScene('second impl', 'a second implementation, sharing no code with the first &nbsp;<b>python3 verify.py</b>', 'python', null),
 
-{ n:'conform', dur:13000, html:`
+{ n:'evidence', dur:18000, shots:3, html:`
+  <h3 style="max-width:62ch; margin-bottom:22px">Every figure in this film is on a public ledger. Here is where to find it.</h3>
+  <div class="shot">
+    <img data-shot="0" src="shots/tx-release.png" alt="the release transaction on HashScan">
+    <img data-shot="1" src="shots/topic-messages.png" alt="the audit topic messages on HashScan">
+    <img data-shot="2" src="shots/ledger.png" alt="the live ledger">
+    <p class="cap" data-cap="0"><b>release()</b> on HashScan — 0.50000000 ℏ leaves the escrow contract for the seller</p>
+    <p class="cap" data-cap="1"><b>the audit log</b> — terms, the raw response and the verdict, published for every deal</p>
+    <p class="cap" data-cap="2"><b>the live ledger</b> — runs a real deal for you, and recomputes any verdict in your own browser</p>
+  </div>`},
+
+{ n:'conform', dur:10000, html:`
   <h2 class="wide">Two implementations. Same verdicts, same hashes.</h2>
   <p class="lede">The Python verifier is 600 lines with no dependencies — its own keccak, its own JCS canonicaliser, written from SPEC.md rather than from the TypeScript. If the spec were ambiguous these would disagree.</p>
   <div class="term" style="background:var(--term-bg); color:var(--term-fg); padding:22px 26px; margin-top:24px; font-size:15px; max-width:92ch" data-static="conformance"></div>`},
 
-{ n:'sponsors', dur:17000, html:`
+{ n:'sponsors', dur:15000, html:`
   <h3 style="max-width:60ch">Where each sponsor technology actually carries weight.</h3>
   <table>
     <tr><th>sponsor</th><th>what it does here</th><th>evidence</th></tr>
@@ -269,7 +290,7 @@ termScene('second impl', 'a second implementation, sharing no code with the firs
 ];
 
 // terminal scenes get their duration from how much there is to read
-const TERM_DUR = { honest:25000, garbage:17000, subtle:15000, selfcheck:14000, dead:16000,
+const TERM_DUR = { honest:23000, garbage:15000, subtle:13000, selfcheck:14000, dead:14000,
                    verifyAll:16000, python:15000 };
 for (const s of SCENES) if (s.type) s.dur = TERM_DUR[s.type] ?? 16000;
 
@@ -341,6 +362,21 @@ function seek(ms){
   }
 
   // checks tick down one at a time, then the stamp lands once
+  // three captures in one scene: each holds, then hands over to the next
+  if (s.shots) {
+    const per = s.dur / s.shots;
+    const idx = Math.min(s.shots - 1, Math.floor(st / per));
+    const into = (st - idx * per) / 260;
+    for (const img of kids[i].querySelectorAll('[data-shot]')) {
+      const j = Number(img.dataset.shot);
+      img.style.opacity = j === idx ? String(easeOut(into)) : (j < idx ? '0' : '0');
+    }
+    for (const cap of kids[i].querySelectorAll('[data-cap]')) {
+      cap.style.opacity = Number(cap.dataset.cap) === idx ? String(easeOut(into)) : '0';
+    }
+    sig.push('s' + idx, Math.round(easeOut(into) * 100));
+  }
+
   const rows = kids[i].querySelectorAll('.checks .row');
   if (rows.length) {
     const per = 520;

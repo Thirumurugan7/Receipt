@@ -142,6 +142,35 @@ third party can recompute it — which is exactly why it lives in `attested` and
 gates nothing. It is reported, never trusted.
 
 
+## The live ledger — public, and it will run a deal for you
+
+| | |
+|---|---|
+| URL | https://0700-2406-7400-c4-858a-d876-37d7-a720-7be3.ngrok-free.app |
+| Serves | the ledger at `/`, the x402 facilitator interface, and the audit links |
+| Run budget | 200 deals, one at a time, 15s apart (`RECEIPT_DEMO_MAX_RUNS`) |
+
+The page lists every deal with its checks, the transaction that moved the
+money, and the raw bytes of its terms, response and verdict on the mirror
+node. Four buttons start a real purchase and stream it live; each one runs the
+documented command, so what a visitor sees is the same code path as
+`pnpm buy honest` rather than a demo-only one.
+
+Every deal also has **recompute this in your browser**, which fetches the
+terms, the raw response and the published verdict straight from Hedera's
+mirror node, re-runs the adjudicator in the visitor's browser, and compares
+its own hash to the published one. No request touches this facilitator while
+it runs, so this facilitator cannot influence the answer.
+
+The deal list survives restarts because it is **rebuilt from the audit topic on
+boot** rather than kept only in memory. That is worth more than the
+convenience: if the page can be reconstructed from the public log, the log
+demonstrably contains what the page claims.
+
+This is an ngrok tunnel to a local facilitator, so it is live only while that
+tunnel is. **The URL changes when the tunnel restarts** — if it is dead, run
+`pnpm facilitator` and open http://localhost:8080, which is the same page.
+
 ## Bazantic — live
 
 | | |

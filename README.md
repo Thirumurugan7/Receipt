@@ -6,7 +6,9 @@
 
 Live on Hedera testnet. Settlement runs through the Blocky402 x402 facilitator, every verdict is published to a public Hedera Consensus Service topic, and anyone can re-run the adjudicator offline and check the result against the hash recorded on chain.
 
-**Demo: [`demo/receipt-demo.mp4`](demo/receipt-demo.mp4)** — 3:51. Every figure in it came off a live run: real settlement, real escrow, real release and refund. [`DEMO.md`](DEMO.md) is the narration, and [`demo/README.md`](demo/README.md) explains how the film is rendered without recording a screen.
+**Demo: [`demo/receipt-demo.mp4`](demo/receipt-demo.mp4)** — 3:54. Every figure in it came off a live run: real settlement, real escrow, real release and refund. [`DEMO.md`](DEMO.md) is the narration, and [`demo/README.md`](demo/README.md) explains how the film is rendered without recording a screen.
+
+**Nothing here needs to be taken on trust.** Every deal links to the transaction that moved the money on [HashScan](https://hashscan.io/testnet/contract/0x3483B3761ebe3C2fC2eB3EfE8215a7CF90634071) and to the raw bytes of its terms, response and verdict on the Hedera mirror node. `pnpm verify --all` recomputes every verdict from that public log with no cooperation from the facilitator, and `verify-py/` does it again in a second implementation that shares no code with the first. The live ledger at `/` goes further: **every deal has a button that recomputes its verdict in your own browser**, fetching the inputs straight from Hedera's mirror node so our server cannot influence the answer — and it will run a real deal for you too. See [`DEPLOYMENTS.md`](DEPLOYMENTS.md) for the current URL.
 
 ---
 

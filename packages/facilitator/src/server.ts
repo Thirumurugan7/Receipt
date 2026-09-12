@@ -22,6 +22,7 @@ import { adjudicatorAddress, readDeal } from './escrow.js'
 import * as store from './store.js'
 import { openapi, publicUrl } from './openapi.js'
 import { DEMO_MODES, isDemoMode, RunGate } from './demo.js'
+import { rehydrate } from './rehydrate.js'
 import { lookup, record } from './payments.js'
 
 const app = new Hono()
@@ -44,6 +45,20 @@ app.get('/', (c) => {
     return c.html(readFileSync(DASHBOARD, 'utf8'))
   } catch {
     return c.text('dashboard not found', 404)
+  }
+})
+
+/**
+ * The browser verifier, served from this origin. It recomputes a verdict from
+ * the mirror node without asking this server anything, which only means
+ * something if the page is not loading it from a third party.
+ */
+app.get('/verify.js', (c) => {
+  try {
+    const js = readFileSync(resolve(dirname(DASHBOARD), 'verify.js'), 'utf8')
+    return c.body(js, 200, { 'content-type': 'text/javascript; charset=utf-8' })
+  } catch {
+    return c.text('verify.js not built — run pnpm build:verifier', 404)
   }
 })
 
@@ -269,6 +284,20 @@ app.get('/stream', (c) => {
     headers: { 'content-type': 'text/event-stream', 'cache-control': 'no-cache', connection: 'keep-alive' },
   })
 })
+
+/*
+ * Rebuild the ledger from the audit topic before serving, so a restart does
+ * not leave a visitor looking at an empty page — and so the page demonstrates,
+ * on every boot, that the log really does contain what the page claims. Best
+ * effort: a slow mirror node must not stop the facilitator from starting.
+ */
+const MIRROR = process.env.HEDERA_MIRROR_URL ?? 'https://testnet.mirrornode.hedera.com'
+try {
+  const n = await rehydrate(MIRROR, config.topicId)
+  console.log(`rebuilt ${n} deal${n === 1 ? '' : 's'} from the audit topic`)
+} catch (e) {
+  console.log(`could not read the audit topic (${String(e)}); the ledger starts empty`)
+}
 
 serve({ fetch: app.fetch, port: config.port }, (info) => {
   console.log(`Receipt facilitator on :${info.port}`)

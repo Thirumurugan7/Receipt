@@ -23,6 +23,7 @@ import { createServer } from 'node:http'
 import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { dirname, extname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { launch } from './cdp.mjs'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
 const FPS = 30
@@ -30,9 +31,6 @@ const WIDTH = 1920
 const HEIGHT = 1080
 const OUT = join(HERE, 'receipt-demo.mp4')
 const FRAMES = process.env.FRAME_DIR ?? join(HERE, '.frames')
-
-const CHROME = process.env.CHROME ??
-  '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
 
 const TYPES = {
   '.html': 'text/html; charset=utf-8',
@@ -60,68 +58,6 @@ function serve() {
   })
 }
 
-// ── the smallest CDP client that can do this job ───────────────────────────
-class CDP {
-  constructor(ws) {
-    this.ws = ws
-    this.id = 0
-    this.pending = new Map()
-    this.listeners = []
-    ws.addEventListener('message', (ev) => {
-      const msg = JSON.parse(ev.data)
-      if (msg.id !== undefined && this.pending.has(msg.id)) {
-        const { resolve, reject } = this.pending.get(msg.id)
-        this.pending.delete(msg.id)
-        msg.error ? reject(new Error(`${msg.error.message} (${JSON.stringify(msg.error.data ?? '')})`))
-          : resolve(msg.result)
-      } else {
-        for (const fn of this.listeners) fn(msg)
-      }
-    })
-  }
-
-  static async connect(url) {
-    const ws = new WebSocket(url)
-    await new Promise((resolve, reject) => {
-      ws.addEventListener('open', resolve, { once: true })
-      ws.addEventListener('error', () => reject(new Error(`cannot connect to ${url}`)), { once: true })
-    })
-    return new CDP(ws)
-  }
-
-  send(method, params = {}, sessionId) {
-    const id = ++this.id
-    this.ws.send(JSON.stringify({ id, method, params, ...(sessionId ? { sessionId } : {}) }))
-    return new Promise((resolve, reject) => this.pending.set(id, { resolve, reject }))
-  }
-
-  once(method) {
-    return new Promise((resolve) => {
-      const fn = (msg) => {
-        if (msg.method === method) {
-          this.listeners = this.listeners.filter((l) => l !== fn)
-          resolve(msg.params)
-        }
-      }
-      this.listeners.push(fn)
-    })
-  }
-}
-
-const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
-
-async function chromeEndpoint(port, chrome) {
-  for (let i = 0; i < 100; i++) {
-    if (chrome.exitCode !== null) throw new Error(`Chrome exited early with code ${chrome.exitCode}`)
-    try {
-      const r = await fetch(`http://127.0.0.1:${port}/json/version`)
-      if (r.ok) return (await r.json()).webSocketDebuggerUrl
-    } catch { /* not up yet */ }
-    await sleep(200)
-  }
-  throw new Error('Chrome did not open a debugging port')
-}
-
 async function main() {
   const { server, port } = await serve()
   const url = `http://127.0.0.1:${port}/film.html#render`
@@ -129,37 +65,12 @@ async function main() {
   rmSync(FRAMES, { recursive: true, force: true })
   mkdirSync(FRAMES, { recursive: true })
 
-  const debugPort = 9000 + Math.floor(Math.random() * 900)
-  const profile = join(FRAMES, 'profile')
-  const chrome = spawn(CHROME, [
-    '--headless=new',
-    `--remote-debugging-port=${debugPort}`,
-    `--user-data-dir=${profile}`,
-    `--window-size=${WIDTH},${HEIGHT}`,
-    '--hide-scrollbars',
-    '--disable-lcd-text',
-    '--force-device-scale-factor=1',
-    '--font-render-hinting=none',
-    '--no-first-run',
-    '--no-default-browser-check',
-    '--disable-extensions',
-    'about:blank',
-  ], { stdio: 'ignore' })
-
-  const browserWs = await chromeEndpoint(debugPort, chrome)
-  const browser = await CDP.connect(browserWs)
-  const { targetId } = await browser.send('Target.createTarget', { url: 'about:blank' })
-  const { sessionId } = await browser.send('Target.attachToTarget', { targetId, flatten: true })
-  const call = (method, params) => browser.send(method, params, sessionId)
-
-  await call('Page.enable')
-  await call('Emulation.setDeviceMetricsOverride', {
-    width: WIDTH, height: HEIGHT, deviceScaleFactor: 1, mobile: false,
+  const browser = await launch({
+    width: WIDTH, height: HEIGHT, profileDir: join(FRAMES, 'profile'),
   })
+  const call = browser.call
 
-  const loaded = browser.once('Page.loadEventFired')
-  await call('Page.navigate', { url })
-  await loaded
+  await browser.goto(url)
 
   // The film is typeset in one family. Rendering a frame in the fallback font
   // because the webfont had not arrived yet would be a silent defect in the
@@ -195,7 +106,7 @@ async function main() {
       writeFileSync(file, Buffer.from(data, 'base64'))
       console.log(file)
     }
-    chrome.kill()
+    browser.kill()
     server.close()
     return
   }
@@ -234,7 +145,7 @@ async function main() {
   }
   process.stdout.write(`\r  100% — ${captured} distinct frames for ${frameCount} frame slots\n`)
 
-  chrome.kill()
+  browser.kill()
   server.close()
 
   // ffmpeg's concat demuxer wants the final entry repeated for its duration to
