@@ -99,26 +99,16 @@ describe('DEMO.md is runnable as written', () => {
     for (const id of hederaIds(demo)) expect(inDeployments).toContain(id)
   })
 
-  test('all six scenes plus a closing are scripted', () => {
-    for (const n of [1, 2, 3, 4, 5, 6]) {
-      expect(demo).toMatch(new RegExp(`## Scene ${n} —`))
-    }
-    expect(demo).toMatch(/## Closing/)
-  })
-
-  /**
-   * The hard requirement is under five minutes. A script whose own stated
-   * timings already exceed that is a script that will be cut off mid-sentence.
+  /*
+   * DEMO.md is now a narration script timed against the film rather than a
+   * list of scenes to perform live, so its structure and running time are
+   * checked against demo/schedule.json in demo-doc.test.ts, which compares
+   * them to the film itself instead of to numbers written down by hand.
+   * What is still worth asserting here is that the script makes the argument.
    */
-  test('the scripted timings fit inside the five minute limit', () => {
-    const seconds = [...demo.matchAll(/\((\d+)s\)/g)].map((m) => Number(m[1]))
-    expect(seconds.length).toBeGreaterThanOrEqual(6)
-    const total = seconds.reduce((a, b) => a + b, 0)
-    expect(total).toBeLessThanOrEqual(300)
-  })
-
-  test('it names the claim the project rests on', () => {
-    expect(demo.toLowerCase()).toMatch(/do not trust my adjudicator/)
+  test('it tells the viewer not to trust the adjudicator, and how to check', () => {
+    expect(demo.toLowerCase()).toMatch(/do not trust/)
+    expect(demo).toMatch(/verify --all/)
   })
 
   test('it tells the presenter to disclose the unprovable latency', () => {

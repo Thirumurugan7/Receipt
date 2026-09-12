@@ -1,45 +1,67 @@
 # demo
 
-`receipt-demo.mp4` — 3m44s, 1920×1080, no audio. Every number in it is real,
-captured from a live run against Hedera testnet, buying live token data from
-The Graph's Token API.
+`receipt-demo.mp4` — 1920×1080, no audio. Every number in it is real, captured
+from a live run against Hedera testnet, buying live token data from The Graph.
+`DEMO.md` at the repo root is the narration to read over it.
 
-## How it was made
+## How it is made
 
-No screen recording. Each slide is rendered offscreen with headless Chrome and
-the frames are assembled with ffmpeg, so the output is deterministic and
-contains nothing but the film.
+Nothing here records a screen. Two steps, both reproducible:
 
 ```bash
-# 1. capture real output from a full run (needs facilitator + seller running)
-pnpm scenes > /tmp/scenes.txt
-
-# 2. extract the transcripts into demo-data.js, then serve this directory
-python3 -m http.server 8899
-
-# 3. render each slide offscreen
-CHROME="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
-for i in $(seq 0 11); do
-  "$CHROME" --headless --disable-gpu --hide-scrollbars --virtual-time-budget=2500 \
-    --screenshot="frames/s$(printf %02d $i).png" --window-size=1920,1080 \
-    "http://localhost:8899/film.html#slide=$i"
-done
-
-# 4. assemble (concat.txt pairs each frame with its slide duration)
-ffmpeg -f concat -safe 0 -i concat.txt -t 224 \
-  -vf "fps=30,format=yuv420p,fade=t=in:st=0:d=0.8,fade=t=out:st=222.4:d=1.6" \
-  -c:v libx264 -preset slow -crf 20 -movflags +faststart receipt-demo.mp4
+node demo/capture.mjs     # runs every scene for real -> demo-data.js
+node demo/render.mjs      # renders the film -> receipt-demo.mp4, schedule.json
 ```
+
+**`capture.mjs`** runs the scenes end to end — real settlement, real escrow,
+real release and refund — and writes the transcripts to `demo-data.js`. The
+per-check results behind the animated checklist are read back from the
+facilitator's own deal record, so the ticks and crosses on screen are the ones
+the adjudicator produced, including the checks that failed *after* the first
+failure. It refuses to write a capture that came back empty, because a blank
+slide in the finished film is worse than a failed build.
+
+**`render.mjs`** drives headless Chrome over the DevTools Protocol and
+assembles the frames with ffmpeg. It has no dependencies: the WebSocket client
+is the one built into Node, and the page is served by `node:http`.
+
+## The film is a pure function of time
+
+`film.html` has no CSS animations and no timers. It exposes `seek(ms)`, which
+computes every pixel of state from the clock — which scene is showing, how much
+of a transcript has printed, where a stamp is in its landing, what the escrow
+chip in the margin says. A frame at `t` is the same frame no matter when, or on
+whose machine, it is rendered.
+
+That is the same property the project claims for its verdicts, and it buys two
+concrete things:
+
+- **Frames can be skipped.** `seek` returns a signature of the state it painted.
+  The renderer captures a frame only when the signature changes and turns the
+  rest into a longer `duration` in the ffmpeg concat list. A scene that holds
+  still for twelve seconds costs one screenshot, not three hundred and sixty.
+- **Re-rendering is safe.** There is no wall-clock animation to race, so a
+  slow machine produces the same video as a fast one.
+
+Opening `film.html` in a browser plays it: the same `seek` is driven off
+`requestAnimationFrame` instead. `#render` freezes it at `t=0` for the renderer.
+
+## Checking a change without a full render
+
+```bash
+node demo/render.mjs --at 0,62000,163000
+```
+
+Renders just those moments into `demo/.frames/` and exits.
 
 ## Files
 
 | | |
 |---|---|
-| `film.html` | the deck. `#slide=N` renders one slide statically; no hash autoplays it in a browser |
-| `demo-data.js` | real terminal transcripts captured from a live run |
-| `dashboard.png` | the live ledger, screenshotted with three real deals on it |
+| `film.html` | the film. one family, no animation, `seek(ms)` paints everything |
+| `capture.mjs` | runs the scenes for real and writes `demo-data.js` |
+| `demo-data.js` | captured transcripts and verdicts — generated, not hand-edited |
+| `render.mjs` | headless Chrome + ffmpeg, no dependencies |
+| `schedule.json` | the running order, written by the renderer; `DEMO.md` is tested against it |
 | `receipt-demo.mp4` | the rendered film |
-
-Open `film.html` in a browser to watch it play with the transcripts typing out,
-which is the better version to screen-record if you want narration over it.
-DEMO.md at the repo root is the script for that.
+| `dashboard.png` | the live ledger, screenshotted with real deals on it |

@@ -1,224 +1,106 @@
-# DEMO.md — the recording script
+# DEMO.md — the film, and what to say over it
 
-Under 5 minutes. Judges are watching a recording, not standing at your table.
-**Show, do not explain.** Every number on screen is real and comes from Hedera
-testnet; nothing here is mocked, so nothing needs to be faked.
+`demo/receipt-demo.mp4` — 3:51, 1920×1080, no audio.
 
-Record at 1080p minimum. Terminal font large enough to read on a laptop. No
-background music.
+Every figure in it came off a live run against Hedera testnet: real settlement
+through Blocky402, real escrow, real release and refund, real data bought from
+The Graph. Nothing is mocked, which is why nothing needed to be faked.
+
+The film carries the argument on its own if it is watched in silence. The
+narration below is for when you are presenting it — read it over the top, or
+record it as a voice track. Timecodes are taken from `demo/schedule.json`,
+which the renderer writes from the film itself, so this script cannot quietly
+drift out of sync with what is on screen.
 
 ---
 
-## Before you hit record
+## Narration
+
+| at | scene | what to say |
+|---|---|---|
+| 0:00 | title | Receipt is a drop-in x402 facilitator that adds one thing: the money moves only if the response passes checks the buyer wrote. |
+| 0:09 | problem | Today an agent pays first and looks second. If the API returns two hundred and garbage, the money is already gone — x402 has no refund primitive. Arbitration doesn't help: the median ticket is forty-six cents, and Kleros or UMA want bonds and days. The one shipped alternative appoints an evaluator. It does five unique senders a day. |
+| 0:28 | design | Receipt has no evaluator, because there is nothing to judge. Every check is a pure function of the terms and the response. The buyer computes it, the seller computes it, and so can you, from a public log. |
+| 0:42 | honest | Here is a real purchase. The buyer signs terms saying what shape of token data it will pay for — real contract addresses, integer amounts, a snapshot indexed past a stated block. The payment escrows on Hedera instead of going to the seller. The seller answers, the adjudicator runs, and the funds release. |
+| 1:07 | verdict | Seven checks decide where the money goes, and every one is recomputable. Latency is the eighth: measured, published, and gating nothing — we cannot prove our own stopwatch. |
+| 1:17 | garbage | Same buyer, same terms. This time the seller returns HTTP two hundred with a useless body. |
+| 1:34 | refund | Nothing at the HTTP layer was wrong — status passed. The schema caught it, and the money came back in seconds. No human, no evaluator, no dispute. |
+| 1:45 | stale | Harder case. The data is well-formed and correct — it is just an hour old. Every check passes except freshness, and freshness is the one that matters. |
+| 2:00 | declined | And because the check is a pure function, the seller can run it too, before answering. Here it grades its own response, sees it would fail, and declines the sale rather than take a payment it could not keep. |
+| 2:14 | expired | If the seller simply never answers, no verdict is invented. The escrow expires, and an unrelated wallet — not the buyer — calls claimExpired. The funds can only go back to the payer, so anyone is safe to call it. |
+| 2:30 | replay | Now do not trust any of it. This replays every verdict the facilitator ever published, from the public log, with no cooperation from it. Twenty-eight reproduce. Zero mismatch. |
+| 2:46 | second impl | And here it is again in a second implementation — Python, no dependencies, its own keccak, written from the spec rather than from our TypeScript. Same verdict, same hash, and it is the hash the escrow recorded on chain. |
+| 3:01 | conform | Twelve cases, both implementations, identical every time. If the spec were ambiguous, these would disagree. |
+| 3:14 | sponsors | Every sponsor technology is load-bearing. The Graph is what is being bought — two products composed. Hedera holds the money and carries the log. Blocky402 performs every payment. Bazantic exposes it as a gateway, with a Recipe that prices a swap only against holdings that passed. |
+| 3:31 | limits | What we cannot prove, we say. Latency is attested and gates nothing. Publishing the raw response is what makes verification real, and it is wrong for a business selling data. |
+| 3:42 | close | x402 has no refund primitive. The shipped alternative appoints an evaluator. Receipt has no evaluator, because the verdict is a pure function anyone can recompute. |
+
+Pace is about 2.5 words a second. If you run long, the scenes that tolerate
+cutting are **stale** and **conform**; do not cut **replay** or **second
+impl**, which are the two that make the claim checkable.
+
+---
+
+## Questions judges ask, and the honest answer
+
+**"Who decides what counts as a good response?"** The buyer, before paying,
+in signed terms. Nobody decides afterwards.
+
+**"What if the facilitator lies about the verdict?"** It publishes the terms,
+the raw response and the verdict to a public HCS topic, and the escrow records
+the verdict hash on chain. `pnpm verify --all` recomputes all of it from the
+log. A lie would have to produce a verdict that follows from inputs it also
+published, which is the same as not lying.
+
+**"It still custodies the money for a hop."** Yes. Both legs are on the public
+log, and `open()` verifies the buyer's EIP-712 signature on chain, so the
+facilitator cannot alter the deal it was handed. Removing the hop entirely
+needs a scheme change in x402, not a change here.
+
+**"Why not just use an LLM judge?"** Because then you need an evaluator, and
+somebody has to pay it and trust it. That design is shipped, and it runs at
+five unique senders a day.
+
+---
+
+## Rebuilding the film
+
+Both steps are reproducible and neither records a screen.
 
 ```bash
-# 1. services, in this order — the seller syncs supported kinds from Receipt
-pnpm facilitator      # :8080
-pnpm seller           # :8787
+# 1. capture real transcripts (needs the facilitator and seller running)
+pnpm facilitator            # :8080
+pnpm seller                 # :8787
+node demo/capture.mjs       # runs every scene for real, writes demo/demo-data.js
 
-# 2. confirm the buyer has enough testnet HBAR for four scenes (~2 ℏ)
-curl -s https://testnet.mirrornode.hedera.com/api/v1/accounts/$BUYER_HEDERA_ACCOUNT_ID \
-  | python3 -c "import sys,json;print(json.load(sys.stdin)['balance']['balance']/1e8, 'HBAR')"
-
-# 3. do one throwaway `pnpm buy honest` so the first-run compile is not on camera
+# 2. render
+node demo/render.mjs        # writes demo/receipt-demo.mp4 and demo/schedule.json
 ```
 
-Have these tabs open and already loaded:
-
-- HashScan contract: `https://hashscan.io/testnet/contract/0x3483B3761ebe3C2fC2eB3EfE8215a7CF90634071`
-- HashScan HCS topic: `https://hashscan.io/testnet/topic/0.0.10495465`
-
-Terminal layout: one wide terminal is enough. Resist a four-pane grid; it reads
-as clutter at 1080p.
+`demo/render.mjs --at 0,62000,163000` renders single moments instead of the
+whole film, which is how to check a layout change without paying for a full
+render. See `demo/README.md` for how it works.
 
 ---
 
-## Scene 1 — the problem (25s)
+## If you want to run it live instead
 
-**Show:** the seller in garbage mode, called directly, with no Receipt.
+The film is the safer artifact — a live run needs testnet liquidity, a
+responsive mirror node, and about four minutes of patience for the expiry
+scene. If you do run it live:
 
 ```bash
-curl -s "http://localhost:8787/api/quote?mode=garbage" -H "PAYMENT-SIGNATURE: $PAID"
+pnpm facilitator            # :8080
+pnpm seller                 # :8787
+pnpm buy honest             # releases
+pnpm buy garbage            # refunds
+pnpm buy subtle             # refunds on freshness alone
+pnpm verify --all           # replays every verdict from the public log
+cd verify-py && python3 verify.py --deal <dealId> --topic 0.0.10495465
 ```
 
-```json
-{"error":"upstream rate limited"}
-```
+Do one throwaway `pnpm buy honest` before recording so the first-run compile is
+not on camera, and have these open:
 
-**Say, once:** "HTTP 200. The payment already settled. The agent paid for
-this, and there is no refund primitive in x402 — no dispute step anywhere in
-the stack."
-
-**Do not** linger. This scene exists to make scene 3 land.
-
----
-
-## Scene 2 — the honest path (45s)
-
-```bash
-pnpm buy honest
-```
-
-**Point at, in this order:**
-
-1. The **terms** block at the top — `checks: status, contentType, minBytes, maxLatencyMs, requiredPaths, jsonSchema, freshnessSeconds`.
-   Say: "The buyer states, up front and in machine terms, what it is paying for. Then signs it."
-2. `402 payment required -> payTo 0.0.2672117 (the facilitator, not the seller)`.
-   Say: "That one field is the whole product. The money goes to escrow, not the seller."
-3. `verdict pass`, then the three transaction ids: settlement, `open()`, `release()`.
-4. `buyer delta -0.50000000 ℏ`.
-
-Cut to the HashScan tab and show the contract's recent transactions.
-
----
-
-## Scene 3 — garbage: the money shot (50s)
-
-This is the scene that wins or loses the submission. Give it room.
-
-```bash
-pnpm buy garbage
-```
-
-**Point at, in this order:**
-
-1. The body: `{"error":"upstream rate limited"}`
-2. **`firstFailure requiredPaths`** — and say the important sentence:
-   **"Status two hundred. The status check passed. Nothing at the HTTP layer is
-   wrong. The schema check is what caught it."**
-3. `buyer delta 0.00000000 ℏ`
-
-**Say:** "The money came back in seconds. No human touched it, no evaluator was
-asked, nobody filed a dispute."
-
-**Then the line that separates this from metered refunds:** "The call completed.
-Status two hundred. A meter would bill this as consumed and it would be right —
-the bytes arrived. Metering refunds what you didn't use. This refunds what you
-did use and couldn't."
-
-Let the `0.00000000` sit on screen for a beat before cutting.
-
----
-
-## Scene 3b — subtle: the one a reviewer would approve (25s)
-
-```bash
-pnpm buy subtle
-```
-
-Real holdings from The Graph. Correct shape. Every field valid. The snapshot is
-two hours old.
-
-**Point at the check list:** `status`, `contentType`, `minBytes`,
-`requiredPaths`, `jsonSchema` — **all pass**. Then `freshness` alone fails.
-
-**Say:** "Nothing here looks wrong. A human reviewing this response would
-approve it, and a meter has no opinion about it at all — the bytes arrived. The
-only thing that catches it is the buyer having said, up front, how fresh the
-data had to be."
-
-This is the strongest scene in the demo. Do not rush it.
-
----
-
-## Scene 4 — dead seller (30s)
-
-```bash
-pnpm buy dead          # ~45s; cut the wait in the edit
-```
-
-Show `HTTP 504 — seller did not respond`, `escrow still Open; no verdict was published`.
-
-**Say:** "The seller never answered. A verdict is a pure function of terms and
-response — with no response, there is nothing to judge, so we publish nothing
-rather than invent a verdict nobody could reproduce."
-
-Then, and this is the point:
-
-```bash
-pnpm claim --deal 0x…
-```
-
-**Point at `caller (stranger) 0x13DD3C13…`** and say: "That wallet is not the
-buyer, not the seller, not the facilitator. `claimExpired` is permissionless
-and can only pay the payer. If we disappeared, the money still comes back."
-
-Show `payer delta 0.50000000 ℏ`.
-
----
-
-## Scene 5 — reproducibility (40s)
-
-**The most important twenty seconds in the video.**
-
-```bash
-pnpm verify --deal 0x…       # use the garbage deal: a refund is the harder case
-```
-
-Point at the three hashes lining up:
-
-```
-recomputed verdictHash    0x055b2c13…
-published  verdictHash    0x055b2c13…
-on-chain   verdictHash    0x055b2c13…   (DealRefunded)
-
-MATCH
-```
-
-**Say the line:** "Do not trust my adjudicator. This just pulled the terms and
-the raw response off a public Hedera topic, re-ran the same pure function
-offline, and got the same hash the escrow recorded. No API key. No cooperation
-from me. If I had lied, this number would differ — and that number is what
-moved the money."
-
-Then be honest, briefly: "One field we cannot prove is latency — it is our own
-stopwatch. So it gates nothing. It is recorded and it decides nothing."
-
-That sentence buys more credibility than it costs.
-
----
-
-## Scene 6 — the zero-fee detail (20s)
-
-Show the buyer's balance line from any scene:
-
-```
-buyer delta  -0.50000000 ℏ
-```
-
-**Say:** "Exactly the transfer amount. The agent never submitted a transaction
-and never paid a network fee — it signs a partial transfer and Blocky402 adds
-the fee-payer signature and submits. An agent holding no HBAR for gas can still
-transact."
-
-Optionally show the fee payer `0.0.7162784` on HashScan.
-
----
-
-## Closing (20s)
-
-One slide, three lines:
-
-> **x402 has no refund primitive.**
->
-> **The only shipped alternative uses an evaluator, and runs at five unique senders a day.**
->
-> **Receipt has no evaluator, because the verdict is a pure function anyone can recompute.**
-
-Then the repo URL. Stop.
-
----
-
-## Things to avoid
-
-- Do not read the architecture diagram aloud. Judges can read.
-- Do not explain JCS, EIP-712 or weibars. They are in the README.
-- Do not apologise for testnet.
-- Do not show a wall of passing tests; one `MATCH` is worth more.
-- Do not exceed 5 minutes. A 4:10 video that lands beats a 5:30 that gets cut off.
-
-## If something breaks on camera
-
-Re-record. Do not narrate over a failure hoping it passes — a judge who sees a
-retry loses the thread. `pnpm scenes` runs everything unattended if you would
-rather capture one clean pass and cut it into scenes afterwards.
+- escrow — `https://hashscan.io/testnet/contract/0x3483B3761ebe3C2fC2eB3EfE8215a7CF90634071`
+- audit topic — `https://hashscan.io/testnet/topic/0.0.10495465`

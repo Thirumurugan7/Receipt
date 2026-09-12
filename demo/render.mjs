@@ -1,0 +1,269 @@
+/**
+ * Renders film.html to a video without screen-recording anything.
+ *
+ *   node demo/render.mjs
+ *
+ * The film is a pure function of time: `seek(ms)` computes every pixel of
+ * state from the clock, so a frame at t is the same frame no matter when, or
+ * on whose machine, it is rendered. That is the same property the project
+ * claims for its verdicts, and it is what makes this renderer possible --
+ * there is no wall-clock animation to race, so frames can be captured as fast
+ * or as slowly as Chrome manages.
+ *
+ * `seek` also returns a signature of the state it just painted. Frames whose
+ * signature is unchanged are not re-captured; they become a longer `duration`
+ * in the ffmpeg concat list instead. A four-minute film holding on a static
+ * slide costs one screenshot, not nine hundred.
+ *
+ * Dependencies: none. Chrome is driven over the DevTools Protocol using the
+ * WebSocket client built into Node, and the page is served by node:http.
+ */
+import { spawn } from 'node:child_process'
+import { createServer } from 'node:http'
+import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { dirname, extname, join } from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+const HERE = dirname(fileURLToPath(import.meta.url))
+const FPS = 30
+const WIDTH = 1920
+const HEIGHT = 1080
+const OUT = join(HERE, 'receipt-demo.mp4')
+const FRAMES = process.env.FRAME_DIR ?? join(HERE, '.frames')
+
+const CHROME = process.env.CHROME ??
+  '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
+
+const TYPES = {
+  '.html': 'text/html; charset=utf-8',
+  '.js': 'text/javascript; charset=utf-8',
+  '.css': 'text/css; charset=utf-8',
+  '.png': 'image/png',
+  '.svg': 'image/svg+xml',
+}
+
+// ── a static server for the film, so the page can fetch its own data ───────
+function serve() {
+  const server = createServer((req, res) => {
+    const rel = decodeURIComponent((req.url ?? '/').split('?')[0].split('#')[0])
+    const safe = rel.replace(/\.\./g, '').replace(/^\/+/, '') || 'film.html'
+    try {
+      const body = readFileSync(join(HERE, safe))
+      res.writeHead(200, { 'content-type': TYPES[extname(safe)] ?? 'application/octet-stream' })
+      res.end(body)
+    } catch {
+      res.writeHead(404).end('not found')
+    }
+  })
+  return new Promise((resolve) => {
+    server.listen(0, '127.0.0.1', () => resolve({ server, port: server.address().port }))
+  })
+}
+
+// ── the smallest CDP client that can do this job ───────────────────────────
+class CDP {
+  constructor(ws) {
+    this.ws = ws
+    this.id = 0
+    this.pending = new Map()
+    this.listeners = []
+    ws.addEventListener('message', (ev) => {
+      const msg = JSON.parse(ev.data)
+      if (msg.id !== undefined && this.pending.has(msg.id)) {
+        const { resolve, reject } = this.pending.get(msg.id)
+        this.pending.delete(msg.id)
+        msg.error ? reject(new Error(`${msg.error.message} (${JSON.stringify(msg.error.data ?? '')})`))
+          : resolve(msg.result)
+      } else {
+        for (const fn of this.listeners) fn(msg)
+      }
+    })
+  }
+
+  static async connect(url) {
+    const ws = new WebSocket(url)
+    await new Promise((resolve, reject) => {
+      ws.addEventListener('open', resolve, { once: true })
+      ws.addEventListener('error', () => reject(new Error(`cannot connect to ${url}`)), { once: true })
+    })
+    return new CDP(ws)
+  }
+
+  send(method, params = {}, sessionId) {
+    const id = ++this.id
+    this.ws.send(JSON.stringify({ id, method, params, ...(sessionId ? { sessionId } : {}) }))
+    return new Promise((resolve, reject) => this.pending.set(id, { resolve, reject }))
+  }
+
+  once(method) {
+    return new Promise((resolve) => {
+      const fn = (msg) => {
+        if (msg.method === method) {
+          this.listeners = this.listeners.filter((l) => l !== fn)
+          resolve(msg.params)
+        }
+      }
+      this.listeners.push(fn)
+    })
+  }
+}
+
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
+
+async function chromeEndpoint(port, chrome) {
+  for (let i = 0; i < 100; i++) {
+    if (chrome.exitCode !== null) throw new Error(`Chrome exited early with code ${chrome.exitCode}`)
+    try {
+      const r = await fetch(`http://127.0.0.1:${port}/json/version`)
+      if (r.ok) return (await r.json()).webSocketDebuggerUrl
+    } catch { /* not up yet */ }
+    await sleep(200)
+  }
+  throw new Error('Chrome did not open a debugging port')
+}
+
+async function main() {
+  const { server, port } = await serve()
+  const url = `http://127.0.0.1:${port}/film.html#render`
+
+  rmSync(FRAMES, { recursive: true, force: true })
+  mkdirSync(FRAMES, { recursive: true })
+
+  const debugPort = 9000 + Math.floor(Math.random() * 900)
+  const profile = join(FRAMES, 'profile')
+  const chrome = spawn(CHROME, [
+    '--headless=new',
+    `--remote-debugging-port=${debugPort}`,
+    `--user-data-dir=${profile}`,
+    `--window-size=${WIDTH},${HEIGHT}`,
+    '--hide-scrollbars',
+    '--disable-lcd-text',
+    '--force-device-scale-factor=1',
+    '--font-render-hinting=none',
+    '--no-first-run',
+    '--no-default-browser-check',
+    '--disable-extensions',
+    'about:blank',
+  ], { stdio: 'ignore' })
+
+  const browserWs = await chromeEndpoint(debugPort, chrome)
+  const browser = await CDP.connect(browserWs)
+  const { targetId } = await browser.send('Target.createTarget', { url: 'about:blank' })
+  const { sessionId } = await browser.send('Target.attachToTarget', { targetId, flatten: true })
+  const call = (method, params) => browser.send(method, params, sessionId)
+
+  await call('Page.enable')
+  await call('Emulation.setDeviceMetricsOverride', {
+    width: WIDTH, height: HEIGHT, deviceScaleFactor: 1, mobile: false,
+  })
+
+  const loaded = browser.once('Page.loadEventFired')
+  await call('Page.navigate', { url })
+  await loaded
+
+  // The film is typeset in one family. Rendering a frame in the fallback font
+  // because the webfont had not arrived yet would be a silent defect in the
+  // finished video, so wait for it and refuse to render without it.
+  await call('Runtime.evaluate', { expression: 'document.fonts.ready', awaitPromise: true })
+  const fontOk = await call('Runtime.evaluate', {
+    expression: `document.fonts.check('600 76px "IBM Plex Mono"')`,
+    returnByValue: true,
+  })
+  if (!fontOk.result.value) throw new Error('IBM Plex Mono did not load; refusing to render')
+
+  const total = (await call('Runtime.evaluate', {
+    expression: 'window.TOTAL_MS', returnByValue: true,
+  })).result.value
+  if (!total) throw new Error('film.html did not expose TOTAL_MS')
+
+  // Publish the running order so DEMO.md's timecodes can be checked against
+  // the film rather than maintained by hand and silently drifting.
+  const schedule = (await call('Runtime.evaluate', {
+    expression: 'JSON.stringify(window.SCHEDULE)', returnByValue: true,
+  })).result.value
+  writeFileSync(join(HERE, 'schedule.json'),
+    JSON.stringify({ totalMs: total, scenes: JSON.parse(schedule) }, null, 2) + '\n')
+
+  // --at 0,12500,48000 renders just those moments, for checking the layout
+  // without paying for a full render.
+  const atArg = process.argv.indexOf('--at')
+  if (atArg !== -1) {
+    for (const ms of process.argv[atArg + 1].split(',').map(Number)) {
+      await call('Runtime.evaluate', { expression: `window.seek(${ms})`, returnByValue: true })
+      const { data } = await call('Page.captureScreenshot', { format: 'png', fromSurface: true })
+      const file = join(FRAMES, `at-${ms}.png`)
+      writeFileSync(file, Buffer.from(data, 'base64'))
+      console.log(file)
+    }
+    chrome.kill()
+    server.close()
+    return
+  }
+
+  const frameCount = Math.round((total / 1000) * FPS)
+  console.log(`film is ${(total / 1000).toFixed(1)}s — ${frameCount} frames at ${FPS}fps`)
+
+  const shots = []           // { file, frames }
+  let lastSig = null
+  let captured = 0
+
+  for (let f = 0; f < frameCount; f++) {
+    const t = Math.round((f / FPS) * 1000)
+    const sig = (await call('Runtime.evaluate', {
+      expression: `window.seek(${t})`, returnByValue: true,
+    })).result.value
+
+    if (sig === lastSig) {
+      shots[shots.length - 1].frames++
+      continue
+    }
+    lastSig = sig
+
+    const { data } = await call('Page.captureScreenshot', {
+      format: 'png', captureBeyondViewport: false, fromSurface: true,
+    })
+    const file = join(FRAMES, `f${String(captured).padStart(5, '0')}.png`)
+    writeFileSync(file, Buffer.from(data, 'base64'))
+    shots.push({ file, frames: 1 })
+    captured++
+
+    if (captured % 50 === 0) {
+      const pct = ((f / frameCount) * 100).toFixed(0)
+      process.stdout.write(`\r  ${pct}% — ${captured} distinct frames captured`)
+    }
+  }
+  process.stdout.write(`\r  100% — ${captured} distinct frames for ${frameCount} frame slots\n`)
+
+  chrome.kill()
+  server.close()
+
+  // ffmpeg's concat demuxer wants the final entry repeated for its duration to
+  // be honoured, and durations in seconds.
+  const lines = []
+  for (const s of shots) {
+    lines.push(`file '${s.file}'`, `duration ${(s.frames / FPS).toFixed(6)}`)
+  }
+  lines.push(`file '${shots[shots.length - 1].file}'`)
+  const listFile = join(FRAMES, 'concat.txt')
+  writeFileSync(listFile, lines.join('\n') + '\n')
+
+  const seconds = (total / 1000).toFixed(3)
+  const args = [
+    '-y', '-f', 'concat', '-safe', '0', '-i', listFile,
+    '-t', seconds,
+    '-vf', `fps=${FPS},format=yuv420p`,
+    '-c:v', 'libx264', '-preset', 'slow', '-crf', '20',
+    '-movflags', '+faststart', OUT,
+  ]
+  console.log(`encoding ${OUT}`)
+  const ff = spawn('ffmpeg', args, { stdio: ['ignore', 'ignore', 'inherit'] })
+  const code = await new Promise((r) => ff.on('exit', r))
+  if (code !== 0) throw new Error(`ffmpeg exited ${code}`)
+
+  console.log(`done — ${OUT}`)
+}
+
+main().catch((err) => {
+  console.error(err)
+  process.exit(1)
+})
