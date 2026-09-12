@@ -1,0 +1,90 @@
+{
+  "name": "Buy data you can refuse to pay for",
+  "description": "Buys a priced API response under machine-checkable acceptance terms, then reads back the adjudication so the caller can see exactly why the payment settled or was returned. Payment is escrowed on Hedera instead of going straight to the seller. A pure function checks the response against the terms - status, content type, size, required JSON paths, a JSON Schema, and freshness - and the escrow releases to the seller only if every check passes. If the response is unusable the money comes back automatically, with no dispute process and no human in the loop. The verdict, the terms and the raw response are all published to a public Hedera Consensus Service topic, so any third party can re-run the same adjudicator offline and confirm the result.",
+  "input_schema": {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "type": "object",
+    "properties": {
+      "resource": {
+        "type": "string",
+        "description": "URL of the priced resource to buy"
+      },
+      "required_paths": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "JSONPath expressions that must resolve to a non-null value, e.g. $.data",
+        "default": [
+          "$.data"
+        ]
+      },
+      "max_price_tinybars": {
+        "type": "string",
+        "description": "Most the caller will pay, in tinybars (1 HBAR = 100000000)",
+        "default": "50000000"
+      },
+      "freshness_seconds": {
+        "type": "integer",
+        "description": "Reject data whose $.timestamp is older than this",
+        "default": 120
+      }
+    },
+    "required": [
+      "resource"
+    ],
+    "additionalProperties": false
+  },
+  "input_example": {
+    "resource": "https://receipt.example/api/quote",
+    "required_paths": [
+      "$.data",
+      "$.timestamp"
+    ],
+    "max_price_tinybars": "50000000",
+    "freshness_seconds": 120
+  },
+  "output_example": {
+    "settled": false,
+    "outcome": "refunded",
+    "first_failure": "requiredPaths",
+    "checks": [
+      {
+        "check": "status",
+        "pass": true
+      },
+      {
+        "check": "contentType",
+        "pass": true
+      },
+      {
+        "check": "minBytes",
+        "pass": true
+      },
+      {
+        "check": "requiredPaths",
+        "pass": false,
+        "detail": "missing $.data"
+      }
+    ],
+    "data": null,
+    "deal_id": "0xd9e6e264e21f7693e341d79f12adc46bc67a03eeaac08d096a58e9e44d7bbd10",
+    "amount_returned_tinybars": "50000000",
+    "audit": {
+      "topic": "0.0.10495465",
+      "verify_command": "pnpm verify --deal 0xd9e6e264e21f7693e341d79f12adc46bc67a03eeaac08d096a58e9e44d7bbd10"
+    }
+  },
+  "prompt_template": "You are buying data on behalf of an agent that will act on it, so a response that looks fine but is unusable is worse than no response at all.\n\nRequest: {{inputs}}\n\nDo this in order:\n1. Call receipt-buy with the given resource. Build the acceptance terms from the request: require HTTP 200, application/json, the listed required_paths, and the given freshness_seconds. Never exceed max_price_tinybars.\n2. Read the X-Receipt-Deal-Id response header, then call receipt-verdict with it to get the full adjudication.\n3. Return a single JSON object with: settled (did the seller get paid), outcome (released, refunded or expired), first_failure, the full checks array, the data itself when the checks passed and null when they did not, deal_id, the amount returned if any, and the audit topic plus the command a third party can run to re-check the verdict.\n\nReport a refund as a success of the payment layer, not as an error: the caller kept its money and got a machine-readable reason. Never present data that failed its checks as if it had passed, and never summarise away a failed check.",
+  "model": "openai/gpt-5-nano",
+  "tool_bindings": [
+    {
+      "gateway_slug": "gatewayslugreplacemexxxxxx",
+      "tool_name": "buyWithTerms"
+    },
+    {
+      "gateway_slug": "gatewayslugreplacemeyyyyyy",
+      "tool_name": "getDeal"
+    }
+  ]
+}

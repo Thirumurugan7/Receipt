@@ -19,6 +19,7 @@ import { blocky, requirementsFor } from './blocky.js'
 import { decodePayment, FlowError, runFlow, SellerUnreachableError } from './flow.js'
 import { adjudicatorAddress, readDeal } from './escrow.js'
 import * as store from './store.js'
+import { openapi, publicUrl } from './openapi.js'
 import { lookup, record } from './payments.js'
 
 const app = new Hono()
@@ -43,6 +44,8 @@ app.get('/', (c) => {
     return c.text('dashboard not found', 404)
   }
 })
+
+app.get('/openapi.json', (c) => c.json(openapi(publicUrl())))
 
 app.get('/health', (c) =>
   c.json({

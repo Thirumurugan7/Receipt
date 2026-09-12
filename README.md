@@ -133,6 +133,11 @@ Load-bearing, not decorative. Remove any one of these and the project stops work
 - Hedera's x402 flow is not the EVM ERC-3009 flow. The buyer builds a **partially signed** `TransferTransaction`; Blocky402 adds the fee-payer signature and submits it.
 - Consequence worth seeing: in every scene the buyer's balance moves by **exactly** the transfer amount and pays no network fee. Gas came from Blocky402's fee payer `0.0.7162784`. An agent with no HBAR for gas can still transact.
 
+**Bazantic** is where the whole thing becomes one tool an agent can call.
+- `bazantic.yaml` declares two gateways — one that buys under acceptance terms, one that reads the verdict back — built from the OpenAPI document the facilitator serves at `/openapi.json`.
+- `recipes/receipt.bazantic.json` chains both into a single MCP tool: buy the data, then fetch the adjudication, and return the data *with* the reason it was accepted or refused. The prompt forbids presenting data that failed its checks as if it had passed.
+- Both files are validated in CI against every rule `baz recipe --help` states — key set, 24 KiB limit, the single `{{inputs}}` placeholder, binding shape, and the `input_example` is run through its own `input_schema`. **They are written and valid but not published**; see below.
+
 **Chainlink** — see "What is not done" below. Not claimed.
 
 **The Graph** — see "What is not done" below. Not claimed.
@@ -221,6 +226,8 @@ surfacing as an unexplained `BadSignature` during a live paid request.
 **Bodies are capped at 4 KB.** Above the cap the facilitator records `bodyTooLarge` and refuses rather than truncating: a truncated body produces a verdict nobody can reproduce, which is worse than a failure. Production would put the body in a content-addressed store and publish the CID.
 
 **A hung seller is not auto-refunded.** With no response there is nothing to judge, so the facilitator publishes no verdict rather than inventing one nobody could reproduce. The deadline is the remedy and `claimExpired` is permissionless. This is a deliberate choice, not an omission — but it does mean the buyer waits for the deadline instead of being refunded immediately.
+
+**The Bazantic recipe is not live.** The manifest and recipe are written and pass every documented validation rule, but publishing them needs three things this build does not have: a provider listing (a manual application the Bazantic team reviews within two business days), the 26-character `gateway_slug` the platform assigns when a gateway is created, and a payout account uuid. The files carry obvious placeholders — `REPLACE_WITH_PAYOUT_ACCOUNT_UUID` and slugs containing `replaceme` — rather than plausible-looking fakes, and a test asserts they stay obvious. The facilitator would also need a public URL; it runs on localhost.
 
 **No Chainlink integration.** Confidential Workflows is a private beta gated behind a Chainlink account team, not a self-serve grant, so it was never on the critical path.
 

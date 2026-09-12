@@ -1,0 +1,70 @@
+# Bazantic gateway manifest for Receipt.
+#
+# Two gateways, because the Recipe chains them: one buys data under acceptance
+# terms, the other reads back the verdict so the agent can confirm the purchase
+# was adjudicated and settled the way it was told.
+#
+# Before `baz` can deploy this you must:
+#   1. have a bazantic.com account with a provider listing approved
+#   2. expose the facilitator on a public URL and set PUBLIC_URL
+#   3. paste the payout account uuid the dashboard assigns
+# See "Bazantic status" in README.md — none of that is done.
+
+version: 1
+
+gateways:
+  - handle: receipt-buy
+    listing:
+      name: "Receipt — buy under acceptance terms"
+      category: DATA
+      tagline: "Pay for an API call only if the response passes your own checks"
+      description: >
+        Buy a priced API response under machine-checkable acceptance terms.
+        Payment is escrowed on Hedera rather than paid straight to the seller,
+        the response is adjudicated against the terms by a pure function, and
+        the money is released or refunded on the result. Every verdict is
+        published to a public Hedera Consensus Service topic and can be
+        recomputed offline by anyone.
+      tags: [x402, hedera, escrow, settlement, agents]
+      product_website: "https://github.com/Thirumurugan7/Receipt"
+      docs_url: "https://github.com/Thirumurugan7/Receipt#readme"
+    upstream:
+      url: ${PUBLIC_URL}
+      spec:
+        type: openapi
+        url: ${PUBLIC_URL}/openapi.json
+      protocol: rest
+    default_price: $0.010
+    methods:
+      - verb: POST
+        path: /proxy
+        price: $0.010
+    status: active
+    payout: "REPLACE_WITH_PAYOUT_ACCOUNT_UUID"
+
+  - handle: receipt-verdict
+    listing:
+      name: "Receipt — verdict lookup"
+      category: DATA
+      tagline: "Read the adjudication and on-chain settlement state for a deal"
+      description: >
+        Returns the verdict for one deal: every check result, which check
+        failed first, the escrow's on-chain status, and the transaction ids for
+        settlement, escrow and resolution. Free to read; the audit log it
+        reflects is public.
+      tags: [x402, hedera, audit, verification]
+      product_website: "https://github.com/Thirumurugan7/Receipt"
+      docs_url: "https://github.com/Thirumurugan7/Receipt#readme"
+    upstream:
+      url: ${PUBLIC_URL}
+      spec:
+        type: openapi
+        url: ${PUBLIC_URL}/openapi.json
+      protocol: rest
+    default_price: $0.000
+    methods:
+      - verb: GET
+        path: /deals/{dealId}
+        price: $0.000
+    status: active
+    payout: "REPLACE_WITH_PAYOUT_ACCOUNT_UUID"
