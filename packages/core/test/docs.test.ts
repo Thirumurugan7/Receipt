@@ -1,5 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { describe, expect, test } from 'vitest'
+import { ADJUDICATOR_VERSION, REPRODUCIBLE_ORDER } from '../src/adjudicator.js'
+import { EIP712_TERMS_TYPES } from '../src/terms.js'
 
 /**
  * The README is judged, and a README that disagrees with the repo is worse
@@ -121,5 +123,43 @@ describe('DEMO.md is runnable as written', () => {
 
   test('it tells the presenter to disclose the unprovable latency', () => {
     expect(demo.toLowerCase()).toMatch(/stopwatch/)
+  })
+})
+
+describe('SPEC.md matches the implementation', () => {
+  const spec = read('SPEC.md')
+
+  test('the documented check order is the order the adjudicator runs', () => {
+    // pull the ordered check names out of the spec's numbered table
+    const documented = [...spec.matchAll(/^\|\s*\d+\s*\|\s*`([a-zA-Z]+)`/gm)].map((m) => m[1]!)
+    expect(documented).toEqual([...REPRODUCIBLE_ORDER])
+  })
+
+  test('the spec states that maxLatencyMs is excluded from the reproducible list', () => {
+    expect(REPRODUCIBLE_ORDER).not.toContain('maxLatencyMs')
+    expect(spec).toMatch(/`maxLatencyMs` is \*\*not\*\* in this list/)
+  })
+
+  test('the documented adjudicator version is the one that gets published', () => {
+    expect(spec).toContain(ADJUDICATOR_VERSION)
+  })
+
+  test('the documented EIP-712 struct matches the committed cross-language fixture', () => {
+    const m = spec.match(/Terms\(bytes32 termsHash, address payer, address payee,\s*\n\s*uint256 amount, uint64 deadline, bytes32 nonce\)/)
+    expect(m).not.toBeNull()
+    // rebuild the canonical one-line form the typeHash is taken over
+    const canonical =
+      'Terms(bytes32 termsHash,address payer,address payee,uint256 amount,uint64 deadline,bytes32 nonce)'
+    const fields = EIP712_TERMS_TYPES.Terms.map((f) => `${f.type} ${f.name}`).join(',')
+    expect(`Terms(${fields})`).toBe(canonical)
+  })
+
+  test('the spec documents the JCS hashing rule the code implements', () => {
+    expect(spec).toMatch(/keccak256\(\s*utf8Bytes\(\s*jcs\(doc\)\s*\)\s*\)/)
+    expect(spec).toMatch(/never over\s*\n?`JSON\.stringify`/)
+  })
+
+  test('the spec states pass is the AND of reproducible only', () => {
+    expect(spec).toMatch(/`pass` is the AND of\s*\n?`reproducible\[\]` only/)
   })
 })

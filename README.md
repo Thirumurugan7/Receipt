@@ -1,5 +1,7 @@
 # Receipt
 
+[![CI](https://github.com/Thirumurugan7/Receipt/actions/workflows/ci.yml/badge.svg)](https://github.com/Thirumurugan7/Receipt/actions/workflows/ci.yml)
+
 **Receipt is a drop-in x402 facilitator that adds conditional settlement: the buyer attaches machine-checkable acceptance terms to a paid API call, the money waits in escrow, and it moves to the seller only if the response actually satisfies those terms.**
 
 Live on Hedera testnet. Settlement runs through the Blocky402 x402 facilitator, every verdict is published to a public Hedera Consensus Service topic, and anyone can re-run the adjudicator offline and check the result against the hash recorded on chain.
@@ -118,6 +120,8 @@ We can tell you exactly which part of our verdict you have to take on faith, and
 | Settlement asset | `0.0.0` (native HBAR) |
 
 Full detail, including the four testnet accounts and their roles, is in [DEPLOYMENTS.md](DEPLOYMENTS.md).
+The wire format and adjudication semantics are specified in [SPEC.md](SPEC.md) — precise
+enough to write a second implementation, and asserted against the code in CI.
 
 ---
 
@@ -195,13 +199,14 @@ HashScan.
 |---|---|---|---|
 | 2 | `honest` | live Graph token data, all 7 checks pass, `release()` pays the seller | −0.5 ℏ |
 | 3 | `garbage` | **HTTP 200** with a useless body, `requiredPaths` fails, `refund()` | 0.0 ℏ |
+| 3b | `subtle` | real Graph data, valid shape, **stale snapshot** — only `freshness` catches it | 0.0 ℏ |
 | 4 | `dead` | no verdict invented; a stranger calls `claimExpired` | 0.0 ℏ after claim |
 | 5 | — | `pnpm verify` recomputes both verdicts and prints MATCH | — |
 
 Individually:
 
 ```bash
-pnpm buy honest                     # or: garbage, dead
+pnpm buy honest                     # or: garbage, subtle, dead
 pnpm claim  --deal 0x…              # permissionless expiry, from an unrelated wallet
 pnpm verify --deal 0x…              # re-run the adjudicator offline
 ```

@@ -91,3 +91,32 @@ describe('Graph acceptance terms discriminate', () => {
     expect(v.firstFailure).toBe('requiredPaths')
   })
 })
+
+describe('the subtle failure: valid data, stale snapshot', () => {
+  /**
+   * The failure a human reviewer waves through. Every field is well-formed,
+   * the schema passes, the paths resolve, the source is right — and the data
+   * is hours old. Only the freshness clause catches it, which is the argument
+   * for stating acceptance criteria up front instead of eyeballing responses.
+   */
+  const stale = { ...good, timestamp: Math.floor(NOW / 1000) - 7200 }
+
+  test('every content check still passes on the stale payload', () => {
+    const v = adjudicate(terms(), obs(stale))
+    for (const name of ['status', 'contentType', 'minBytes', 'requiredPaths', 'jsonSchema']) {
+      expect(v.reproducible.find((c) => c.check === name)?.pass).toBe(true)
+    }
+  })
+
+  test('freshness alone rejects it, and it is the first failure', () => {
+    const v = adjudicate(terms(), obs(stale))
+    expect(v.reproducible.find((c) => c.check === 'freshness')?.pass).toBe(false)
+    expect(v.firstFailure).toBe('freshness')
+    expect(v.pass).toBe(false)
+  })
+
+  test('a snapshot just inside the window is accepted', () => {
+    const fresh = { ...good, timestamp: Math.floor(NOW / 1000) - 3500 }
+    expect(adjudicate(terms(), obs(fresh)).pass).toBe(true)
+  })
+})

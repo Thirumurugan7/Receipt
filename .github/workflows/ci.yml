@@ -1,0 +1,77 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  typescript:
+    name: TypeScript — typecheck and unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # Strict, no emit. A type error is a build failure here, not a runtime
+      # surprise during a live paid request.
+      - run: pnpm typecheck
+
+      # No secrets and no network: the adjudicator is pure by construction and
+      # every test that touches an external shape runs against a committed
+      # fixture. If this job ever needs a key, something has drifted.
+      - run: pnpm test
+
+  contracts:
+    name: Solidity — forge test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - uses: foundry-rs/foundry-toolchain@v1
+
+      - name: forge build
+        working-directory: packages/contracts
+        run: forge build --sizes
+
+      - name: forge test
+        working-directory: packages/contracts
+        run: forge test -vv
+
+  # The EIP-712 payload is pinned across both languages by a committed
+  # fixture. This job exists so a field reordered on either side fails in CI
+  # rather than as an unexplained BadSignature during a live payment.
+  interop:
+    name: EIP-712 cross-language pin
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - uses: foundry-rs/foundry-toolchain@v1
+      - run: pnpm install --frozen-lockfile
+      - name: TypeScript side of the pin
+        run: pnpm vitest run packages/core/test/eip712-interop.test.ts
+      - name: Solidity side of the pin
+        working-directory: packages/contracts
+        run: forge test --match-contract Eip712InteropTest -vv

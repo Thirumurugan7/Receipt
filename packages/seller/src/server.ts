@@ -32,6 +32,9 @@ const MIRROR = need('HEDERA_MIRROR_URL')
  *  to trust a wallet we control. */
 const QUOTE_ADDRESS = process.env.GRAPH_QUOTE_ADDRESS ?? '0x28C6c06298d514Db089934071355E5743bf21d60'
 const QUOTE_NETWORK = process.env.GRAPH_QUOTE_NETWORK ?? 'mainnet'
+/** How far back `subtle` mode rewinds the snapshot. Must exceed the buyer's
+ *  freshnessSeconds (3600) for the check to bite. */
+const STALE_BY_SECONDS = Number(process.env.SELLER_STALE_BY_SECONDS ?? 7200)
 
 /** Receipt, not Blocky402. This single line is the integration. */
 const RECEIPT = process.env.RECEIPT_FACILITATOR_URL ?? 'http://localhost:8080'
@@ -87,8 +90,11 @@ app.use(
  * between scenes without restarting anything.
  *
  *   honest  — real data, passes every check
- *   garbage — HTTP 200 with a useless body. The important one: a naive payment
- *             rail sees "200 OK" and releases the money.
+ *   garbage — HTTP 200 with a useless body. A naive payment rail sees
+ *             "200 OK" and releases the money.
+ *   subtle  — real Graph data, correct shape, every field valid — but the
+ *             snapshot is hours old. This is the failure a human reviewer
+ *             waves through: nothing looks wrong. Only `freshness` catches it.
  *   dead    — never responds at all.
  */
 app.get('/api/quote', async (c) => {
@@ -109,7 +115,15 @@ app.get('/api/quote', async (c) => {
   // decision can be re-checked by anyone.
   try {
     const raw = await balances(QUOTE_ADDRESS, QUOTE_NETWORK, 5)
-    return c.json(toQuote(raw, QUOTE_ADDRESS, QUOTE_NETWORK))
+    const quote = toQuote(raw, QUOTE_ADDRESS, QUOTE_NETWORK)
+
+    // `subtle` models a lagging indexer: the holdings are genuinely from The
+    // Graph and every field is valid, but the snapshot is stale. A reviewer
+    // eyeballing this response would approve it. The signed terms will not.
+    if (mode === 'subtle') {
+      return c.json({ ...quote, timestamp: quote.timestamp - STALE_BY_SECONDS })
+    }
+    return c.json(quote)
   } catch (e) {
     if (e instanceof GraphError) {
       // Fail loudly rather than substituting invented data. The checks would
