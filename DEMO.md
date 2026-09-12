@@ -31,7 +31,7 @@ script cannot drift out of sync with what is on screen.
 | 1:31 | seller says no | Because the checks are only arithmetic, the seller can run them too. Here it grades itself, sees it would fail, and refuses the sale rather than take money it cannot keep. |
 | 1:43 | seller vanishes | And if the seller never answers at all, no verdict gets invented. The escrow waits for its deadline, then a complete stranger unlocks it. The money can only go back to the buyer. |
 | 1:56 | the live app | And here is the whole thing running on a public URL that anyone can open right now. One button starts a real purchase with real testnet HBAR. The buyer signs its checks, the money lands in escrow, and the new deal appears below, held. The checks pass, the money goes to the seller, and every leg becomes a link. Follow one and you are looking at the transaction on HashScan. |
-| 2:26 | check it yourself | Now do not believe any of it. This replays every verdict ever published, straight from the public log, with no help from us. Twenty eight reproduce. Zero mismatch. |
+| 2:26 | check it yourself | Now do not believe any of it. This replays every verdict ever published, straight from the public log, with no help from us. Zero mismatches, across every verdict ever published. |
 | 2:36 | second opinion | And again in Python, no dependencies, written from the written spec. Same answer, same hash, and it is the hash the escrow recorded on chain. |
 | 2:47 | the receipts | All of it is public. Here is half an HBAR leaving the escrow, on HashScan. And here is the reasoning: every check result, published, for every deal. |
 | 3:01 | architecture | Here is the whole path. The buyer signs, Blocky402 settles the payment, Hedera holds it in escrow, the seller answers with Graph data, the checks run, and all of it lands on a public log. Money only moves at two of those steps. |
@@ -99,6 +99,8 @@ pnpm verify --all           # replays every verdict from the public log
 cd verify-py && python3 verify.py --deal <dealId> --topic 0.0.10495465
 ```
 
-Better still, open the live ledger and press a button. See `DEPLOYMENTS.md` for
-the URL. Every deal on it links to the transaction that moved the money, and
+Better still, open the hosted ledger at **receipt-ledger-zeta.vercel.app**. It is
+a static page with no backend: it rebuilds every deal in the browser from
+Hedera, and each one recomputes its own verdict locally. To run a *new* deal you
+need the facilitator locally, since that spends real HBAR. Every deal on it links to the transaction that moved the money, and
 recomputes its own verdict in your browser.

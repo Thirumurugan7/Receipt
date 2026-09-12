@@ -1,16 +1,43 @@
-<img src="assets/logo.svg" width="72" alt="">
+<img src="assets/logo.svg" width="76" alt="">
 
 # Receipt
 
 [![CI](https://github.com/Thirumurugan7/Receipt/actions/workflows/ci.yml/badge.svg)](https://github.com/Thirumurugan7/Receipt/actions/workflows/ci.yml)
 
-**Receipt is a drop-in x402 facilitator that adds conditional settlement: the buyer attaches machine-checkable acceptance terms to a paid API call, the money waits in escrow, and it moves to the seller only if the response actually satisfies those terms.**
+**A drop-in x402 facilitator that adds conditional settlement.** The buyer attaches
+machine-checkable acceptance terms to a paid API call, the money waits in escrow, and it
+moves to the seller only if the response actually satisfies those terms. If it does not,
+the refund is automatic, and there is no judge anywhere in the loop.
 
-Live on Hedera testnet. Settlement runs through the Blocky402 x402 facilitator, every verdict is published to a public Hedera Consensus Service topic, and anyone can re-run the adjudicator offline and check the result against the hash recorded on chain.
+Live on Hedera testnet. Settlement runs through Blocky402, every verdict is published to a
+public Hedera Consensus Service topic, and anyone can re-run the adjudicator offline and
+check the result against the hash recorded on chain.
 
-**Demo: [`demo/receipt-demo.mp4`](demo/receipt-demo.mp4)**, 3:47. Every figure in it came off a live run: real settlement, real escrow, real release and refund. [`DEMO.md`](DEMO.md) is the narration, and [`demo/README.md`](demo/README.md) explains how the film is rendered without recording a screen.
+## Start here
 
-**Nothing here needs to be taken on trust.** Every deal links to the transaction that moved the money on [HashScan](https://hashscan.io/testnet/contract/0x3483B3761ebe3C2fC2eB3EfE8215a7CF90634071) and to the raw bytes of its terms, response and verdict on the Hedera mirror node. `pnpm verify --all` recomputes every verdict from that public log with no cooperation from the facilitator, and `verify-py/` does it again in a second implementation that shares no code with the first. **The ledger is hosted at [receipt-ledger-zeta.vercel.app](https://receipt-ledger-zeta.vercel.app)**, a static page with no server behind it: it rebuilds every deal in your browser from Hedera's mirror node. It goes further still: **every deal has a button that recomputes its verdict in your own browser**, fetching the inputs straight from Hedera's mirror node so our server cannot influence the answer, and running a new deal is a local action, since it spends real HBAR. See [`DEPLOYMENTS.md`](DEPLOYMENTS.md).
+| | |
+|---|---|
+| **Live ledger** | **[receipt-ledger-zeta.vercel.app](https://receipt-ledger-zeta.vercel.app)** &nbsp;A static page with no backend. It rebuilds every deal in your browser from Hedera, and recomputes any verdict locally |
+| **Demo film** | [`demo/receipt-demo.mp4`](demo/receipt-demo.mp4), 3:47. Every figure in it came off a live run. [`DEMO.md`](DEMO.md) is the narration |
+| **Check it in one command** | `pnpm verify --all` replays every verdict ever published, from the public log, with no cooperation from us |
+| **The escrow** | [`0x3483B376…4071`](https://hashscan.io/testnet/contract/0x3483B3761ebe3C2fC2eB3EfE8215a7CF90634071) on HashScan |
+| **The audit log** | [topic `0.0.10495465`](https://hashscan.io/testnet/topic/0.0.10495465/messages), every terms, response and verdict |
+| **The protocol** | [`SPEC.md`](SPEC.md), precise enough to write a second implementation. Someone did: [`verify-py/`](verify-py) |
+
+## Contents
+
+- [The problem](#the-problem)
+- [How it works](#how-it-works)
+- [Architecture](#architecture)
+- [Why you do not have to trust our adjudicator](#why-you-do-not-have-to-trust-our-adjudicator)
+- [Where this sits against everything else](#where-this-sits-against-everything-else)
+- [Deployed](#deployed)
+- [For judges: what to check, and how, in under a minute](#for-judges-what-to-check-and-how-in-under-a-minute)
+- [Sponsor integrations, in detail](#sponsor-integrations-in-detail)
+- [Run it yourself](#run-it-yourself)
+- [Repository map](#repository-map)
+- [What is not done, honestly](#what-is-not-done-honestly)
+- [Further reading](#further-reading)
 
 ---
 
@@ -26,6 +53,41 @@ When an AI agent pays for an API call over x402, the money moves the moment the 
 The obvious fix is an evaluator: a human or an LLM judges whether the delivery was good. **That design already shipped.** Virtuals Protocol's Agent Commerce Protocol has Client, Provider and Evaluator roles with escrow, went live on Base, and accumulated over 12 million cumulative commerce memos. As of 11 September 2026 an independent tracker shows it running at **five unique senders per day**. The evaluator is what broke it: nobody could answer who judges, who pays the judge, and why the verdict should be trusted.
 
 **Receipt has no judge.** Every check is a pure function of (terms, response). Both parties can compute it. So can you.
+
+---
+
+## How it works
+
+The buyer writes down what a good answer looks like, signs it, and only then pays. Seven
+checks, all of them arithmetic on the response, so the buyer can run them, the seller can
+run them, and so can a stranger with the public log.
+
+| # | Check | In plain English | Decides the money |
+|---|---|---|---|
+| 1 | `status` | Did it answer HTTP 200? | yes |
+| 2 | `contentType` | Is it actually JSON? | yes |
+| 3 | `minBytes` | Is the body not empty? | yes |
+| 4 | `requiredPaths` | Does it contain the fields that were asked for? | yes |
+| 5 | `jsonSchema` | Are the addresses real addresses, the amounts whole numbers, the block recent? | yes |
+| 6 | `freshness` | Is the snapshot recent rather than hours old? | yes |
+| 7 | `expectedHash` | Does it match an exact answer the buyer named? | yes |
+| . | `maxLatencyMs` | How fast did it answer? | **no**, see [below](#the-part-we-cannot-prove-stated-plainly) |
+
+The order is fixed, so two implementations agree on which check is to blame. `pass` is the
+AND of the seven; the eighth is recorded and gates nothing, because it is our own stopwatch
+and nobody can check it afterwards.
+
+Then the money moves, in one direction or the other:
+
+```
+buyer signs terms ─▶ pays ─▶ escrow holds it ─▶ seller answers ─▶ checks run ─┬─▶ release to seller
+                                                                              └─▶ refund to buyer
+                                          and if the seller never answers at all:
+                                          the deadline passes ─▶ anyone may call claimExpired ─▶ refund to buyer
+```
+
+Every step publishes to the audit topic, which is what makes the last column of that table
+checkable by someone who was not involved.
 
 ---
 
@@ -157,6 +219,16 @@ against the hash the escrow recorded. Nothing above does that.
 | x402 facilitator | `https://api.testnet.blocky402.com`, network `hedera:testnet`, x402 v2 |
 | Settlement asset | `0.0.0` (native HBAR) |
 
+**Live URLs**
+
+| | |
+|---|---|
+| Hosted ledger | [receipt-ledger-zeta.vercel.app](https://receipt-ledger-zeta.vercel.app), static, no backend |
+| Bazantic gateway | [`…bazgateway.com/health`](https://2g6od7kdczdp7p5wr3ywz2vhlu.bazgateway.com/health) returns the live escrow and topic. MCP is at `/mcp` (POST) |
+| Bazantic Recipes | `buy-data-you-can-refuse-to-pay-for`, `price-a-swap-on-data-you-actually-verified` |
+| Mirror node | [`testnet.mirrornode.hedera.com`](https://testnet.mirrornode.hedera.com/api/v1/topics/0.0.10495465/messages), the raw bytes |
+| Local ledger | `http://localhost:8080` after `pnpm facilitator`, which can also run new deals |
+
 Full detail, including the four testnet accounts and their roles, is in [DEPLOYMENTS.md](DEPLOYMENTS.md).
 The wire format and adjudication semantics are specified in [SPEC.md](SPEC.md), precise
 enough to write a second implementation, and asserted against the code in CI.
@@ -178,7 +250,7 @@ cooperation: every link is a public record and every command runs against it.
 The single strongest check, if you only run one thing:
 
 ```bash
-pnpm verify --all      # replays every verdict from the public log. 28 reproduce, 0 mismatch.
+pnpm verify --all      # replays every verdict from the public log. 41 replayed, 0 mismatches.
 ```
 
 Or press a button on the live ledger and watch a real deal settle, then follow
@@ -187,25 +259,61 @@ the URL.
 
 ---
 
-## What each sponsor technology actually does
+## Sponsor integrations, in detail
 
-Load-bearing, not decorative. Remove any one of these and the project stops working.
+Load-bearing, not decorative. Remove any one of these and the project stops working. Each
+claim below names the file that implements it and the live artefact that proves it.
 
-**Hedera** is the settlement and audit layer, not a logo.
+### Hedera
+
+The settlement and audit layer, not a logo.
+
+**Where:** [`packages/contracts/src/ReceiptEscrow.sol`](packages/contracts/src/ReceiptEscrow.sol),
+[`packages/core/src/hcs.ts`](packages/core/src/hcs.ts) and
+[`packages/core/src/hcs-read.ts`](packages/core/src/hcs-read.ts).
+**Live:** escrow [`0x3483B376…4071`](https://hashscan.io/testnet/contract/0x3483B3761ebe3C2fC2eB3EfE8215a7CF90634071),
+topic [`0.0.10495465`](https://hashscan.io/testnet/topic/0.0.10495465/messages).
+
 - `ReceiptEscrow.sol` runs on the Hedera EVM and custodies real HBAR between payment and verdict.
 - **HCS is what makes the trust argument possible.** The ordered public topic is where terms, the raw response and the verdict are published; without it, "re-run it yourself" is a slogan rather than a command. HCS is used as an append-only consensus log, which is exactly what an audit trail needs and what a database cannot give a stranger.
 
-**Blocky402** performs every real payment.
+### Blocky402
+
+Performs every real payment.
+
+**Where:** [`packages/facilitator/src/blocky.ts`](packages/facilitator/src/blocky.ts),
+[`packages/buyer/src/buy.ts`](packages/buyer/src/buy.ts).
+**Live:** `https://api.testnet.blocky402.com`, network `hedera:testnet`, x402 v2.
+
 - Hedera's x402 flow is not the EVM ERC-3009 flow. The buyer builds a **partially signed** `TransferTransaction`; Blocky402 adds the fee-payer signature and submits it.
 - Consequence worth seeing: in every scene the buyer's balance moves by **exactly** the transfer amount and pays no network fee. Gas came from Blocky402's fee payer `0.0.7162784`. An agent with no HBAR for gas can still transact.
 
-**Bazantic** is where the whole thing becomes one tool an agent can call.
+### Bazantic
+
+Where the whole thing becomes one tool an agent can call.
+
+**Where:** [`bazantic.yaml`](bazantic.yaml), [`recipes/`](recipes),
+[`packages/facilitator/src/openapi.ts`](packages/facilitator/src/openapi.ts).
+**Live:** gateway [`…bazgateway.com/health`](https://2g6od7kdczdp7p5wr3ywz2vhlu.bazgateway.com/health),
+and **two published Recipes**:
+
+| Recipe | What it does | Track it answers |
+|---|---|---|
+| `buy-data-you-can-refuse-to-pay-for` | Buys under acceptance terms, then reads the verdict back, as one tool call | Agentify a New API |
+| `price-a-swap-on-data-you-actually-verified` | Binds **two** gateways: Receipt buys a holdings snapshot under terms, then 1inch prices a swap for the largest holding that passed. If the data fails its checks the payment refunds and no route is quoted | Recipe using sponsor APIs |
+
 - `bazantic.yaml` declares two gateways, one that buys under acceptance terms, one that reads the verdict back, built from the OpenAPI document the facilitator serves at `/openapi.json`.
 - `recipes/receipt.bazantic.json` chains both into a single MCP tool: buy the data, then fetch the adjudication, and return the data *with* the reason it was accepted or refused. The prompt forbids presenting data that failed its checks as if it had passed.
 - Both are validated in CI against every rule `baz recipe --help` states, key set, 24 KiB limit, the single `{{inputs}}` placeholder, binding shape, and the `input_example` run through its own `input_schema`.
-- **Both are live.** The gateway is activated at [`2g6od7kdczdp7p5wr3ywz2vhlu.bazgateway.com`](https://2g6od7kdczdp7p5wr3ywz2vhlu.bazgateway.com), its MCP server exposes `buyWithTerms`, `getDeal`, `health` and `info`, and the recipe `buy-data-you-can-refuse-to-pay-for` is published. Calling `health` through the gateway's MCP endpoint returns the live escrow address and audit topic, an agent reaches Receipt without knowing anything about x402 or Hedera.
+- **Both are live.** The gateway is activated at [`…bazgateway.com`](https://2g6od7kdczdp7p5wr3ywz2vhlu.bazgateway.com/health), its MCP server exposes `buyWithTerms`, `getDeal`, `health` and `info`, and the recipe `buy-data-you-can-refuse-to-pay-for` is published. Calling `health` through the gateway's MCP endpoint returns the live escrow address and audit topic, an agent reaches Receipt without knowing anything about x402 or Hedera.
 
-**The Graph** is what is actually being bought, and **two of its products are composed** to produce it.
+### The Graph
+
+What is actually being bought, and **two of its products are composed** to produce it.
+
+**Where:** [`packages/seller/src/graph.ts`](packages/seller/src/graph.ts).
+**Live:** every `terms` message on the topic requires both products by name.
+
 - **Token API** supplies what an address holds. **A subgraph** (Uniswap V3, through the Subgraph Gateway) supplies the markets those holdings actually trade in. Neither answers the question alone, the quote is a composition, not two endpoints stapled together, and the terms assert on *both* halves by name so a seller cannot quietly drop one.
 - The subgraph's `_meta.block.number` gives **provenance in blocks, not wall clock**. The buyer fetches the Ethereum head from a public RPC it picks itself and signs a floor, `indexedBlock >= head - 200`. An indexer lagging the chain fails the sale even when every value in the response is well-formed.
 - That response *is* the product, remove The Graph and there is nothing to purchase.
@@ -385,6 +493,25 @@ surfacing as an unexplained `BadSignature` during a live paid request.
 
 ---
 
+## Repository map
+
+| Path | What is in it |
+|---|---|
+| [`packages/core`](packages/core) | The adjudicator, terms and verdict hashing (JCS + keccak), HCS read and write, explorer links. No Node-only code in the read path, so the browser uses the same functions |
+| [`packages/contracts`](packages/contracts) | `ReceiptEscrow.sol`. Holds the HBAR, verifies the buyer's EIP-712 signature on chain, `release`, `refund`, `claimExpired` |
+| [`packages/facilitator`](packages/facilitator) | The drop-in x402 facilitator: `/verify`, `/settle`, `/supported`, plus `/proxy` which runs the nine-step flow, and the ledger page |
+| [`packages/seller`](packages/seller) | An ordinary x402 resource server selling live Graph data, which grades its own response before answering |
+| [`packages/buyer`](packages/buyer) | Signs terms, pays, and prints what happened. Also `claim-expired` and the scene runner |
+| [`packages/verify`](packages/verify) | `pnpm verify`, the independent replay of one deal or of the whole log |
+| [`packages/mcp`](packages/mcp) | MCP server: `buy_verified_data`, `verify_deal`, `get_deal` |
+| [`packages/dashboard`](packages/dashboard) | The ledger page and the browser verifier bundle |
+| [`verify-py`](verify-py) | The second implementation. Python, zero dependencies, its own keccak and JCS, written from `SPEC.md` |
+| [`site`](site) | The hosted static ledger deployed to Vercel |
+| [`demo`](demo) | The film, and the tooling that renders it without recording a screen |
+| [`recipes`](recipes) | The two published Bazantic Recipes |
+
+---
+
 ## What is not done, honestly
 
 **The facilitator custodies for one hop.** x402 on Hedera settles a native transfer to an account; the escrow is an EVM contract. Those are two address spaces and they do not compose, so the payment lands in the facilitator's account and the facilitator funds `open()` in the same request handler. Both legs, the Hedera settlement transaction id and the EVM `open()` hash, are published to HCS, so the window is publicly measurable. The mitigation is that `open()` verifies the buyer's EIP-712 signature on chain: the facilitator cannot open a deal the buyer did not sign, and cannot alter the amount, payee, deadline or terms on the way through. Tests `test_open_revertsWhenFacilitatorInflatesTheAmount` and `..._redirectsThePayee` cover exactly that. Everything after `open()` is trustless.
@@ -400,3 +527,16 @@ surfacing as an unexplained `BadSignature` during a live paid request.
 **The dashboard is a prop.** It is a single static file served by the facilitator at `/`, with no build step and no third-party scripts. It reads deployment identifiers from `/health` and deal state from `/stream`, so it needs no configuration, but it is read-only, keeps state in memory, and is not something to point at production.
 
 **Testnet only.** Nothing here has been audited, and `ReceiptEscrow` holds real funds only in the sense that testnet HBAR is real.
+
+---
+
+## Further reading
+
+| Document | What it is for |
+|---|---|
+| [`SPEC.md`](SPEC.md) | The wire format and adjudication semantics, precise enough to write a second implementation. Asserted against the code in CI |
+| [`DEPLOYMENTS.md`](DEPLOYMENTS.md) | Every deployed address, account, topic and URL, and what each one is for |
+| [`DEMO.md`](DEMO.md) | The film's narration, timed against `demo/schedule.json` so it cannot drift |
+| [`demo/README.md`](demo/README.md) | How the film is captured and rendered, without recording a screen |
+| [`DECISIONS-01.md`](DECISIONS-01.md) | The design questions that were settled before building, and why |
+| [`BUILD.md`](BUILD.md) | The original build plan and constraints |
