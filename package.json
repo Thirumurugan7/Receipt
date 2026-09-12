@@ -12,7 +12,10 @@
     "verify": "pnpm --filter @receipt/verify start",
     "claim": "pnpm --filter @receipt/buyer claim",
     "scenes": "pnpm --filter @receipt/buyer scenes",
-    "mcp": "pnpm --filter @receipt/mcp start"
+    "mcp": "pnpm --filter @receipt/mcp start",
+    "verify:py": "cd verify-py && python3 verify.py",
+    "conformance": "cd verify-py && python3 keccak.py && python3 test_cross_implementation.py",
+    "verify:all": "pnpm --filter @receipt/verify start --all"
   },
   "devDependencies": {
     "@bazantic/cli": "0.10.0",

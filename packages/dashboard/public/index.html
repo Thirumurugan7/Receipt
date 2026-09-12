@@ -170,6 +170,8 @@ const txLink = (h) => h ? `<a href="${HASHSCAN}/transaction/${encodeURIComponent
 function renderEntry(d) {
   const s = stampFor(d.phase);
   const v = d.verdict;
+  // What was actually bought, when the log carries it.
+  const bought = d.bought || null;
   const checks = v ? v.reproducible.map((c) => {
     const mark = c.skipped ? 'skipped' : (c.pass ? 'pass' : 'fail');
     const cls = c.skipped ? 'attested' : (c.pass ? 'verdict-pass' : 'verdict-fail');
@@ -192,6 +194,9 @@ function renderEntry(d) {
     </div>
     ${v ? `<ul class="checks">${checks}${attested}</ul>` : `<ul class="checks"><li>${row('status', `<span class="attested">${esc(d.phase)}</span>`)}</li></ul>`}
     <div style="margin-top:12px">
+      ${bought ? row('products', esc(bought.products || '—')) : ''}
+      ${bought && bought.indexedBlock ? row('indexed block', esc(String(bought.indexedBlock))) : ''}
+      ${d.sellerDeclined ? row('seller', '<span class="verdict-fail">declined the sale</span>') : ''}
       ${row('x402 settlement', d.settlementTxId ? esc(short(d.settlementTxId, 14)) : '—')}
       ${row('open()', txLink(d.openTxHash))}
       ${row(d.phase === 'refunded' || d.phase === 'expired' ? 'refund()' : 'release()', txLink(d.resolveTxHash))}

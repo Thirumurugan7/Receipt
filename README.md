@@ -340,7 +340,7 @@ in CI — and it is the kind of thing only a second implementation finds.
 ### Tests
 
 ```bash
-pnpm test                                   # 163 unit tests
+pnpm test                                   # the full unit suite
 pnpm typecheck                              # strict TypeScript, no emit
 cd packages/contracts && forge test         # 22 contract tests
 ```

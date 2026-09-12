@@ -209,3 +209,36 @@ describe('.env.example documents every variable the code reads', () => {
     expect(documented).toContain(name)
   })
 })
+
+describe('README does not make claims that go stale', () => {
+  test('no hardcoded test counts', () => {
+    // It said "163 unit tests" when there were 218. A number in prose is a
+    // promise to update it, and that promise is always broken eventually.
+    expect(readme).not.toMatch(/\b\d+\s+(unit\s+)?tests\b/i)
+  })
+
+  test('every feature the README advertises has a workspace script', () => {
+    const advertised = [...readme.matchAll(/^\s*pnpm ([a-z][a-z:-]*)/gm)]
+      .map((m) => m[1]!)
+      .filter((s) => !['install', 'exec', 'run'].includes(s))
+    for (const cmd of new Set(advertised)) {
+      expect(Object.keys(rootPkg.scripts)).toContain(cmd)
+    }
+  })
+})
+
+describe('the demo runner exercises every seller mode', () => {
+  test('each mode the seller implements appears in scenes.ts', () => {
+    const seller = read('packages/seller/src/server.ts')
+    const scenes = read('packages/buyer/src/scenes.ts')
+    const modes = [...seller.matchAll(/mode === '([a-z]+)'/g)].map((m) => m[1]!)
+    expect(modes.length).toBeGreaterThan(1)
+    for (const mode of new Set(modes)) {
+      expect(scenes).toContain(`'${mode}'`)
+    }
+  })
+
+  test('the self-check path is demonstrated too', () => {
+    expect(read('packages/buyer/src/scenes.ts')).toMatch(/subtle-selfcheck/)
+  })
+})

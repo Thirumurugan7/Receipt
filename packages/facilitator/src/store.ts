@@ -17,6 +17,10 @@ export interface DealRecord {
   resolveTxHash?: string
   verdict?: Verdict
   observedLatencyMs?: number
+  /** What the response said it was made of, for the ledger view. */
+  bought?: { products: string; indexedBlock?: number }
+  /** True when the seller graded its own response and refused the sale. */
+  sellerDeclined?: boolean
   error?: string
 }
 

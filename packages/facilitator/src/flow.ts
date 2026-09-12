@@ -158,12 +158,31 @@ export async function runFlow(
   }
   const observedLatencyMs = Math.round(performance.now() - started)
 
+  // Read provenance out of the body for the ledger view. Purely cosmetic —
+  // nothing here influences the verdict.
+  let bought: { products: string; indexedBlock?: number } | undefined
+  let sellerDeclined = false
+  try {
+    const parsed = JSON.parse(new TextDecoder().decode(body)) as {
+      sources?: Record<string, string>
+      indexedBlock?: number
+      declined?: boolean
+    }
+    sellerDeclined = parsed?.declined === true
+    if (parsed?.sources) {
+      bought = {
+        products: Object.values(parsed.sources).join(' + '),
+        indexedBlock: parsed.indexedBlock,
+      }
+    }
+  } catch { /* a non-JSON body simply has no provenance to show */ }
+
   if (!reachedSeller) {
     advance(dealId, { phase: 'awaiting-expiry', observedLatencyMs })
     throw new SellerUnreachableError(dealId, terms.deadlineMs, observedLatencyMs)
   }
 
-  advance(dealId, { phase: 'seller-responded', observedLatencyMs })
+  advance(dealId, { phase: 'seller-responded', observedLatencyMs, bought, sellerDeclined })
 
   const observation: Observation = { status, headers, body, requestTimeMs, observedLatencyMs }
 

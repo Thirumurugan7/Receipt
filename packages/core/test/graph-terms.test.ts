@@ -11,7 +11,7 @@ const GRAPH_CHECKS = {
     type: 'object',
     required: ['data', 'source', 'timestamp'],
     properties: {
-      source: { type: 'string', const: 'the-graph-token-api' },
+      source: { type: 'string', const: 'the-graph' },
       timestamp: { type: 'integer', minimum: 1 },
       data: {
         type: 'array', minItems: 1,
@@ -45,7 +45,7 @@ const obs = (body: unknown): Observation => ({
 })
 
 const good = {
-  source: 'the-graph-token-api',
+  source: 'the-graph',
   address: '0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045',
   network: 'mainnet',
   timestamp: Math.floor(NOW / 1000),

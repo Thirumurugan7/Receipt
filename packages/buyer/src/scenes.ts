@@ -66,6 +66,11 @@ const subtle = capture(['--filter', '@receipt/buyer', 'start', 'subtle'])
 process.stdout.write(subtle.stdout ?? '')
 const subtleDeal = (subtle.stdout ?? '').match(/dealId\s+(0x[0-9a-f]{64})/i)?.[1] ?? null
 
+// ── Scene 3c ──────────────────────────────────────────────────────────────
+rule('SCENE 3c — the seller grades its own work and declines the sale')
+const declined = capture(['--filter', '@receipt/buyer', 'start', 'subtle-selfcheck'])
+process.stdout.write(declined.stdout ?? '')
+
 // ── Scene 4 ───────────────────────────────────────────────────────────────
 rule('SCENE 4 — dead seller: no verdict is invented; a stranger recovers the funds')
 const dead = capture(['--filter', '@receipt/buyer', 'start', 'dead'])
