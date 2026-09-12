@@ -91,7 +91,33 @@ pnpm buy garbage
 **Say:** "The money came back in seconds. No human touched it, no evaluator was
 asked, nobody filed a dispute."
 
+**Then the line that separates this from metered refunds:** "The call completed.
+Status two hundred. A meter would bill this as consumed and it would be right —
+the bytes arrived. Metering refunds what you didn't use. This refunds what you
+did use and couldn't."
+
 Let the `0.00000000` sit on screen for a beat before cutting.
+
+---
+
+## Scene 3b — subtle: the one a reviewer would approve (25s)
+
+```bash
+pnpm buy subtle
+```
+
+Real holdings from The Graph. Correct shape. Every field valid. The snapshot is
+two hours old.
+
+**Point at the check list:** `status`, `contentType`, `minBytes`,
+`requiredPaths`, `jsonSchema` — **all pass**. Then `freshness` alone fails.
+
+**Say:** "Nothing here looks wrong. A human reviewing this response would
+approve it, and a meter has no opinion about it at all — the bytes arrived. The
+only thing that catches it is the buyer having said, up front, how fresh the
+data had to be."
+
+This is the strongest scene in the demo. Do not rush it.
 
 ---
 

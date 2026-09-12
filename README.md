@@ -114,10 +114,16 @@ We can tell you exactly which part of our verdict you have to take on faith, and
 | **x402** | Per-request HTTP payment. Synchronous, atomic, no evaluation step. | No refund primitive. Pay first, find out second. |
 | **[ERC-8183](https://eips.ethereum.org/EIPS/eip-8183)** (Virtuals) | Job escrow for agent-to-agent work, with an **Evaluator** who approves or rejects. Explicitly scoped to deliverables that *"can't be verified by HTTP 200"*. | The EIP names its own weak point: *"the security risks of the Evaluator itself"*. Someone must be trusted. |
 | **Virtuals ACP** | Shipped the evaluator design on Base. 12M cumulative memos. | Five unique senders a day. Nobody could answer who judges, who pays the judge, or why the verdict is trustworthy. |
+| **Metered refunds** (e.g. Pinout, a Hedera x402 bounty winner) | Refunds unused **quantity**: prepay for a session, use less, get the remainder back. Credit burning, tiers, mid-job top-ups. | Silent on quality. A call that returns HTTP 200 with garbage is correctly billed as consumed, and the buyer keeps nothing. |
 | **x402r** | The only native x402 refund attempt. | ~1 GitHub star per repo; Solana contracts self-described as unaudited pilot code. |
 | **Google AP2 / ERC-8004** | Signed audit trails and agent identity. | Both stop at evidence and hand the remedy to whatever rail you are on. |
 | **Kleros / UMA** | Real dispute resolution with real guarantees. | Bonds, liveness windows and gas — dollars and days against a median ticket near $0.46. |
 | **Receipt** | Conditional settlement for the deliverables that **are** machine-checkable, with **no evaluator at all**. | Does not handle subjective deliverables. That is ERC-8183's problem, and we do not pretend to solve it. |
+
+**A meter refunds what you did not use. Receipt refunds what you did use and
+could not.** Those are orthogonal axes, not competing answers — metering asks
+*how much did you consume*, Receipt asks *was it any good* — and they compose:
+nothing stops a metered session settling through conditional terms.
 
 The gap we fill is narrow and specific. ERC-8183 scopes itself to work that
 cannot be checked by an HTTP response — and in doing so leaves the much larger
@@ -238,6 +244,31 @@ pnpm buy honest                     # or: garbage, subtle, dead
 pnpm claim  --deal 0x…              # permissionless expiry, from an unrelated wallet
 pnpm verify --deal 0x…              # re-run the adjudicator offline
 ```
+
+### As an MCP tool
+
+Receipt is also an MCP server, so an agent can use it without knowing anything
+about x402, escrow or Hedera:
+
+```bash
+pnpm mcp        # stdio; point any MCP client at it
+```
+
+| tool | what it does |
+|---|---|
+| `buy_verified_data` | states acceptance terms, pays, and returns the data **or** the reason it was refused |
+| `verify_deal` | re-runs the adjudicator over the public log and reports whether the hashes match |
+| `get_deal` | verdict and on-chain settlement state for one deal |
+
+Two properties worth noting. `buy_verified_data` returns `data: null` when the
+checks failed — data that did not pass is never handed back as though it had.
+And every result carries the audit topic and the command a third party can run
+to re-check the decision, so an agent passing results on can pass on the means
+to verify them too.
+
+The buying routine is shared with the CLI agent and lives on the **buyer** side:
+the facilitator never holds the buyer's key, and never authors the terms it is
+later judged against.
 
 ### Two implementations, one verdict
 

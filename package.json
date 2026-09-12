@@ -11,7 +11,8 @@
     "buy": "pnpm --filter @receipt/buyer start",
     "verify": "pnpm --filter @receipt/verify start",
     "claim": "pnpm --filter @receipt/buyer claim",
-    "scenes": "pnpm --filter @receipt/buyer scenes"
+    "scenes": "pnpm --filter @receipt/buyer scenes",
+    "mcp": "pnpm --filter @receipt/mcp start"
   },
   "devDependencies": {
     "@bazantic/cli": "0.10.0",

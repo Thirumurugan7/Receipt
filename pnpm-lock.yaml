@@ -10,7 +10,7 @@ importers:
     devDependencies:
       '@bazantic/cli':
         specifier: 0.10.0
-        version: 0.10.0(typescript@5.9.2)(zod@3.25.76)
+        version: 0.10.0(typescript@5.9.2)(zod@4.6.2)
       '@types/node':
         specifier: ^22.20.2
         version: 22.20.2
@@ -37,7 +37,7 @@ importers:
         version: 17.4.2
       viem:
         specifier: 2.56.3
-        version: 2.56.3(typescript@5.9.2)(zod@3.25.76)
+        version: 2.56.3(typescript@5.9.2)(zod@4.6.2)
     devDependencies:
       tsx:
         specifier: ^4.23.13
@@ -65,7 +65,7 @@ importers:
         version: 10.4.0
       viem:
         specifier: 2.56.3
-        version: 2.56.3(typescript@5.9.2)(zod@3.25.76)
+        version: 2.56.3(typescript@5.9.2)(zod@4.6.2)
     devDependencies:
       tsx:
         specifier: ^4.23.13
@@ -98,7 +98,29 @@ importers:
         version: 4.13.7
       viem:
         specifier: 2.56.3
-        version: 2.56.3(typescript@5.9.2)(zod@3.25.76)
+        version: 2.56.3(typescript@5.9.2)(zod@4.6.2)
+    devDependencies:
+      tsx:
+        specifier: ^4.23.13
+        version: 4.23.13
+
+  packages/mcp:
+    dependencies:
+      '@modelcontextprotocol/sdk':
+        specifier: 1.30.0
+        version: 1.30.0(zod@4.6.2)
+      '@receipt/buyer':
+        specifier: workspace:^
+        version: link:../buyer
+      '@receipt/core':
+        specifier: workspace:^
+        version: link:../core
+      viem:
+        specifier: 2.56.3
+        version: 2.56.3(typescript@5.9.2)(zod@4.6.2)
+      zod:
+        specifier: ^4.6.2
+        version: 4.6.2
     devDependencies:
       tsx:
         specifier: ^4.23.13
@@ -139,7 +161,7 @@ importers:
         version: link:../core
       viem:
         specifier: 2.56.3
-        version: 2.56.3(typescript@5.9.2)(zod@3.25.76)
+        version: 2.56.3(typescript@5.9.2)(zod@4.6.2)
     devDependencies:
       tsx:
         specifier: ^4.23.13
@@ -2226,6 +2248,9 @@ packages:
   zod@3.25.76:
     resolution: {integrity: sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ==}
 
+  zod@4.6.2:
+    resolution: {integrity: sha512-lh5RCAGFa1Cm2hjtNwLQhSs/AsqdWnTQaBER9fEwN/88pSh7KOtJavtBx/0VlkN/uFd61SwYmljLMDAsHlvzBQ==}
+
 snapshots:
 
   '@adraffy/ens-normalize@1.10.1': {}
@@ -2334,10 +2359,10 @@ snapshots:
       '@babel/helper-string-parser': 7.29.7
       '@babel/helper-validator-identifier': 7.29.7
 
-  '@bazantic/cli@0.10.0(typescript@5.9.2)(zod@3.25.76)':
+  '@bazantic/cli@0.10.0(typescript@5.9.2)(zod@4.6.2)':
     dependencies:
-      '@modelcontextprotocol/sdk': 1.30.0(zod@3.25.76)
-      viem: 2.56.3(typescript@5.9.2)(zod@3.25.76)
+      '@modelcontextprotocol/sdk': 1.30.0(zod@4.6.2)
+      viem: 2.56.3(typescript@5.9.2)(zod@4.6.2)
     transitivePeerDependencies:
       - '@cfworker/json-schema'
       - bufferutil
@@ -2556,7 +2581,7 @@ snapshots:
     dependencies:
       jsep: 1.4.0
 
-  '@modelcontextprotocol/sdk@1.30.0(zod@3.25.76)':
+  '@modelcontextprotocol/sdk@1.30.0(zod@4.6.2)':
     dependencies:
       '@hono/node-server': 2.1.1(hono@4.13.7)
       ajv: 8.20.0
@@ -2573,8 +2598,8 @@ snapshots:
       json-schema-typed: 8.0.2
       pkce-challenge: 5.0.1
       raw-body: 3.0.2
-      zod: 3.25.76
-      zod-to-json-schema: 3.25.2(zod@3.25.76)
+      zod: 4.6.2
+      zod-to-json-schema: 3.25.2(zod@4.6.2)
     transitivePeerDependencies:
       - supports-color
 
@@ -2923,6 +2948,11 @@ snapshots:
     optionalDependencies:
       typescript: 5.9.2
       zod: 3.25.76
+
+  abitype@1.2.3(typescript@5.9.2)(zod@4.6.2):
+    optionalDependencies:
+      typescript: 5.9.2
+      zod: 4.6.2
 
   accepts@2.0.0:
     dependencies:
@@ -3811,6 +3841,21 @@ snapshots:
     transitivePeerDependencies:
       - zod
 
+  ox@0.14.44(typescript@5.9.2)(zod@4.6.2):
+    dependencies:
+      '@adraffy/ens-normalize': 1.11.1
+      '@noble/ciphers': 1.3.0
+      '@noble/curves': 1.9.1
+      '@noble/hashes': 1.8.0
+      '@scure/bip32': 1.7.0
+      '@scure/bip39': 1.6.0
+      abitype: 1.2.3(typescript@5.9.2)(zod@4.6.2)
+      eventemitter3: 5.0.1
+    optionalDependencies:
+      typescript: 5.9.2
+    transitivePeerDependencies:
+      - zod
+
   parseurl@1.3.3: {}
 
   path-key@3.1.1: {}
@@ -4310,6 +4355,23 @@ snapshots:
       - utf-8-validate
       - zod
 
+  viem@2.56.3(typescript@5.9.2)(zod@4.6.2):
+    dependencies:
+      '@noble/curves': 1.9.1
+      '@noble/hashes': 1.8.0
+      '@scure/bip32': 1.7.0
+      '@scure/bip39': 1.6.0
+      abitype: 1.2.3(typescript@5.9.2)(zod@4.6.2)
+      isows: 1.0.7(ws@8.21.0)
+      ox: 0.14.44(typescript@5.9.2)(zod@4.6.2)
+      ws: 8.21.0
+    optionalDependencies:
+      typescript: 5.9.2
+    transitivePeerDependencies:
+      - bufferutil
+      - utf-8-validate
+      - zod
+
   vite-node@3.2.4(@types/node@22.20.2)(terser@5.51.2)(tsx@4.23.13):
     dependencies:
       cac: 6.7.14
@@ -4433,8 +4495,10 @@ snapshots:
       y18n: 5.0.8
       yargs-parser: 21.1.1
 
-  zod-to-json-schema@3.25.2(zod@3.25.76):
+  zod-to-json-schema@3.25.2(zod@4.6.2):
     dependencies:
-      zod: 3.25.76
+      zod: 4.6.2
 
   zod@3.25.76: {}
+
+  zod@4.6.2: {}

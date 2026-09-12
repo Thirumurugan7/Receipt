@@ -18,5 +18,9 @@
     "start": "tsx src/agent.ts",
     "claim": "tsx src/claim-expired.ts",
     "scenes": "tsx src/scenes.ts"
+  },
+  "exports": {
+    ".": "./src/agent.ts",
+    "./buy": "./src/buy.ts"
   }
 }
