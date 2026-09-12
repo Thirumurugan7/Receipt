@@ -11,13 +11,22 @@ const CHECKS = {
   contentType: { equals: 'application/json' },
   minBytes: 32,
   maxLatencyMs: 5000,
-  requiredPaths: ['$.data', '$.timestamp', '$.source'],
+  requiredPaths: ['$.data', '$.markets', '$.sources.balances', '$.sources.markets', '$.indexedBlock', '$.timestamp'],
   jsonSchema: {
     type: 'object',
-    required: ['data', 'source', 'timestamp'],
+    required: ['data', 'markets', 'sources', 'indexedBlock', 'source', 'timestamp'],
     properties: {
-      source: { type: 'string', const: 'the-graph-token-api' },
+      source: { type: 'string', const: 'the-graph' },
       timestamp: { type: 'integer', minimum: 1 },
+      sources: {
+        type: 'object',
+        required: ['balances', 'markets'],
+        properties: {
+          balances: { type: 'string', const: 'token-api' },
+          markets: { type: 'string', const: 'subgraph' },
+        },
+      },
+      indexedBlock: { type: 'integer', minimum: 25000000 },
       data: {
         type: 'array', minItems: 1,
         items: {
@@ -26,6 +35,13 @@ const CHECKS = {
             contract: { type: 'string', pattern: '^0x[0-9a-fA-F]{40}$' },
             amount: { type: 'string', pattern: '^[0-9]+$' },
           },
+        },
+      },
+      markets: {
+        type: 'array', minItems: 1,
+        items: {
+          type: 'object', required: ['pool', 'pair'],
+          properties: { pool: { type: 'string', pattern: '^0x[0-9a-fA-F]{40}$' } },
         },
       },
     },
@@ -43,11 +59,14 @@ const terms = (): Terms => ({
 })
 
 const GOOD = {
-  source: 'the-graph-token-api',
+  source: 'the-graph',
+  sources: { balances: 'token-api', markets: 'subgraph' },
   address: '0x28C6c06298d514Db089934071355E5743bf21d60',
   network: 'mainnet',
+  indexedBlock: 25961439,
   timestamp: Math.floor(NOW / 1000),
   data: [{ contract: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48', symbol: 'USDC', name: 'USDC', amount: '51951297920', decimals: 6, value: 51951.29792, blockNum: 25960658, lastUpdate: '2026-09-12 10:00:00', network: 'mainnet' }],
+  markets: [{ pool: '0x88e6a0c2ddd26feeb64f039a2c41296fcb3f5640', feeTier: '500', liquidity: '123', tvlUsd: '4200000', pair: 'USDC/WETH' }],
 }
 
 const cases: { name: string; body: unknown; status?: number; contentType?: string }[] = [
@@ -56,6 +75,11 @@ const cases: { name: string; body: unknown; status?: number; contentType?: strin
   { name: 'stale', body: { ...GOOD, timestamp: Math.floor(NOW / 1000) - 7200 } },
   { name: 'empty-holdings', body: { ...GOOD, data: [] } },
   { name: 'forged-source', body: { ...GOOD, source: 'invented' } },
+  // the subgraph half silently dropped — composition must be enforced
+  { name: 'markets-missing', body: { ...GOOD, markets: [] } },
+  { name: 'sources-half-claimed', body: { ...GOOD, sources: { balances: 'token-api', markets: 'guessed' } } },
+  // provenance in blocks: an indexer far behind the chain head
+  { name: 'stale-indexed-block', body: { ...GOOD, indexedBlock: 21000000 } },
   { name: 'bad-amount', body: { ...GOOD, data: [{ ...GOOD.data[0], amount: 'lots' }] } },
   { name: 'bad-contract', body: { ...GOOD, data: [{ ...GOOD.data[0], contract: 'nope' }] } },
   { name: 'wrong-status', body: GOOD, status: 503 },

@@ -21,24 +21,51 @@
       "maxLatencyMs": 5000,
       "requiredPaths": [
         "$.data",
-        "$.timestamp",
-        "$.source"
+        "$.markets",
+        "$.sources.balances",
+        "$.sources.markets",
+        "$.indexedBlock",
+        "$.timestamp"
       ],
       "jsonSchema": {
         "type": "object",
         "required": [
           "data",
+          "markets",
+          "sources",
+          "indexedBlock",
           "source",
           "timestamp"
         ],
         "properties": {
           "source": {
             "type": "string",
-            "const": "the-graph-token-api"
+            "const": "the-graph"
           },
           "timestamp": {
             "type": "integer",
             "minimum": 1
+          },
+          "sources": {
+            "type": "object",
+            "required": [
+              "balances",
+              "markets"
+            ],
+            "properties": {
+              "balances": {
+                "type": "string",
+                "const": "token-api"
+              },
+              "markets": {
+                "type": "string",
+                "const": "subgraph"
+              }
+            }
+          },
+          "indexedBlock": {
+            "type": "integer",
+            "minimum": 25000000
           },
           "data": {
             "type": "array",
@@ -60,6 +87,23 @@
                 }
               }
             }
+          },
+          "markets": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "required": [
+                "pool",
+                "pair"
+              ],
+              "properties": {
+                "pool": {
+                  "type": "string",
+                  "pattern": "^0x[0-9a-fA-F]{40}$"
+                }
+              }
+            }
           }
         }
       },
@@ -74,23 +118,23 @@
         "headers": {
           "content-type": "application/json; charset=utf-8"
         },
-        "bodyBase64": "eyJzb3VyY2UiOiJ0aGUtZ3JhcGgtdG9rZW4tYXBpIiwiYWRkcmVzcyI6IjB4MjhDNmMwNjI5OGQ1MTREYjA4OTkzNDA3MTM1NUU1NzQzYmYyMWQ2MCIsIm5ldHdvcmsiOiJtYWlubmV0IiwidGltZXN0YW1wIjoxNzg5MjAwMDAwLCJkYXRhIjpbeyJjb250cmFjdCI6IjB4YTBiODY5OTFjNjIxOGIzNmMxZDE5ZDRhMmU5ZWIwY2UzNjA2ZWI0OCIsInN5bWJvbCI6IlVTREMiLCJuYW1lIjoiVVNEQyIsImFtb3VudCI6IjUxOTUxMjk3OTIwIiwiZGVjaW1hbHMiOjYsInZhbHVlIjo1MTk1MS4yOTc5MiwiYmxvY2tOdW0iOjI1OTYwNjU4LCJsYXN0VXBkYXRlIjoiMjAyNi0wOS0xMiAxMDowMDowMCIsIm5ldHdvcmsiOiJtYWlubmV0In1dfQ==",
+        "bodyBase64": "eyJzb3VyY2UiOiJ0aGUtZ3JhcGgiLCJzb3VyY2VzIjp7ImJhbGFuY2VzIjoidG9rZW4tYXBpIiwibWFya2V0cyI6InN1YmdyYXBoIn0sImFkZHJlc3MiOiIweDI4QzZjMDYyOThkNTE0RGIwODk5MzQwNzEzNTVFNTc0M2JmMjFkNjAiLCJuZXR3b3JrIjoibWFpbm5ldCIsImluZGV4ZWRCbG9jayI6MjU5NjE0MzksInRpbWVzdGFtcCI6MTc4OTIwMDAwMCwiZGF0YSI6W3siY29udHJhY3QiOiIweGEwYjg2OTkxYzYyMThiMzZjMWQxOWQ0YTJlOWViMGNlMzYwNmViNDgiLCJzeW1ib2wiOiJVU0RDIiwibmFtZSI6IlVTREMiLCJhbW91bnQiOiI1MTk1MTI5NzkyMCIsImRlY2ltYWxzIjo2LCJ2YWx1ZSI6NTE5NTEuMjk3OTIsImJsb2NrTnVtIjoyNTk2MDY1OCwibGFzdFVwZGF0ZSI6IjIwMjYtMDktMTIgMTA6MDA6MDAiLCJuZXR3b3JrIjoibWFpbm5ldCJ9XSwibWFya2V0cyI6W3sicG9vbCI6IjB4ODhlNmEwYzJkZGQyNmZlZWI2NGYwMzlhMmM0MTI5NmZjYjNmNTY0MCIsImZlZVRpZXIiOiI1MDAiLCJsaXF1aWRpdHkiOiIxMjMiLCJ0dmxVc2QiOiI0MjAwMDAwIiwicGFpciI6IlVTREMvV0VUSCJ9XX0=",
         "requestTimeMs": 1789200000000
       },
       "expected": {
         "pass": true,
         "firstFailure": null,
-        "responseHash": "0xc8c7b39a77bae368bc230bfb8bf888b06e46181c35a1ca8c592014457ca621f8",
+        "responseHash": "0x42485bd46fd09dfc47f8506c2e8a630d727ab4523e66283da0f63bdf6857ca0e",
         "reproducibleJcs": "[{\"check\":\"status\",\"pass\":true},{\"check\":\"contentType\",\"pass\":true},{\"check\":\"minBytes\",\"pass\":true},{\"check\":\"requiredPaths\",\"pass\":true},{\"check\":\"jsonSchema\",\"pass\":true},{\"check\":\"freshness\",\"pass\":true},{\"check\":\"expectedHash\",\"pass\":true,\"skipped\":true}]",
-        "verdictHash": "0x01750f0783c8d05d19a5d7e13f8932f008cded2cbc3de8a69a2661557ad8c353"
+        "verdictHash": "0x8e85fd7993144bef09210f26ed952e17d7af310a2390a490bcc8d35ec04873c3"
       },
       "verdict": {
         "v": 1,
         "adjudicator": "receipt-adjudicator@0.1.0",
-        "termsHash": "0x584a51fda1f55ac3c13a042f58a786c1f485da88d923a31e55c4a8ee7d5838ea",
-        "responseHash": "0xc8c7b39a77bae368bc230bfb8bf888b06e46181c35a1ca8c592014457ca621f8",
+        "termsHash": "0x6489fdbea254f99f21ea9fc702965496a3e6c64e771fb4379aaa2c1ff9495ea0",
+        "responseHash": "0x42485bd46fd09dfc47f8506c2e8a630d727ab4523e66283da0f63bdf6857ca0e",
         "observedStatus": 200,
-        "observedBytes": 358,
+        "observedBytes": 566,
         "reproducible": [
           {
             "check": "status",
@@ -147,13 +191,13 @@
         "pass": false,
         "firstFailure": "requiredPaths",
         "responseHash": "0xf16ba772ebaf7402a47ed24254a69f3d3dd696dcbd4e7f31bcae97aed46ae09e",
-        "reproducibleJcs": "[{\"check\":\"status\",\"pass\":true},{\"check\":\"contentType\",\"pass\":true},{\"check\":\"minBytes\",\"pass\":true},{\"check\":\"requiredPaths\",\"detail\":\"missing $.data, $.timestamp, $.source\",\"pass\":false},{\"check\":\"jsonSchema\",\"detail\":\"/: must have required property 'data'; /: must have required property 'source'; /: must have required property 'timestamp'\",\"pass\":false},{\"check\":\"freshness\",\"detail\":\"$.timestamp missing or unparseable\",\"pass\":false},{\"check\":\"expectedHash\",\"pass\":true,\"skipped\":true}]",
-        "verdictHash": "0x3c1f838181122fcc674e5d4ec9d39fff1f522b3feb9f5eb68c2b43ee0d06edcd"
+        "reproducibleJcs": "[{\"check\":\"status\",\"pass\":true},{\"check\":\"contentType\",\"pass\":true},{\"check\":\"minBytes\",\"pass\":true},{\"check\":\"requiredPaths\",\"detail\":\"missing $.data, $.markets, $.sources.balances, $.sources.markets, $.indexedBlock, $.timestamp\",\"pass\":false},{\"check\":\"jsonSchema\",\"detail\":\"/: must have required property 'data'; /: must have required property 'markets'; /: must have required property 'sources'; /: must have required property 'indexedBlock'; /: must have required property 'source'; /: must have required property 'timestamp'\",\"pass\":false},{\"check\":\"freshness\",\"detail\":\"$.timestamp missing or unparseable\",\"pass\":false},{\"check\":\"expectedHash\",\"pass\":true,\"skipped\":true}]",
+        "verdictHash": "0xf74d956117bb5eb245c0bca95c62827833342cbfd318b22eaf78644f1eb2d907"
       },
       "verdict": {
         "v": 1,
         "adjudicator": "receipt-adjudicator@0.1.0",
-        "termsHash": "0x584a51fda1f55ac3c13a042f58a786c1f485da88d923a31e55c4a8ee7d5838ea",
+        "termsHash": "0x6489fdbea254f99f21ea9fc702965496a3e6c64e771fb4379aaa2c1ff9495ea0",
         "responseHash": "0xf16ba772ebaf7402a47ed24254a69f3d3dd696dcbd4e7f31bcae97aed46ae09e",
         "observedStatus": 200,
         "observedBytes": 33,
@@ -173,12 +217,12 @@
           {
             "check": "requiredPaths",
             "pass": false,
-            "detail": "missing $.data, $.timestamp, $.source"
+            "detail": "missing $.data, $.markets, $.sources.balances, $.sources.markets, $.indexedBlock, $.timestamp"
           },
           {
             "check": "jsonSchema",
             "pass": false,
-            "detail": "/: must have required property 'data'; /: must have required property 'source'; /: must have required property 'timestamp'"
+            "detail": "/: must have required property 'data'; /: must have required property 'markets'; /: must have required property 'sources'; /: must have required property 'indexedBlock'; /: must have required property 'source'; /: must have required property 'timestamp'"
           },
           {
             "check": "freshness",
@@ -209,23 +253,23 @@
         "headers": {
           "content-type": "application/json; charset=utf-8"
         },
-        "bodyBase64": "eyJzb3VyY2UiOiJ0aGUtZ3JhcGgtdG9rZW4tYXBpIiwiYWRkcmVzcyI6IjB4MjhDNmMwNjI5OGQ1MTREYjA4OTkzNDA3MTM1NUU1NzQzYmYyMWQ2MCIsIm5ldHdvcmsiOiJtYWlubmV0IiwidGltZXN0YW1wIjoxNzg5MTkyODAwLCJkYXRhIjpbeyJjb250cmFjdCI6IjB4YTBiODY5OTFjNjIxOGIzNmMxZDE5ZDRhMmU5ZWIwY2UzNjA2ZWI0OCIsInN5bWJvbCI6IlVTREMiLCJuYW1lIjoiVVNEQyIsImFtb3VudCI6IjUxOTUxMjk3OTIwIiwiZGVjaW1hbHMiOjYsInZhbHVlIjo1MTk1MS4yOTc5MiwiYmxvY2tOdW0iOjI1OTYwNjU4LCJsYXN0VXBkYXRlIjoiMjAyNi0wOS0xMiAxMDowMDowMCIsIm5ldHdvcmsiOiJtYWlubmV0In1dfQ==",
+        "bodyBase64": "eyJzb3VyY2UiOiJ0aGUtZ3JhcGgiLCJzb3VyY2VzIjp7ImJhbGFuY2VzIjoidG9rZW4tYXBpIiwibWFya2V0cyI6InN1YmdyYXBoIn0sImFkZHJlc3MiOiIweDI4QzZjMDYyOThkNTE0RGIwODk5MzQwNzEzNTVFNTc0M2JmMjFkNjAiLCJuZXR3b3JrIjoibWFpbm5ldCIsImluZGV4ZWRCbG9jayI6MjU5NjE0MzksInRpbWVzdGFtcCI6MTc4OTE5MjgwMCwiZGF0YSI6W3siY29udHJhY3QiOiIweGEwYjg2OTkxYzYyMThiMzZjMWQxOWQ0YTJlOWViMGNlMzYwNmViNDgiLCJzeW1ib2wiOiJVU0RDIiwibmFtZSI6IlVTREMiLCJhbW91bnQiOiI1MTk1MTI5NzkyMCIsImRlY2ltYWxzIjo2LCJ2YWx1ZSI6NTE5NTEuMjk3OTIsImJsb2NrTnVtIjoyNTk2MDY1OCwibGFzdFVwZGF0ZSI6IjIwMjYtMDktMTIgMTA6MDA6MDAiLCJuZXR3b3JrIjoibWFpbm5ldCJ9XSwibWFya2V0cyI6W3sicG9vbCI6IjB4ODhlNmEwYzJkZGQyNmZlZWI2NGYwMzlhMmM0MTI5NmZjYjNmNTY0MCIsImZlZVRpZXIiOiI1MDAiLCJsaXF1aWRpdHkiOiIxMjMiLCJ0dmxVc2QiOiI0MjAwMDAwIiwicGFpciI6IlVTREMvV0VUSCJ9XX0=",
         "requestTimeMs": 1789200000000
       },
       "expected": {
         "pass": false,
         "firstFailure": "freshness",
-        "responseHash": "0x06276e37dbb095c8353c0fb7c32432fad2922e3a6649dad82d7f90bfbe506570",
+        "responseHash": "0x1561b21afe65295ff7ff967db841b29d8c2b8018ec8172141dfef4a3ad9a03b4",
         "reproducibleJcs": "[{\"check\":\"status\",\"pass\":true},{\"check\":\"contentType\",\"pass\":true},{\"check\":\"minBytes\",\"pass\":true},{\"check\":\"requiredPaths\",\"pass\":true},{\"check\":\"jsonSchema\",\"pass\":true},{\"check\":\"freshness\",\"detail\":\"timestamp is 7200s from request, limit 3600s\",\"pass\":false},{\"check\":\"expectedHash\",\"pass\":true,\"skipped\":true}]",
-        "verdictHash": "0xb5058a46262caa7be34cd47eb95c2533a2527d727c03eccff900d5d2ee73143a"
+        "verdictHash": "0x296779e6cfba352bb9c93de20a4788bee6be15ff17b4fac1fb096673e3b5a599"
       },
       "verdict": {
         "v": 1,
         "adjudicator": "receipt-adjudicator@0.1.0",
-        "termsHash": "0x584a51fda1f55ac3c13a042f58a786c1f485da88d923a31e55c4a8ee7d5838ea",
-        "responseHash": "0x06276e37dbb095c8353c0fb7c32432fad2922e3a6649dad82d7f90bfbe506570",
+        "termsHash": "0x6489fdbea254f99f21ea9fc702965496a3e6c64e771fb4379aaa2c1ff9495ea0",
+        "responseHash": "0x1561b21afe65295ff7ff967db841b29d8c2b8018ec8172141dfef4a3ad9a03b4",
         "observedStatus": 200,
-        "observedBytes": 358,
+        "observedBytes": 566,
         "reproducible": [
           {
             "check": "status",
@@ -276,23 +320,23 @@
         "headers": {
           "content-type": "application/json; charset=utf-8"
         },
-        "bodyBase64": "eyJzb3VyY2UiOiJ0aGUtZ3JhcGgtdG9rZW4tYXBpIiwiYWRkcmVzcyI6IjB4MjhDNmMwNjI5OGQ1MTREYjA4OTkzNDA3MTM1NUU1NzQzYmYyMWQ2MCIsIm5ldHdvcmsiOiJtYWlubmV0IiwidGltZXN0YW1wIjoxNzg5MjAwMDAwLCJkYXRhIjpbXX0=",
+        "bodyBase64": "eyJzb3VyY2UiOiJ0aGUtZ3JhcGgiLCJzb3VyY2VzIjp7ImJhbGFuY2VzIjoidG9rZW4tYXBpIiwibWFya2V0cyI6InN1YmdyYXBoIn0sImFkZHJlc3MiOiIweDI4QzZjMDYyOThkNTE0RGIwODk5MzQwNzEzNTVFNTc0M2JmMjFkNjAiLCJuZXR3b3JrIjoibWFpbm5ldCIsImluZGV4ZWRCbG9jayI6MjU5NjE0MzksInRpbWVzdGFtcCI6MTc4OTIwMDAwMCwiZGF0YSI6W10sIm1hcmtldHMiOlt7InBvb2wiOiIweDg4ZTZhMGMyZGRkMjZmZWViNjRmMDM5YTJjNDEyOTZmY2IzZjU2NDAiLCJmZWVUaWVyIjoiNTAwIiwibGlxdWlkaXR5IjoiMTIzIiwidHZsVXNkIjoiNDIwMDAwMCIsInBhaXIiOiJVU0RDL1dFVEgifV19",
         "requestTimeMs": 1789200000000
       },
       "expected": {
         "pass": false,
         "firstFailure": "jsonSchema",
-        "responseHash": "0xdbd6d17ef9eaf054381383b840d1400da24072f3b17abf8d7655c82f1a58d3ba",
+        "responseHash": "0xe1f5f348c0208dc01f2b6127796b69aca8b8b0f9852cf31828a213416e4bc244",
         "reproducibleJcs": "[{\"check\":\"status\",\"pass\":true},{\"check\":\"contentType\",\"pass\":true},{\"check\":\"minBytes\",\"pass\":true},{\"check\":\"requiredPaths\",\"pass\":true},{\"check\":\"jsonSchema\",\"detail\":\"/data: must NOT have fewer than 1 items\",\"pass\":false},{\"check\":\"freshness\",\"pass\":true},{\"check\":\"expectedHash\",\"pass\":true,\"skipped\":true}]",
-        "verdictHash": "0xce38911e4fe1a247bbf6f4cc9f1589881557978eccd6e08edcc416ba03056e33"
+        "verdictHash": "0x49ff5437e343d89c9b86df2cef945067b989da763324541e8684541b367b5b86"
       },
       "verdict": {
         "v": 1,
         "adjudicator": "receipt-adjudicator@0.1.0",
-        "termsHash": "0x584a51fda1f55ac3c13a042f58a786c1f485da88d923a31e55c4a8ee7d5838ea",
-        "responseHash": "0xdbd6d17ef9eaf054381383b840d1400da24072f3b17abf8d7655c82f1a58d3ba",
+        "termsHash": "0x6489fdbea254f99f21ea9fc702965496a3e6c64e771fb4379aaa2c1ff9495ea0",
+        "responseHash": "0xe1f5f348c0208dc01f2b6127796b69aca8b8b0f9852cf31828a213416e4bc244",
         "observedStatus": 200,
-        "observedBytes": 140,
+        "observedBytes": 348,
         "reproducible": [
           {
             "check": "status",
@@ -343,23 +387,23 @@
         "headers": {
           "content-type": "application/json; charset=utf-8"
         },
-        "bodyBase64": "eyJzb3VyY2UiOiJpbnZlbnRlZCIsImFkZHJlc3MiOiIweDI4QzZjMDYyOThkNTE0RGIwODk5MzQwNzEzNTVFNTc0M2JmMjFkNjAiLCJuZXR3b3JrIjoibWFpbm5ldCIsInRpbWVzdGFtcCI6MTc4OTIwMDAwMCwiZGF0YSI6W3siY29udHJhY3QiOiIweGEwYjg2OTkxYzYyMThiMzZjMWQxOWQ0YTJlOWViMGNlMzYwNmViNDgiLCJzeW1ib2wiOiJVU0RDIiwibmFtZSI6IlVTREMiLCJhbW91bnQiOiI1MTk1MTI5NzkyMCIsImRlY2ltYWxzIjo2LCJ2YWx1ZSI6NTE5NTEuMjk3OTIsImJsb2NrTnVtIjoyNTk2MDY1OCwibGFzdFVwZGF0ZSI6IjIwMjYtMDktMTIgMTA6MDA6MDAiLCJuZXR3b3JrIjoibWFpbm5ldCJ9XX0=",
+        "bodyBase64": "eyJzb3VyY2UiOiJpbnZlbnRlZCIsInNvdXJjZXMiOnsiYmFsYW5jZXMiOiJ0b2tlbi1hcGkiLCJtYXJrZXRzIjoic3ViZ3JhcGgifSwiYWRkcmVzcyI6IjB4MjhDNmMwNjI5OGQ1MTREYjA4OTkzNDA3MTM1NUU1NzQzYmYyMWQ2MCIsIm5ldHdvcmsiOiJtYWlubmV0IiwiaW5kZXhlZEJsb2NrIjoyNTk2MTQzOSwidGltZXN0YW1wIjoxNzg5MjAwMDAwLCJkYXRhIjpbeyJjb250cmFjdCI6IjB4YTBiODY5OTFjNjIxOGIzNmMxZDE5ZDRhMmU5ZWIwY2UzNjA2ZWI0OCIsInN5bWJvbCI6IlVTREMiLCJuYW1lIjoiVVNEQyIsImFtb3VudCI6IjUxOTUxMjk3OTIwIiwiZGVjaW1hbHMiOjYsInZhbHVlIjo1MTk1MS4yOTc5MiwiYmxvY2tOdW0iOjI1OTYwNjU4LCJsYXN0VXBkYXRlIjoiMjAyNi0wOS0xMiAxMDowMDowMCIsIm5ldHdvcmsiOiJtYWlubmV0In1dLCJtYXJrZXRzIjpbeyJwb29sIjoiMHg4OGU2YTBjMmRkZDI2ZmVlYjY0ZjAzOWEyYzQxMjk2ZmNiM2Y1NjQwIiwiZmVlVGllciI6IjUwMCIsImxpcXVpZGl0eSI6IjEyMyIsInR2bFVzZCI6IjQyMDAwMDAiLCJwYWlyIjoiVVNEQy9XRVRIIn1dfQ==",
         "requestTimeMs": 1789200000000
       },
       "expected": {
         "pass": false,
         "firstFailure": "jsonSchema",
-        "responseHash": "0xe91ce402d772eef72b4355897c5e94bec410abba085a19f38c2f36e61a220ac5",
+        "responseHash": "0x14be818c1383c177304485e91822ce6886a423e99720d8f802abc8506c56351d",
         "reproducibleJcs": "[{\"check\":\"status\",\"pass\":true},{\"check\":\"contentType\",\"pass\":true},{\"check\":\"minBytes\",\"pass\":true},{\"check\":\"requiredPaths\",\"pass\":true},{\"check\":\"jsonSchema\",\"detail\":\"/source: must be equal to constant\",\"pass\":false},{\"check\":\"freshness\",\"pass\":true},{\"check\":\"expectedHash\",\"pass\":true,\"skipped\":true}]",
-        "verdictHash": "0x1f89aa4d81f5b80b0fdb1c2fe106bfa1261815cddd2d889e35293e14f4e01e0d"
+        "verdictHash": "0x6c198155535b592dab97e38d16e6e16a1c347d2e2c7d1d96fb81974b5d605216"
       },
       "verdict": {
         "v": 1,
         "adjudicator": "receipt-adjudicator@0.1.0",
-        "termsHash": "0x584a51fda1f55ac3c13a042f58a786c1f485da88d923a31e55c4a8ee7d5838ea",
-        "responseHash": "0xe91ce402d772eef72b4355897c5e94bec410abba085a19f38c2f36e61a220ac5",
+        "termsHash": "0x6489fdbea254f99f21ea9fc702965496a3e6c64e771fb4379aaa2c1ff9495ea0",
+        "responseHash": "0x14be818c1383c177304485e91822ce6886a423e99720d8f802abc8506c56351d",
         "observedStatus": 200,
-        "observedBytes": 347,
+        "observedBytes": 565,
         "reproducible": [
           {
             "check": "status",
@@ -404,29 +448,230 @@
       }
     },
     {
+      "name": "markets-missing",
+      "observation": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json; charset=utf-8"
+        },
+        "bodyBase64": "eyJzb3VyY2UiOiJ0aGUtZ3JhcGgiLCJzb3VyY2VzIjp7ImJhbGFuY2VzIjoidG9rZW4tYXBpIiwibWFya2V0cyI6InN1YmdyYXBoIn0sImFkZHJlc3MiOiIweDI4QzZjMDYyOThkNTE0RGIwODk5MzQwNzEzNTVFNTc0M2JmMjFkNjAiLCJuZXR3b3JrIjoibWFpbm5ldCIsImluZGV4ZWRCbG9jayI6MjU5NjE0MzksInRpbWVzdGFtcCI6MTc4OTIwMDAwMCwiZGF0YSI6W3siY29udHJhY3QiOiIweGEwYjg2OTkxYzYyMThiMzZjMWQxOWQ0YTJlOWViMGNlMzYwNmViNDgiLCJzeW1ib2wiOiJVU0RDIiwibmFtZSI6IlVTREMiLCJhbW91bnQiOiI1MTk1MTI5NzkyMCIsImRlY2ltYWxzIjo2LCJ2YWx1ZSI6NTE5NTEuMjk3OTIsImJsb2NrTnVtIjoyNTk2MDY1OCwibGFzdFVwZGF0ZSI6IjIwMjYtMDktMTIgMTA6MDA6MDAiLCJuZXR3b3JrIjoibWFpbm5ldCJ9XSwibWFya2V0cyI6W119",
+        "requestTimeMs": 1789200000000
+      },
+      "expected": {
+        "pass": false,
+        "firstFailure": "jsonSchema",
+        "responseHash": "0x7c644afe216f8a169d69a629cc91afadcd0d60ba3112eac7d6596c18a407625c",
+        "reproducibleJcs": "[{\"check\":\"status\",\"pass\":true},{\"check\":\"contentType\",\"pass\":true},{\"check\":\"minBytes\",\"pass\":true},{\"check\":\"requiredPaths\",\"pass\":true},{\"check\":\"jsonSchema\",\"detail\":\"/markets: must NOT have fewer than 1 items\",\"pass\":false},{\"check\":\"freshness\",\"pass\":true},{\"check\":\"expectedHash\",\"pass\":true,\"skipped\":true}]",
+        "verdictHash": "0x68bfd072ef44e065bf8f7295aa7495124faeef7a578bdfaf5443ece97c7b9778"
+      },
+      "verdict": {
+        "v": 1,
+        "adjudicator": "receipt-adjudicator@0.1.0",
+        "termsHash": "0x6489fdbea254f99f21ea9fc702965496a3e6c64e771fb4379aaa2c1ff9495ea0",
+        "responseHash": "0x7c644afe216f8a169d69a629cc91afadcd0d60ba3112eac7d6596c18a407625c",
+        "observedStatus": 200,
+        "observedBytes": 441,
+        "reproducible": [
+          {
+            "check": "status",
+            "pass": true
+          },
+          {
+            "check": "contentType",
+            "pass": true
+          },
+          {
+            "check": "minBytes",
+            "pass": true
+          },
+          {
+            "check": "requiredPaths",
+            "pass": true
+          },
+          {
+            "check": "jsonSchema",
+            "pass": false,
+            "detail": "/markets: must NOT have fewer than 1 items"
+          },
+          {
+            "check": "freshness",
+            "pass": true
+          },
+          {
+            "check": "expectedHash",
+            "pass": true,
+            "skipped": true
+          }
+        ],
+        "attested": [
+          {
+            "check": "maxLatencyMs",
+            "pass": true,
+            "observed": 412
+          }
+        ],
+        "pass": false,
+        "firstFailure": "jsonSchema"
+      }
+    },
+    {
+      "name": "sources-half-claimed",
+      "observation": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json; charset=utf-8"
+        },
+        "bodyBase64": "eyJzb3VyY2UiOiJ0aGUtZ3JhcGgiLCJzb3VyY2VzIjp7ImJhbGFuY2VzIjoidG9rZW4tYXBpIiwibWFya2V0cyI6Imd1ZXNzZWQifSwiYWRkcmVzcyI6IjB4MjhDNmMwNjI5OGQ1MTREYjA4OTkzNDA3MTM1NUU1NzQzYmYyMWQ2MCIsIm5ldHdvcmsiOiJtYWlubmV0IiwiaW5kZXhlZEJsb2NrIjoyNTk2MTQzOSwidGltZXN0YW1wIjoxNzg5MjAwMDAwLCJkYXRhIjpbeyJjb250cmFjdCI6IjB4YTBiODY5OTFjNjIxOGIzNmMxZDE5ZDRhMmU5ZWIwY2UzNjA2ZWI0OCIsInN5bWJvbCI6IlVTREMiLCJuYW1lIjoiVVNEQyIsImFtb3VudCI6IjUxOTUxMjk3OTIwIiwiZGVjaW1hbHMiOjYsInZhbHVlIjo1MTk1MS4yOTc5MiwiYmxvY2tOdW0iOjI1OTYwNjU4LCJsYXN0VXBkYXRlIjoiMjAyNi0wOS0xMiAxMDowMDowMCIsIm5ldHdvcmsiOiJtYWlubmV0In1dLCJtYXJrZXRzIjpbeyJwb29sIjoiMHg4OGU2YTBjMmRkZDI2ZmVlYjY0ZjAzOWEyYzQxMjk2ZmNiM2Y1NjQwIiwiZmVlVGllciI6IjUwMCIsImxpcXVpZGl0eSI6IjEyMyIsInR2bFVzZCI6IjQyMDAwMDAiLCJwYWlyIjoiVVNEQy9XRVRIIn1dfQ==",
+        "requestTimeMs": 1789200000000
+      },
+      "expected": {
+        "pass": false,
+        "firstFailure": "jsonSchema",
+        "responseHash": "0xbe0c6f75d5f65da6068b66b0c0a3b789314fc721544961e500997f57b944bbed",
+        "reproducibleJcs": "[{\"check\":\"status\",\"pass\":true},{\"check\":\"contentType\",\"pass\":true},{\"check\":\"minBytes\",\"pass\":true},{\"check\":\"requiredPaths\",\"pass\":true},{\"check\":\"jsonSchema\",\"detail\":\"/sources/markets: must be equal to constant\",\"pass\":false},{\"check\":\"freshness\",\"pass\":true},{\"check\":\"expectedHash\",\"pass\":true,\"skipped\":true}]",
+        "verdictHash": "0xcbe3f5c0923d06ef5a9bd018155918e6825bb5ff93b15c7bea236857aad862b8"
+      },
+      "verdict": {
+        "v": 1,
+        "adjudicator": "receipt-adjudicator@0.1.0",
+        "termsHash": "0x6489fdbea254f99f21ea9fc702965496a3e6c64e771fb4379aaa2c1ff9495ea0",
+        "responseHash": "0xbe0c6f75d5f65da6068b66b0c0a3b789314fc721544961e500997f57b944bbed",
+        "observedStatus": 200,
+        "observedBytes": 565,
+        "reproducible": [
+          {
+            "check": "status",
+            "pass": true
+          },
+          {
+            "check": "contentType",
+            "pass": true
+          },
+          {
+            "check": "minBytes",
+            "pass": true
+          },
+          {
+            "check": "requiredPaths",
+            "pass": true
+          },
+          {
+            "check": "jsonSchema",
+            "pass": false,
+            "detail": "/sources/markets: must be equal to constant"
+          },
+          {
+            "check": "freshness",
+            "pass": true
+          },
+          {
+            "check": "expectedHash",
+            "pass": true,
+            "skipped": true
+          }
+        ],
+        "attested": [
+          {
+            "check": "maxLatencyMs",
+            "pass": true,
+            "observed": 412
+          }
+        ],
+        "pass": false,
+        "firstFailure": "jsonSchema"
+      }
+    },
+    {
+      "name": "stale-indexed-block",
+      "observation": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json; charset=utf-8"
+        },
+        "bodyBase64": "eyJzb3VyY2UiOiJ0aGUtZ3JhcGgiLCJzb3VyY2VzIjp7ImJhbGFuY2VzIjoidG9rZW4tYXBpIiwibWFya2V0cyI6InN1YmdyYXBoIn0sImFkZHJlc3MiOiIweDI4QzZjMDYyOThkNTE0RGIwODk5MzQwNzEzNTVFNTc0M2JmMjFkNjAiLCJuZXR3b3JrIjoibWFpbm5ldCIsImluZGV4ZWRCbG9jayI6MjEwMDAwMDAsInRpbWVzdGFtcCI6MTc4OTIwMDAwMCwiZGF0YSI6W3siY29udHJhY3QiOiIweGEwYjg2OTkxYzYyMThiMzZjMWQxOWQ0YTJlOWViMGNlMzYwNmViNDgiLCJzeW1ib2wiOiJVU0RDIiwibmFtZSI6IlVTREMiLCJhbW91bnQiOiI1MTk1MTI5NzkyMCIsImRlY2ltYWxzIjo2LCJ2YWx1ZSI6NTE5NTEuMjk3OTIsImJsb2NrTnVtIjoyNTk2MDY1OCwibGFzdFVwZGF0ZSI6IjIwMjYtMDktMTIgMTA6MDA6MDAiLCJuZXR3b3JrIjoibWFpbm5ldCJ9XSwibWFya2V0cyI6W3sicG9vbCI6IjB4ODhlNmEwYzJkZGQyNmZlZWI2NGYwMzlhMmM0MTI5NmZjYjNmNTY0MCIsImZlZVRpZXIiOiI1MDAiLCJsaXF1aWRpdHkiOiIxMjMiLCJ0dmxVc2QiOiI0MjAwMDAwIiwicGFpciI6IlVTREMvV0VUSCJ9XX0=",
+        "requestTimeMs": 1789200000000
+      },
+      "expected": {
+        "pass": false,
+        "firstFailure": "jsonSchema",
+        "responseHash": "0x8ce97444134c7da44d71304fb109f049052988b8d87144c953bcff3288f66765",
+        "reproducibleJcs": "[{\"check\":\"status\",\"pass\":true},{\"check\":\"contentType\",\"pass\":true},{\"check\":\"minBytes\",\"pass\":true},{\"check\":\"requiredPaths\",\"pass\":true},{\"check\":\"jsonSchema\",\"detail\":\"/indexedBlock: must be >= 25000000\",\"pass\":false},{\"check\":\"freshness\",\"pass\":true},{\"check\":\"expectedHash\",\"pass\":true,\"skipped\":true}]",
+        "verdictHash": "0xbe7c268928847c8186802752c2ec79d1e751c99ef4e0cf149fd375dda7e3c038"
+      },
+      "verdict": {
+        "v": 1,
+        "adjudicator": "receipt-adjudicator@0.1.0",
+        "termsHash": "0x6489fdbea254f99f21ea9fc702965496a3e6c64e771fb4379aaa2c1ff9495ea0",
+        "responseHash": "0x8ce97444134c7da44d71304fb109f049052988b8d87144c953bcff3288f66765",
+        "observedStatus": 200,
+        "observedBytes": 566,
+        "reproducible": [
+          {
+            "check": "status",
+            "pass": true
+          },
+          {
+            "check": "contentType",
+            "pass": true
+          },
+          {
+            "check": "minBytes",
+            "pass": true
+          },
+          {
+            "check": "requiredPaths",
+            "pass": true
+          },
+          {
+            "check": "jsonSchema",
+            "pass": false,
+            "detail": "/indexedBlock: must be >= 25000000"
+          },
+          {
+            "check": "freshness",
+            "pass": true
+          },
+          {
+            "check": "expectedHash",
+            "pass": true,
+            "skipped": true
+          }
+        ],
+        "attested": [
+          {
+            "check": "maxLatencyMs",
+            "pass": true,
+            "observed": 412
+          }
+        ],
+        "pass": false,
+        "firstFailure": "jsonSchema"
+      }
+    },
+    {
       "name": "bad-amount",
       "observation": {
         "status": 200,
         "headers": {
           "content-type": "application/json; charset=utf-8"
         },
-        "bodyBase64": "eyJzb3VyY2UiOiJ0aGUtZ3JhcGgtdG9rZW4tYXBpIiwiYWRkcmVzcyI6IjB4MjhDNmMwNjI5OGQ1MTREYjA4OTkzNDA3MTM1NUU1NzQzYmYyMWQ2MCIsIm5ldHdvcmsiOiJtYWlubmV0IiwidGltZXN0YW1wIjoxNzg5MjAwMDAwLCJkYXRhIjpbeyJjb250cmFjdCI6IjB4YTBiODY5OTFjNjIxOGIzNmMxZDE5ZDRhMmU5ZWIwY2UzNjA2ZWI0OCIsInN5bWJvbCI6IlVTREMiLCJuYW1lIjoiVVNEQyIsImFtb3VudCI6ImxvdHMiLCJkZWNpbWFscyI6NiwidmFsdWUiOjUxOTUxLjI5NzkyLCJibG9ja051bSI6MjU5NjA2NTgsImxhc3RVcGRhdGUiOiIyMDI2LTA5LTEyIDEwOjAwOjAwIiwibmV0d29yayI6Im1haW5uZXQifV19",
+        "bodyBase64": "eyJzb3VyY2UiOiJ0aGUtZ3JhcGgiLCJzb3VyY2VzIjp7ImJhbGFuY2VzIjoidG9rZW4tYXBpIiwibWFya2V0cyI6InN1YmdyYXBoIn0sImFkZHJlc3MiOiIweDI4QzZjMDYyOThkNTE0RGIwODk5MzQwNzEzNTVFNTc0M2JmMjFkNjAiLCJuZXR3b3JrIjoibWFpbm5ldCIsImluZGV4ZWRCbG9jayI6MjU5NjE0MzksInRpbWVzdGFtcCI6MTc4OTIwMDAwMCwiZGF0YSI6W3siY29udHJhY3QiOiIweGEwYjg2OTkxYzYyMThiMzZjMWQxOWQ0YTJlOWViMGNlMzYwNmViNDgiLCJzeW1ib2wiOiJVU0RDIiwibmFtZSI6IlVTREMiLCJhbW91bnQiOiJsb3RzIiwiZGVjaW1hbHMiOjYsInZhbHVlIjo1MTk1MS4yOTc5MiwiYmxvY2tOdW0iOjI1OTYwNjU4LCJsYXN0VXBkYXRlIjoiMjAyNi0wOS0xMiAxMDowMDowMCIsIm5ldHdvcmsiOiJtYWlubmV0In1dLCJtYXJrZXRzIjpbeyJwb29sIjoiMHg4OGU2YTBjMmRkZDI2ZmVlYjY0ZjAzOWEyYzQxMjk2ZmNiM2Y1NjQwIiwiZmVlVGllciI6IjUwMCIsImxpcXVpZGl0eSI6IjEyMyIsInR2bFVzZCI6IjQyMDAwMDAiLCJwYWlyIjoiVVNEQy9XRVRIIn1dfQ==",
         "requestTimeMs": 1789200000000
       },
       "expected": {
         "pass": false,
         "firstFailure": "jsonSchema",
-        "responseHash": "0xdd42a29caa8cd4f8ee632661b4056541aa99e26cfde8fceb86ea5c4921476b81",
+        "responseHash": "0x415970d1e96a8e3ad7bc937033c6f136e209b1f419538a02a6a241e42b34b617",
         "reproducibleJcs": "[{\"check\":\"status\",\"pass\":true},{\"check\":\"contentType\",\"pass\":true},{\"check\":\"minBytes\",\"pass\":true},{\"check\":\"requiredPaths\",\"pass\":true},{\"check\":\"jsonSchema\",\"detail\":\"/data/0/amount: must match pattern \\\"^[0-9]+$\\\"\",\"pass\":false},{\"check\":\"freshness\",\"pass\":true},{\"check\":\"expectedHash\",\"pass\":true,\"skipped\":true}]",
-        "verdictHash": "0x35f454f22a2b9021c137877b96ed12985eebeb2250263b3708465370c91446ef"
+        "verdictHash": "0xdae995eb02927cf38669bc2f796b057f2e332c2d2f6d55e01304eebb95cf8327"
       },
       "verdict": {
         "v": 1,
         "adjudicator": "receipt-adjudicator@0.1.0",
-        "termsHash": "0x584a51fda1f55ac3c13a042f58a786c1f485da88d923a31e55c4a8ee7d5838ea",
-        "responseHash": "0xdd42a29caa8cd4f8ee632661b4056541aa99e26cfde8fceb86ea5c4921476b81",
+        "termsHash": "0x6489fdbea254f99f21ea9fc702965496a3e6c64e771fb4379aaa2c1ff9495ea0",
+        "responseHash": "0x415970d1e96a8e3ad7bc937033c6f136e209b1f419538a02a6a241e42b34b617",
         "observedStatus": 200,
-        "observedBytes": 351,
+        "observedBytes": 559,
         "reproducible": [
           {
             "check": "status",
@@ -477,23 +722,23 @@
         "headers": {
           "content-type": "application/json; charset=utf-8"
         },
-        "bodyBase64": "eyJzb3VyY2UiOiJ0aGUtZ3JhcGgtdG9rZW4tYXBpIiwiYWRkcmVzcyI6IjB4MjhDNmMwNjI5OGQ1MTREYjA4OTkzNDA3MTM1NUU1NzQzYmYyMWQ2MCIsIm5ldHdvcmsiOiJtYWlubmV0IiwidGltZXN0YW1wIjoxNzg5MjAwMDAwLCJkYXRhIjpbeyJjb250cmFjdCI6Im5vcGUiLCJzeW1ib2wiOiJVU0RDIiwibmFtZSI6IlVTREMiLCJhbW91bnQiOiI1MTk1MTI5NzkyMCIsImRlY2ltYWxzIjo2LCJ2YWx1ZSI6NTE5NTEuMjk3OTIsImJsb2NrTnVtIjoyNTk2MDY1OCwibGFzdFVwZGF0ZSI6IjIwMjYtMDktMTIgMTA6MDA6MDAiLCJuZXR3b3JrIjoibWFpbm5ldCJ9XX0=",
+        "bodyBase64": "eyJzb3VyY2UiOiJ0aGUtZ3JhcGgiLCJzb3VyY2VzIjp7ImJhbGFuY2VzIjoidG9rZW4tYXBpIiwibWFya2V0cyI6InN1YmdyYXBoIn0sImFkZHJlc3MiOiIweDI4QzZjMDYyOThkNTE0RGIwODk5MzQwNzEzNTVFNTc0M2JmMjFkNjAiLCJuZXR3b3JrIjoibWFpbm5ldCIsImluZGV4ZWRCbG9jayI6MjU5NjE0MzksInRpbWVzdGFtcCI6MTc4OTIwMDAwMCwiZGF0YSI6W3siY29udHJhY3QiOiJub3BlIiwic3ltYm9sIjoiVVNEQyIsIm5hbWUiOiJVU0RDIiwiYW1vdW50IjoiNTE5NTEyOTc5MjAiLCJkZWNpbWFscyI6NiwidmFsdWUiOjUxOTUxLjI5NzkyLCJibG9ja051bSI6MjU5NjA2NTgsImxhc3RVcGRhdGUiOiIyMDI2LTA5LTEyIDEwOjAwOjAwIiwibmV0d29yayI6Im1haW5uZXQifV0sIm1hcmtldHMiOlt7InBvb2wiOiIweDg4ZTZhMGMyZGRkMjZmZWViNjRmMDM5YTJjNDEyOTZmY2IzZjU2NDAiLCJmZWVUaWVyIjoiNTAwIiwibGlxdWlkaXR5IjoiMTIzIiwidHZsVXNkIjoiNDIwMDAwMCIsInBhaXIiOiJVU0RDL1dFVEgifV19",
         "requestTimeMs": 1789200000000
       },
       "expected": {
         "pass": false,
         "firstFailure": "jsonSchema",
-        "responseHash": "0xd87e1ac51e718a9371c90caf42a1f5fcc4c521490804f86dca670a1dc9726a2d",
+        "responseHash": "0x0da121c6035e4885dd8d490f63b200ed8735b45efc6e0958bcac4fe4a93aca43",
         "reproducibleJcs": "[{\"check\":\"status\",\"pass\":true},{\"check\":\"contentType\",\"pass\":true},{\"check\":\"minBytes\",\"pass\":true},{\"check\":\"requiredPaths\",\"pass\":true},{\"check\":\"jsonSchema\",\"detail\":\"/data/0/contract: must match pattern \\\"^0x[0-9a-fA-F]{40}$\\\"\",\"pass\":false},{\"check\":\"freshness\",\"pass\":true},{\"check\":\"expectedHash\",\"pass\":true,\"skipped\":true}]",
-        "verdictHash": "0xd483e5f32c330978b036db583f94b0270aa010d931993a5d7309ae42175c5ea4"
+        "verdictHash": "0xfad0082bb14c9cf4396af3ba5e1e40fc2a35353db7a09dfc5fa36a68ef41ef87"
       },
       "verdict": {
         "v": 1,
         "adjudicator": "receipt-adjudicator@0.1.0",
-        "termsHash": "0x584a51fda1f55ac3c13a042f58a786c1f485da88d923a31e55c4a8ee7d5838ea",
-        "responseHash": "0xd87e1ac51e718a9371c90caf42a1f5fcc4c521490804f86dca670a1dc9726a2d",
+        "termsHash": "0x6489fdbea254f99f21ea9fc702965496a3e6c64e771fb4379aaa2c1ff9495ea0",
+        "responseHash": "0x0da121c6035e4885dd8d490f63b200ed8735b45efc6e0958bcac4fe4a93aca43",
         "observedStatus": 200,
-        "observedBytes": 320,
+        "observedBytes": 528,
         "reproducible": [
           {
             "check": "status",
@@ -544,23 +789,23 @@
         "headers": {
           "content-type": "application/json; charset=utf-8"
         },
-        "bodyBase64": "eyJzb3VyY2UiOiJ0aGUtZ3JhcGgtdG9rZW4tYXBpIiwiYWRkcmVzcyI6IjB4MjhDNmMwNjI5OGQ1MTREYjA4OTkzNDA3MTM1NUU1NzQzYmYyMWQ2MCIsIm5ldHdvcmsiOiJtYWlubmV0IiwidGltZXN0YW1wIjoxNzg5MjAwMDAwLCJkYXRhIjpbeyJjb250cmFjdCI6IjB4YTBiODY5OTFjNjIxOGIzNmMxZDE5ZDRhMmU5ZWIwY2UzNjA2ZWI0OCIsInN5bWJvbCI6IlVTREMiLCJuYW1lIjoiVVNEQyIsImFtb3VudCI6IjUxOTUxMjk3OTIwIiwiZGVjaW1hbHMiOjYsInZhbHVlIjo1MTk1MS4yOTc5MiwiYmxvY2tOdW0iOjI1OTYwNjU4LCJsYXN0VXBkYXRlIjoiMjAyNi0wOS0xMiAxMDowMDowMCIsIm5ldHdvcmsiOiJtYWlubmV0In1dfQ==",
+        "bodyBase64": "eyJzb3VyY2UiOiJ0aGUtZ3JhcGgiLCJzb3VyY2VzIjp7ImJhbGFuY2VzIjoidG9rZW4tYXBpIiwibWFya2V0cyI6InN1YmdyYXBoIn0sImFkZHJlc3MiOiIweDI4QzZjMDYyOThkNTE0RGIwODk5MzQwNzEzNTVFNTc0M2JmMjFkNjAiLCJuZXR3b3JrIjoibWFpbm5ldCIsImluZGV4ZWRCbG9jayI6MjU5NjE0MzksInRpbWVzdGFtcCI6MTc4OTIwMDAwMCwiZGF0YSI6W3siY29udHJhY3QiOiIweGEwYjg2OTkxYzYyMThiMzZjMWQxOWQ0YTJlOWViMGNlMzYwNmViNDgiLCJzeW1ib2wiOiJVU0RDIiwibmFtZSI6IlVTREMiLCJhbW91bnQiOiI1MTk1MTI5NzkyMCIsImRlY2ltYWxzIjo2LCJ2YWx1ZSI6NTE5NTEuMjk3OTIsImJsb2NrTnVtIjoyNTk2MDY1OCwibGFzdFVwZGF0ZSI6IjIwMjYtMDktMTIgMTA6MDA6MDAiLCJuZXR3b3JrIjoibWFpbm5ldCJ9XSwibWFya2V0cyI6W3sicG9vbCI6IjB4ODhlNmEwYzJkZGQyNmZlZWI2NGYwMzlhMmM0MTI5NmZjYjNmNTY0MCIsImZlZVRpZXIiOiI1MDAiLCJsaXF1aWRpdHkiOiIxMjMiLCJ0dmxVc2QiOiI0MjAwMDAwIiwicGFpciI6IlVTREMvV0VUSCJ9XX0=",
         "requestTimeMs": 1789200000000
       },
       "expected": {
         "pass": false,
         "firstFailure": "status",
-        "responseHash": "0xc8c7b39a77bae368bc230bfb8bf888b06e46181c35a1ca8c592014457ca621f8",
+        "responseHash": "0x42485bd46fd09dfc47f8506c2e8a630d727ab4523e66283da0f63bdf6857ca0e",
         "reproducibleJcs": "[{\"check\":\"status\",\"detail\":\"status 503 not in [200]\",\"pass\":false},{\"check\":\"contentType\",\"pass\":true},{\"check\":\"minBytes\",\"pass\":true},{\"check\":\"requiredPaths\",\"pass\":true},{\"check\":\"jsonSchema\",\"pass\":true},{\"check\":\"freshness\",\"pass\":true},{\"check\":\"expectedHash\",\"pass\":true,\"skipped\":true}]",
-        "verdictHash": "0x999a6b7975b15a81e49c213664acfd33b63f44b53a17d6cf5387220f25e0b61e"
+        "verdictHash": "0xb728801d7c81581d34cb241f76af65ed02889ebbcd7453cd8abc4273df672cce"
       },
       "verdict": {
         "v": 1,
         "adjudicator": "receipt-adjudicator@0.1.0",
-        "termsHash": "0x584a51fda1f55ac3c13a042f58a786c1f485da88d923a31e55c4a8ee7d5838ea",
-        "responseHash": "0xc8c7b39a77bae368bc230bfb8bf888b06e46181c35a1ca8c592014457ca621f8",
+        "termsHash": "0x6489fdbea254f99f21ea9fc702965496a3e6c64e771fb4379aaa2c1ff9495ea0",
+        "responseHash": "0x42485bd46fd09dfc47f8506c2e8a630d727ab4523e66283da0f63bdf6857ca0e",
         "observedStatus": 503,
-        "observedBytes": 358,
+        "observedBytes": 566,
         "reproducible": [
           {
             "check": "status",
@@ -611,23 +856,23 @@
         "headers": {
           "content-type": "text/html"
         },
-        "bodyBase64": "eyJzb3VyY2UiOiJ0aGUtZ3JhcGgtdG9rZW4tYXBpIiwiYWRkcmVzcyI6IjB4MjhDNmMwNjI5OGQ1MTREYjA4OTkzNDA3MTM1NUU1NzQzYmYyMWQ2MCIsIm5ldHdvcmsiOiJtYWlubmV0IiwidGltZXN0YW1wIjoxNzg5MjAwMDAwLCJkYXRhIjpbeyJjb250cmFjdCI6IjB4YTBiODY5OTFjNjIxOGIzNmMxZDE5ZDRhMmU5ZWIwY2UzNjA2ZWI0OCIsInN5bWJvbCI6IlVTREMiLCJuYW1lIjoiVVNEQyIsImFtb3VudCI6IjUxOTUxMjk3OTIwIiwiZGVjaW1hbHMiOjYsInZhbHVlIjo1MTk1MS4yOTc5MiwiYmxvY2tOdW0iOjI1OTYwNjU4LCJsYXN0VXBkYXRlIjoiMjAyNi0wOS0xMiAxMDowMDowMCIsIm5ldHdvcmsiOiJtYWlubmV0In1dfQ==",
+        "bodyBase64": "eyJzb3VyY2UiOiJ0aGUtZ3JhcGgiLCJzb3VyY2VzIjp7ImJhbGFuY2VzIjoidG9rZW4tYXBpIiwibWFya2V0cyI6InN1YmdyYXBoIn0sImFkZHJlc3MiOiIweDI4QzZjMDYyOThkNTE0RGIwODk5MzQwNzEzNTVFNTc0M2JmMjFkNjAiLCJuZXR3b3JrIjoibWFpbm5ldCIsImluZGV4ZWRCbG9jayI6MjU5NjE0MzksInRpbWVzdGFtcCI6MTc4OTIwMDAwMCwiZGF0YSI6W3siY29udHJhY3QiOiIweGEwYjg2OTkxYzYyMThiMzZjMWQxOWQ0YTJlOWViMGNlMzYwNmViNDgiLCJzeW1ib2wiOiJVU0RDIiwibmFtZSI6IlVTREMiLCJhbW91bnQiOiI1MTk1MTI5NzkyMCIsImRlY2ltYWxzIjo2LCJ2YWx1ZSI6NTE5NTEuMjk3OTIsImJsb2NrTnVtIjoyNTk2MDY1OCwibGFzdFVwZGF0ZSI6IjIwMjYtMDktMTIgMTA6MDA6MDAiLCJuZXR3b3JrIjoibWFpbm5ldCJ9XSwibWFya2V0cyI6W3sicG9vbCI6IjB4ODhlNmEwYzJkZGQyNmZlZWI2NGYwMzlhMmM0MTI5NmZjYjNmNTY0MCIsImZlZVRpZXIiOiI1MDAiLCJsaXF1aWRpdHkiOiIxMjMiLCJ0dmxVc2QiOiI0MjAwMDAwIiwicGFpciI6IlVTREMvV0VUSCJ9XX0=",
         "requestTimeMs": 1789200000000
       },
       "expected": {
         "pass": false,
         "firstFailure": "contentType",
-        "responseHash": "0xc8c7b39a77bae368bc230bfb8bf888b06e46181c35a1ca8c592014457ca621f8",
+        "responseHash": "0x42485bd46fd09dfc47f8506c2e8a630d727ab4523e66283da0f63bdf6857ca0e",
         "reproducibleJcs": "[{\"check\":\"status\",\"pass\":true},{\"check\":\"contentType\",\"detail\":\"content-type text/html != application/json\",\"pass\":false},{\"check\":\"minBytes\",\"pass\":true},{\"check\":\"requiredPaths\",\"pass\":true},{\"check\":\"jsonSchema\",\"pass\":true},{\"check\":\"freshness\",\"pass\":true},{\"check\":\"expectedHash\",\"pass\":true,\"skipped\":true}]",
-        "verdictHash": "0xf0e7ea4319bdbe7a0ccf86e7642eab5b9be3829974c07bb797ebf88c54c6b33d"
+        "verdictHash": "0x532ca0b606b0ed8709cdaf7ed747be88bcf93205ce5589451dabe8b74c443f22"
       },
       "verdict": {
         "v": 1,
         "adjudicator": "receipt-adjudicator@0.1.0",
-        "termsHash": "0x584a51fda1f55ac3c13a042f58a786c1f485da88d923a31e55c4a8ee7d5838ea",
-        "responseHash": "0xc8c7b39a77bae368bc230bfb8bf888b06e46181c35a1ca8c592014457ca621f8",
+        "termsHash": "0x6489fdbea254f99f21ea9fc702965496a3e6c64e771fb4379aaa2c1ff9495ea0",
+        "responseHash": "0x42485bd46fd09dfc47f8506c2e8a630d727ab4523e66283da0f63bdf6857ca0e",
         "observedStatus": 200,
-        "observedBytes": 358,
+        "observedBytes": 566,
         "reproducible": [
           {
             "check": "status",

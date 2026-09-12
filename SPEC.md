@@ -232,6 +232,11 @@ Given a public log and a deal id, a verifier:
 Agreement proves the verdict follows from the published inputs and that the
 hash which moved the money is the hash of that verdict.
 
+A note on vacuous clauses: a check whose bound can never fail is worse than an
+absent one, because a reader of the terms believes something is being enforced.
+The reference buyer omits its block-height floor entirely when it cannot source
+a chain head, and says so, rather than signing a floor of 1.
+
 It does **not** prove the observation itself is honest. That is the boundary of
 the claim, and it is why latency is attested rather than reproducible.
 

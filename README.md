@@ -168,8 +168,10 @@ Load-bearing, not decorative. Remove any one of these and the project stops work
 - `recipes/receipt.bazantic.json` chains both into a single MCP tool: buy the data, then fetch the adjudication, and return the data *with* the reason it was accepted or refused. The prompt forbids presenting data that failed its checks as if it had passed.
 - Both files are validated in CI against every rule `baz recipe --help` states — key set, 24 KiB limit, the single `{{inputs}}` placeholder, binding shape, and the `input_example` is run through its own `input_schema`. **They are written and valid but not published**; see below.
 
-**The Graph** is what is actually being bought.
-- The seller sells live ERC-20 holdings from The Graph's Token API. That response *is* the product — remove The Graph and there is nothing to purchase.
+**The Graph** is what is actually being bought, and **two of its products are composed** to produce it.
+- **Token API** supplies what an address holds. **A subgraph** (Uniswap V3, through the Subgraph Gateway) supplies the markets those holdings actually trade in. Neither answers the question alone — the quote is a composition, not two endpoints stapled together, and the terms assert on *both* halves by name so a seller cannot quietly drop one.
+- The subgraph's `_meta.block.number` gives **provenance in blocks, not wall clock**. The buyer fetches the Ethereum head from a public RPC it picks itself and signs a floor — `indexedBlock >= head - 200`. An indexer lagging the chain fails the sale even when every value in the response is well-formed.
+- That response *is* the product — remove The Graph and there is nothing to purchase.
 - The buyer's acceptance terms are written against its shape and the adjudicator decides payment by validating it: a non-empty holdings array where every entry carries a 20-byte contract address and an integer-string amount, a `source` of exactly `the-graph-token-api`, and a snapshot fresh within the hour. A well-formed JSON response that is not token data does not get paid for.
 - The raw Graph response goes to HCS, so **the purchase is a verifiable receipt for a Graph query**: anyone can pull the response off the public topic, re-run the checks, and confirm the money moved for the right reason.
 - The seller refuses to fabricate. With no API key it returns 502 rather than inventing token data, and a test asserts no canned payload exists in the module.

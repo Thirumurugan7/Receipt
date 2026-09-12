@@ -30,6 +30,36 @@ const BUYER_ID = need('BUYER_HEDERA_ACCOUNT_ID')
 
 const hbar = (tb: bigint) => `${(Number(tb) / 1e8).toFixed(8)} ℏ`
 
+/**
+ * The current Ethereum head, from a public RPC the buyer picks itself.
+ *
+ * This is what lets the terms demand provenance in BLOCKS rather than seconds:
+ * the buyer decides how far behind the chain it will tolerate, and the seller
+ * cannot argue with a number the buyer sourced independently. Falls back to 0,
+ * which disables the floor rather than inventing one.
+ */
+async function ethHeadBlock(): Promise<number> {
+  const rpcs = process.env.ETH_RPC_URL
+    ? [process.env.ETH_RPC_URL]
+    : ['https://ethereum-rpc.publicnode.com', 'https://eth.drpc.org']
+
+  for (const rpc of rpcs) {
+    try {
+      const res = await fetch(rpc, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'eth_blockNumber', params: [] }),
+        signal: AbortSignal.timeout(8000),
+      })
+      const j = (await res.json()) as { result?: string }
+      if (j.result) return parseInt(j.result, 16)
+    } catch {
+      // try the next one
+    }
+  }
+  return 0
+}
+
 async function balance(id: string): Promise<bigint> {
   const r = await fetch(`${MIRROR}/api/v1/accounts/${id}`)
   const j = (await r.json()) as { balance?: { balance?: number } }
@@ -96,6 +126,61 @@ export async function buy(mode = 'honest') {
     },
   }
 
+  const head = await ethHeadBlock()
+  /** How far behind the chain the buyer will accept. */
+  const MAX_BLOCKS_BEHIND = Number(process.env.MAX_BLOCKS_BEHIND ?? 200)
+  /**
+   * If no head is available the buyer does NOT assert on block height at all.
+   * The tempting fallback — a floor of 1 — passes for every possible input,
+   * which is a check in name only. An absent clause is honest; a vacuous one
+   * is a lie told to the person reading the terms.
+   */
+  const minIndexedBlock = head > 0 ? head - MAX_BLOCKS_BEHIND : null
+
+  terms.checks.requiredPaths = [
+    '$.data', '$.markets', '$.sources.balances', '$.sources.markets',
+    '$.indexedBlock', '$.timestamp',
+  ]
+  terms.checks.jsonSchema = {
+    type: 'object',
+    required: ['data', 'markets', 'sources', 'indexedBlock', 'source', 'timestamp'],
+    properties: {
+      source: { type: 'string', const: 'the-graph' },
+      timestamp: { type: 'integer', minimum: 1 },
+      // both products must be named, so a quote cannot quietly drop one half
+      sources: {
+        type: 'object',
+        required: ['balances', 'markets'],
+        properties: {
+          balances: { type: 'string', const: 'token-api' },
+          markets: { type: 'string', const: 'subgraph' },
+        },
+      },
+      // provenance in blocks: the subgraph must be near the chain head
+      indexedBlock:
+        minIndexedBlock === null
+          ? { type: 'integer' }
+          : { type: 'integer', minimum: minIndexedBlock },
+      data: {
+        type: 'array', minItems: 1,
+        items: {
+          type: 'object', required: ['contract', 'amount'],
+          properties: {
+            contract: { type: 'string', pattern: '^0x[0-9a-fA-F]{40}$' },
+            amount: { type: 'string', pattern: '^[0-9]+$' },
+          },
+        },
+      },
+      markets: {
+        type: 'array', minItems: 1,
+        items: {
+          type: 'object', required: ['pool', 'pair'],
+          properties: { pool: { type: 'string', pattern: '^0x[0-9a-fA-F]{40}$' } },
+        },
+      },
+    },
+  }
+
   const domain = {
     name: 'Receipt',
     version: '1',
@@ -108,6 +193,12 @@ export async function buy(mode = 'honest') {
   console.log(`  resource   ${terms.resource}`)
   console.log(`  amount     ${AMOUNT_TINYBARS} tinybars (${hbar(BigInt(AMOUNT_TINYBARS))})`)
   console.log(`  checks     ${Object.keys(terms.checks).join(', ')}`)
+  console.log(`  products   the-graph token-api + subgraph (both asserted)`)
+  console.log(
+    minIndexedBlock === null
+      ? `  provenance NOT ASSERTED — no eth head available, so no block floor was signed`
+      : `  provenance indexedBlock >= ${minIndexedBlock}  (eth head ${head}, tolerance ${MAX_BLOCKS_BEHIND} blocks)`,
+  )
   console.log(`  termsHash  ${hashTerms(terms)}`)
 
   const before = await balance(BUYER_ID)

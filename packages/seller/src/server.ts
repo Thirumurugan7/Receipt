@@ -14,7 +14,7 @@ import { Hono } from 'hono'
 import { paymentMiddlewareFromConfig } from '@x402/hono'
 import { HTTPFacilitatorClient } from '@x402/core/server'
 import { ExactHederaScheme } from '@x402/hedera/exact/server'
-import { balances, GraphError, toQuote } from './graph.js'
+import { balances, GraphError, poolsFor, toQuote } from './graph.js'
 
 const need = (k: string): string => {
   const v = process.env[k]
@@ -114,8 +114,13 @@ app.get('/api/quote', async (c) => {
   // decides payment by validating it, and the raw bytes go to HCS so the
   // decision can be re-checked by anyone.
   try {
+    // Compose both Graph products: holdings from the Token API, and the
+    // markets those holdings trade in from a subgraph. Fetched together so a
+    // failure in either half fails the sale rather than half-answering it.
     const raw = await balances(QUOTE_ADDRESS, QUOTE_NETWORK, 5)
-    const quote = toQuote(raw, QUOTE_ADDRESS, QUOTE_NETWORK)
+    const topHolding = raw.data?.[0]?.contract
+    const pools = topHolding ? await poolsFor(topHolding, 3) : undefined
+    const quote = toQuote(raw, QUOTE_ADDRESS, QUOTE_NETWORK, pools)
 
     // `subtle` models a lagging indexer: the holdings are genuinely from The
     // Graph and every field is valid, but the snapshot is stale. A reviewer
