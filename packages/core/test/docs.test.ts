@@ -10,6 +10,7 @@ const root = new URL('../../../', import.meta.url)
 const read = (p: string) => readFileSync(new URL(p, root), 'utf8')
 
 const readme = read('README.md')
+const demo = read('DEMO.md')
 const deployments = read('DEPLOYMENTS.md')
 const rootPkg = JSON.parse(read('package.json')) as { scripts: Record<string, string> }
 
@@ -74,5 +75,51 @@ describe('honesty section is present', () => {
   test('it discloses that latency is attested rather than proven', () => {
     expect(readme).toMatch(/observedLatencyMs/)
     expect(readme.toLowerCase()).toMatch(/cannot recompute|cannot prove|own stopwatch/)
+  })
+})
+
+describe('DEMO.md is runnable as written', () => {
+  const referenced = [...demo.matchAll(/^\s*pnpm ([a-z][a-z-]*)/gm)]
+    .map((m) => m[1]!)
+    .filter((s) => !['install', 'exec', 'run'].includes(s))
+
+  test.each([...new Set(referenced)])('pnpm %s is a real script', (name) => {
+    expect(Object.keys(rootPkg.scripts)).toContain(name)
+  })
+
+  test('every address it tells you to open also appears in DEPLOYMENTS', () => {
+    const inDeployments = addresses(deployments)
+    for (const a of addresses(demo)) expect(inDeployments).toContain(a)
+  })
+
+  test('every Hedera id it references also appears in DEPLOYMENTS', () => {
+    const inDeployments = hederaIds(deployments)
+    for (const id of hederaIds(demo)) expect(inDeployments).toContain(id)
+  })
+
+  test('all six scenes plus a closing are scripted', () => {
+    for (const n of [1, 2, 3, 4, 5, 6]) {
+      expect(demo).toMatch(new RegExp(`## Scene ${n} —`))
+    }
+    expect(demo).toMatch(/## Closing/)
+  })
+
+  /**
+   * The hard requirement is under five minutes. A script whose own stated
+   * timings already exceed that is a script that will be cut off mid-sentence.
+   */
+  test('the scripted timings fit inside the five minute limit', () => {
+    const seconds = [...demo.matchAll(/\((\d+)s\)/g)].map((m) => Number(m[1]))
+    expect(seconds.length).toBeGreaterThanOrEqual(6)
+    const total = seconds.reduce((a, b) => a + b, 0)
+    expect(total).toBeLessThanOrEqual(300)
+  })
+
+  test('it names the claim the project rests on', () => {
+    expect(demo.toLowerCase()).toMatch(/do not trust my adjudicator/)
+  })
+
+  test('it tells the presenter to disclose the unprovable latency', () => {
+    expect(demo.toLowerCase()).toMatch(/stopwatch/)
   })
 })
