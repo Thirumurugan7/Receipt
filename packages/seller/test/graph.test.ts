@@ -30,7 +30,37 @@ describe('toQuote', () => {
   })
 
   test('names The Graph as the source, so the receipt records what was bought', () => {
-    expect(toQuote({ data: [balance()] }, '0xabc', 'mainnet').source).toBe('the-graph-token-api')
+    expect(toQuote({ data: [balance()] }, '0xabc', 'mainnet').source).toBe('the-graph')
+  })
+
+  test('names both products, so a dropped half is visible in the receipt', () => {
+    const q = toQuote({ data: [balance()] }, '0xabc', 'mainnet')
+    expect(q.sources).toEqual({ balances: 'token-api', markets: 'subgraph' })
+  })
+
+  test('carries the subgraph indexed block, which is what the block floor checks', () => {
+    const q = toQuote({ data: [balance()] }, '0xabc', 'mainnet', {
+      pools: [],
+      _meta: { block: { number: 25961439, timestamp: 1789217000 } },
+    })
+    expect(q.indexedBlock).toBe(25961439)
+  })
+
+  test('with no subgraph result the indexed block is 0, which fails any real floor', () => {
+    // Not a fabricated block number: absent provenance must fail, not pass.
+    expect(toQuote({ data: [balance()] }, '0xabc', 'mainnet').indexedBlock).toBe(0)
+  })
+
+  test('markets are flattened to the shape the terms assert on', () => {
+    const q = toQuote({ data: [balance()] }, '0xabc', 'mainnet', {
+      pools: [{
+        id: '0x88e6a0c2ddd26feeb64f039a2c41296fcb3f5640', feeTier: '500',
+        liquidity: '123', totalValueLockedUSD: '4200000',
+        token0: { symbol: 'USDC', id: '0xa' }, token1: { symbol: 'WETH', id: '0xb' },
+      }],
+      _meta: { block: { number: 1, timestamp: 1 } },
+    })
+    expect(q.markets[0]).toMatchObject({ pool: '0x88e6a0c2ddd26feeb64f039a2c41296fcb3f5640', pair: 'USDC/WETH' })
   })
 
   test('lifts the newest block timestamp so the freshness check is meaningful', () => {
