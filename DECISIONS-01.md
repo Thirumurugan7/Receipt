@@ -143,3 +143,27 @@ HashScan, is the entire Hedera bounty. If that is not true by hour 20, stop and 
 escrow to Base Sepolia per BUILD.md section 6. You lose the Hedera prize, not the project.
 
 Start Phase 1 now. It is unblocked by every question above.
+
+
+---
+
+## Addenda found while building (recorded here so BUILD.md stays as handed over)
+
+**`@hashgraph/sdk` -> `@hiero-ledger/sdk`.** BUILD.md §6 names `@hashgraph/sdk`.
+Both packages self-describe as "Hiero SDK"; `@hashgraph/sdk` is the former name.
+`@x402/hedera@2.25.0` depends on `@hiero-ledger/sdk`, so we use that throughout
+to avoid two copies of the SDK and `instanceof` mismatches on `Transaction`.
+
+**`msg.value` on Hedera is tinybars, not weibars.** Q1.1 of this document assumed
+weibars and set `valueScale` to 1e10. Measured on testnet: the relay accepts a
+weibar `value` over JSON-RPC and divides by 1e10, so Solidity sees tinybars.
+x402 `amount` is tinybars too, so `valueScale` is 1. See DEPLOYMENTS.md.
+
+**Chainlink CRE access is not self-serve.** BUILD.md Phase 0 says to run
+`cre account access`. No such grant exists: `cre account` manages linked wallet
+addresses, and Confidential Workflows is a private beta gated behind a Chainlink
+account team. Phase 6 is therefore an enrollment conversation, not a command.
+
+**HashScan's verifier moved.** `server-verify.hashscan.io` 308-redirects to
+upstream Sourcify and Foundry cannot follow it. Use
+`--verifier-url https://sourcify.dev/server`.

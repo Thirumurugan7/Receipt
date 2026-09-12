@@ -6,6 +6,7 @@
   "main": "./src/index.ts",
   "dependencies": {
     "@hiero-ledger/sdk": "2.85.0",
+    "@hono/node-server": "^2.1.1",
     "@receipt/core": "workspace:^",
     "@x402/core": "2.25.0",
     "@x402/hedera": "2.25.0",
@@ -15,5 +16,13 @@
   },
   "devDependencies": {
     "tsx": "^4.23.13"
+  },
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "start": "tsx src/server.ts",
+    "create-topic": "tsx scripts/create-topic.mts",
+    "probe:blocky402": "tsx scripts/probe-blocky402.mts",
+    "probe:escrow": "tsx scripts/probe-escrow.mts",
+    "read-topic": "tsx scripts/read-topic.mts"
   }
 }

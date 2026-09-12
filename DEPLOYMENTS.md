@@ -11,6 +11,7 @@ All public identifiers. No secrets here; keys live in `.env`, which is gitignore
 | EVM address | `0x3483B3761ebe3C2fC2eB3EfE8215a7CF90634071` |
 | Hedera contract ID | `0.0.10485798` |
 
+| Deploy | `forge script script/Deploy.s.sol:Deploy --rpc-url $HEDERA_RPC_URL --broadcast --legacy` |
 | HashScan | https://hashscan.io/testnet/contract/0x3483B3761ebe3C2fC2eB3EfE8215a7CF90634071 |
 | Source verification | Sourcify **exact match**, mirrored by HashScan as "Full Match" |
 | Sourcify record | https://sourcify.dev/server/v2/contract/296/0x3483B3761ebe3C2fC2eB3EfE8215a7CF90634071 |
@@ -80,4 +81,27 @@ Settlement goes through the Blocky402 facilitator. Values confirmed live from
 
 | | |
 |---|---|
-| Topic ID | _created in phase 3_ |
+| Topic ID | `0.0.10495465` |
+| HashScan | https://hashscan.io/testnet/topic/0.0.10495465 |
+| Mirror Node | https://testnet.mirrornode.hedera.com/api/v1/topics/0.0.10495465/messages |
+
+Three messages per deal: `terms`, `observation` (status + headers + the full raw
+response body), and `verdict`. The observation is what makes `pnpm verify` real —
+see DECISIONS-01 Q2.
+
+Messages above 1024 bytes are split by the SDK and arrive as several Mirror Node
+rows sharing one `initial_transaction_id`. `reassembleChunks` in
+`packages/core/src/hcs.ts` rejoins them as bytes before decoding; per-row decoding
+yields truncated JSON, which would look exactly like a verdict that fails to
+reproduce when it is in fact correct.
+
+## First end-to-end paid request
+
+| | |
+|---|---|
+| Deal | `0x7e39ed323a78c6ae17f418c6e3a633020ef8bc7301ef7515f9dc2f46b94ad9a5` |
+| x402 settlement (Blocky402) | `0.0.7162784@1789198380.662216272` |
+| `open()` | `0x5b637ebb484cc2af56ed9c98945ac7af034232871927c1cda7d34a9c19fb0b30` |
+| `release()` | `0x728a26100789c79db8a5e72986bc7edfe3c57c589428d9dc1a23073df44b0801` |
+| Verdict | pass, all seven reproducible checks |
+| Buyer delta | -0.5 ℏ, and no network fee — Blocky402's fee payer covered gas |

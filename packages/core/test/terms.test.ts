@@ -8,7 +8,10 @@ import {
   hashJcs,
   hashTerms,
   jcs,
+  recoverTermsSigner,
+  signTerms,
   termsTypedData,
+  verifyTermsSignature,
 } from '../src/terms.js'
 import { hashVerdict } from '../src/verdict.js'
 import { adjudicate } from '../src/adjudicator.js'
@@ -131,5 +134,40 @@ describe('hashVerdict', () => {
     const a = hashVerdict(adjudicate(terms, makeObs({ observedLatencyMs: 10 })))
     const b = hashVerdict(adjudicate(terms, makeObs({ observedLatencyMs: 20 })))
     expect(a).not.toBe(b)
+  })
+})
+
+describe('signTerms / verifyTermsSignature', () => {
+  test('a signature made by the payer verifies', async () => {
+    const terms = { ...makeTerms({ minBytes: 32 }), payer: ACCOUNT.address }
+    const sig = await signTerms(terms, DOMAIN, ACCOUNT)
+    expect(await verifyTermsSignature(terms, DOMAIN, sig)).toBe(true)
+  })
+
+  test('a signature from another key does not verify', async () => {
+    const other = privateKeyToAccount(`0x${'43'.repeat(32)}`)
+    const terms = { ...makeTerms({ minBytes: 32 }), payer: ACCOUNT.address }
+    const sig = await signTerms(terms, DOMAIN, other)
+    expect(await verifyTermsSignature(terms, DOMAIN, sig)).toBe(false)
+  })
+
+  test('tampering with any signed field invalidates it', async () => {
+    const terms = { ...makeTerms({ minBytes: 32 }), payer: ACCOUNT.address }
+    const sig = await signTerms(terms, DOMAIN, ACCOUNT)
+    expect(await verifyTermsSignature({ ...terms, amount: '1' }, DOMAIN, sig)).toBe(false)
+  })
+
+  test('tampering with an unsigned check still invalidates it, via termsHash', async () => {
+    const terms = { ...makeTerms({ minBytes: 32 }), payer: ACCOUNT.address }
+    const sig = await signTerms(terms, DOMAIN, ACCOUNT)
+    const tampered = { ...terms, checks: { minBytes: 999_999 } }
+    expect(await verifyTermsSignature(tampered, DOMAIN, sig)).toBe(false)
+  })
+
+  test('recoverTermsSigner returns the address that signed', async () => {
+    const terms = { ...makeTerms({ minBytes: 32 }), payer: ACCOUNT.address }
+    const sig = await signTerms(terms, DOMAIN, ACCOUNT)
+    expect((await recoverTermsSigner(terms, DOMAIN, sig)).toLowerCase())
+      .toBe(ACCOUNT.address.toLowerCase())
   })
 })

@@ -4,7 +4,7 @@
  * the fee-payer signature and submits. Nothing else in Phase 3 works until
  * this does, so it is proven first and in isolation.
  */
-import 'dotenv/config'
+import '@receipt/core/loadenv'
 import { PrivateKey } from '@hiero-ledger/sdk'
 import { createClientHederaSigner } from '@x402/hedera'
 

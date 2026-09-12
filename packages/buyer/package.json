@@ -3,5 +3,18 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "main": "./src/index.ts"
+  "main": "./src/index.ts",
+  "dependencies": {
+    "@hiero-ledger/sdk": "2.85.0",
+    "@receipt/core": "workspace:^",
+    "@x402/hedera": "2.25.0",
+    "dotenv": "^17.4.2",
+    "viem": "2.56.3"
+  },
+  "devDependencies": {
+    "tsx": "^4.23.13"
+  },
+  "scripts": {
+    "start": "tsx src/agent.ts"
+  }
 }

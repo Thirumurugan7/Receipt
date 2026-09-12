@@ -4,7 +4,7 @@
  * against a real msg.value, and on-chain ECDSA recovery of a signature that
  * viem produced.
  */
-import 'dotenv/config'
+import '@receipt/core/loadenv'
 import {
   createPublicClient, createWalletClient, defineChain, http, parseAbi, toHex,
 } from 'viem'

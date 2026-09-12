@@ -5,7 +5,10 @@
   "scripts": {
     "test": "vitest run",
     "test:watch": "vitest",
-    "typecheck": "tsc --noEmit -p tsconfig.json"
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "facilitator": "pnpm --filter @receipt/facilitator start",
+    "seller": "pnpm --filter @receipt/seller start",
+    "buy": "pnpm --filter @receipt/buyer start"
   },
   "devDependencies": {
     "@types/node": "^22.20.2",

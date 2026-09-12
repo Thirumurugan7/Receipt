@@ -1,5 +1,12 @@
 import canonicalize from 'canonicalize'
-import { encodeAbiParameters, keccak256, parseAbiParameters, toBytes } from 'viem'
+import {
+  encodeAbiParameters,
+  keccak256,
+  parseAbiParameters,
+  recoverTypedDataAddress,
+  toBytes,
+} from 'viem'
+import type { TypedDataDefinition } from 'viem'
 import type { Hex, Terms } from './types.js'
 import { floorDeadlineToSeconds } from './units.js'
 
@@ -79,4 +86,55 @@ export function encodeTermsHeader(terms: Terms): string {
 
 export function decodeTermsHeader(header: string): Terms {
   return JSON.parse(Buffer.from(header, 'base64url').toString('utf8')) as Terms
+}
+
+/** Anything that can sign EIP-712 — a viem account, or a wallet client. */
+export interface TypedDataSigner {
+  signTypedData(parameters: TypedDataDefinition): Promise<Hex>
+}
+
+/**
+ * The EIP-712 payload, shaped so viem accepts it without casts and so the
+ * facilitator is not left wrestling generics at the call site.
+ */
+export function termsTypedDataDefinition(terms: Terms, domain: ReceiptDomain): TypedDataDefinition {
+  return termsTypedData(terms, domain) as unknown as TypedDataDefinition
+}
+
+export async function signTerms(
+  terms: Terms,
+  domain: ReceiptDomain,
+  signer: TypedDataSigner,
+): Promise<Hex> {
+  return signer.signTypedData(termsTypedDataDefinition(terms, domain))
+}
+
+export async function recoverTermsSigner(
+  terms: Terms,
+  domain: ReceiptDomain,
+  signature: Hex,
+): Promise<Hex> {
+  return recoverTypedDataAddress({
+    ...(termsTypedDataDefinition(terms, domain) as Parameters<typeof recoverTypedDataAddress>[0]),
+    signature,
+  })
+}
+
+/**
+ * True when `signature` is the payer's signature over exactly these terms.
+ * Because the signed struct carries `termsHash`, altering any part of the
+ * terms document — including a check the struct does not name individually —
+ * changes the digest and fails here.
+ */
+export async function verifyTermsSignature(
+  terms: Terms,
+  domain: ReceiptDomain,
+  signature: Hex,
+): Promise<boolean> {
+  try {
+    const recovered = await recoverTermsSigner(terms, domain, signature)
+    return recovered.toLowerCase() === terms.payer.toLowerCase()
+  } catch {
+    return false
+  }
 }

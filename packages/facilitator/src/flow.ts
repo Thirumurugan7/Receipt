@@ -1,0 +1,186 @@
+/**
+ * The nine-step flow from BUILD.md §3, as amended by DECISIONS-01.
+ *
+ * The ordering matters and is not arbitrary: settlement happens before escrow
+ * (the facilitator cannot fund open() with money it does not yet hold), and
+ * escrow happens before the seller is called (so a seller that hangs cannot
+ * cost the buyer anything that claimExpired cannot recover).
+ */
+import { adjudicate, hashTerms, hashVerdict, dealId as computeDealId } from '@receipt/core'
+import type { Hex, Observation, Terms, Verdict } from '@receipt/core'
+import { MAX_BODY_BYTES, submit } from '@receipt/core/hcs'
+import { recoverTermsSigner } from '@receipt/core'
+import { config } from './env.js'
+import { blocky, requirementsFor, type PaymentPayload } from './blocky.js'
+import * as escrow from './escrow.js'
+import { advance, upsert } from './store.js'
+import { record as recordSettlement } from './payments.js'
+
+const domain = {
+  name: 'Receipt',
+  version: '1',
+  chainId: config.chainId,
+  verifyingContract: config.escrow,
+} as const
+
+const hcs = { operatorId: config.operatorId, operatorKey: config.operatorKey, network: 'testnet' as const }
+
+export class FlowError extends Error {
+  constructor(message: string, readonly status = 400) { super(message) }
+}
+
+/** Step 1: the terms must be signed by the payer they name. */
+export async function assertTermsSigned(terms: Terms, signature: Hex): Promise<void> {
+  const recovered = await recoverTermsSigner(terms, domain, signature)
+  if (recovered.toLowerCase() !== terms.payer.toLowerCase()) {
+    throw new FlowError(`terms signature recovers to ${recovered}, not payer ${terms.payer}`, 401)
+  }
+}
+
+export interface FlowResult {
+  dealId: Hex
+  verdict: Verdict
+  body: Uint8Array
+  status: number
+  contentType: string
+  settlementTxId: string
+  openTxHash: Hex
+  resolveTxHash: Hex
+}
+
+export async function runFlow(
+  terms: Terms,
+  signature: Hex,
+  paymentPayload: PaymentPayload,
+): Promise<FlowResult> {
+  const dealId = computeDealId(terms)
+  const termsHash = hashTerms(terms)
+
+  upsert({
+    dealId, termsHash, terms, phase: 'terms-verified', createdAt: Date.now(),
+  })
+
+  // 1. terms signature
+  await assertTermsSigned(terms, signature)
+
+  // 2. x402 payment verification, delegated to Blocky402
+  const requirements = requirementsFor(terms.amount)
+  const verified = await blocky.verify(paymentPayload, requirements)
+  if (!verified.isValid) {
+    advance(dealId, { phase: 'failed', error: `payment invalid: ${verified.invalidReason ?? '?'}` })
+    throw new FlowError(`payment verification failed: ${verified.invalidReason ?? 'unknown'}`, 402)
+  }
+  advance(dealId, { phase: 'payment-verified' })
+
+  // 3. settle — Blocky402 adds the fee-payer signature and submits
+  const settled = await blocky.settle(paymentPayload, requirements)
+  if (!settled.success || !settled.transaction) {
+    advance(dealId, { phase: 'failed', error: `settle failed: ${settled.errorReason ?? '?'}` })
+    throw new FlowError(`settlement failed: ${settled.errorReason ?? 'unknown'}`, 402)
+  }
+  const settlementTxId = settled.transaction
+  // Register BEFORE the seller is called: its middleware will ask Receipt to
+  // verify and settle this very payment, and must be answered from here
+  // rather than by re-submitting a transaction that already reached consensus.
+  recordSettlement(paymentPayload, {
+    transaction: settlementTxId,
+    payer: settled.payer ?? terms.payer,
+    at: Date.now(),
+  })
+  advance(dealId, { phase: 'settled', settlementTxId })
+
+  // 4. escrow. The custody hop closes here.
+  const opened = await escrow.open(terms, signature)
+  advance(dealId, { phase: 'escrowed', openTxHash: opened.hash })
+
+  // 5. call the seller, timed
+  await submit(hcs, config.topicId, { kind: 'terms', dealId, termsHash, terms })
+
+  const requestTimeMs = Date.now()
+  const started = performance.now()
+  let status = 0
+  let headers: Record<string, string> = {}
+  let body = new Uint8Array()
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), 45_000) // DECISIONS-01 Q6
+  try {
+    const res = await fetch(terms.resource, {
+      // x402 v2 carries the payment in PAYMENT-SIGNATURE. The resource
+      // server's extractPayment() reads ONLY that header — `x-payment` is
+      // v1 and is used solely to decide whether a route needs payment, so
+      // sending it alone yields a 402 on a request that was in fact paid.
+      headers: {
+        'PAYMENT-SIGNATURE': encodePayment(paymentPayload),
+        'X-PAYMENT': encodePayment(paymentPayload),
+      },
+      signal: controller.signal,
+    })
+    status = res.status
+    headers = Object.fromEntries([...res.headers].map(([k, v]) => [k.toLowerCase(), v]))
+    body = new Uint8Array(await res.arrayBuffer())
+  } catch (e) {
+    // A dead seller is a normal outcome, not an exception: status 0 fails the
+    // status check and the buyer is refunded on the spot.
+    status = 0
+    headers = {}
+    body = new Uint8Array()
+  } finally {
+    clearTimeout(timeout)
+  }
+  const observedLatencyMs = Math.round(performance.now() - started)
+  advance(dealId, { phase: 'seller-responded', observedLatencyMs })
+
+  const observation: Observation = { status, headers, body, requestTimeMs, observedLatencyMs }
+
+  // 6. adjudicate — pure
+  let verdict: Verdict = adjudicate(terms, observation)
+
+  // DECISIONS-01 Q2: refuse rather than truncate. A body we cannot publish is
+  // a verdict nobody can reproduce, which is worse than a failure.
+  const bodyTooLarge = body.length > MAX_BODY_BYTES
+  if (bodyTooLarge) {
+    verdict = {
+      ...verdict,
+      reproducible: [{
+        check: 'bodyTooLarge',
+        pass: false,
+        detail: `${body.length} bytes exceeds the ${MAX_BODY_BYTES} byte publish cap`,
+      }],
+      pass: false,
+      firstFailure: 'bodyTooLarge',
+    }
+  } else {
+    await submit(hcs, config.topicId, {
+      kind: 'observation', dealId, termsHash, status, headers,
+      bodyBase64: Buffer.from(body).toString('base64'), requestTimeMs,
+    })
+  }
+  const verdictHash = hashVerdict(verdict)
+  advance(dealId, { phase: 'adjudicated', verdict })
+
+  // 7. resolve on-chain
+  const resolveTxHash = verdict.pass
+    ? await escrow.release(dealId, verdictHash)
+    : await escrow.refund(dealId, verdictHash, verdict.firstFailure ?? 'failed')
+  advance(dealId, { phase: verdict.pass ? 'released' : 'refunded', resolveTxHash })
+
+  // 8. publish the verdict, with BOTH legs of the custody hop recorded
+  await submit(hcs, config.topicId, {
+    kind: 'verdict', dealId, termsHash, verdictHash, verdict,
+    settlementTxId, openTxHash: opened.hash, resolveTxHash,
+  })
+
+  return {
+    dealId, verdict, body, status,
+    contentType: headers['content-type'] ?? '',
+    settlementTxId, openTxHash: opened.hash, resolveTxHash,
+  }
+}
+
+export function encodePayment(p: PaymentPayload): string {
+  return Buffer.from(JSON.stringify(p), 'utf8').toString('base64')
+}
+
+export function decodePayment(header: string): PaymentPayload {
+  return JSON.parse(Buffer.from(header, 'base64').toString('utf8')) as PaymentPayload
+}
