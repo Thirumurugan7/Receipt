@@ -1,0 +1,62 @@
+{
+  "name": "Price a swap on data you actually verified",
+  "description": "Chains two sponsor services into one agent task. Receipt buys a live token-holdings snapshot under machine-checkable acceptance terms and escrows the payment on Hedera, releasing it only if the response passes every check the buyer signed - a non-empty holdings array, real contract addresses, integer amounts, and a snapshot fresh within the hour. 1inch then builds a real Classic Swap route for the largest verified holding. The result depends on both: without Receipt the swap would be priced against numbers nobody checked, and without 1inch there is no route. If the holdings data fails its terms the payment is refunded automatically and NO swap is quoted, because a route built on unverified data is worse than no route at all.",
+  "input_schema": {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "type": "object",
+    "properties": {
+      "resource": {
+        "type": "string",
+        "format": "uri",
+        "description": "URL of the priced holdings endpoint to buy through Receipt."
+      },
+      "swap_to": {
+        "type": "string",
+        "description": "Contract address of the token to swap into, e.g. WETH."
+      }
+    },
+    "required": [
+      "resource",
+      "swap_to"
+    ],
+    "additionalProperties": false
+  },
+  "input_example": {
+    "resource": "http://localhost:8787/api/quote?mode=honest",
+    "swap_to": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
+  },
+  "output_example": {
+    "verified": true,
+    "deal_id": "0xdfea4b07cc2d56efa0ec63e5064c0c6136afc7e78469beaab2ad357d8758713b",
+    "holdings_source": "the-graph",
+    "largest_holding": {
+      "symbol": "USDC",
+      "contract": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+      "amount": "51951297920"
+    },
+    "swap_route": {
+      "from": "USDC",
+      "to": "WETH",
+      "protocols": [
+        "UNISWAP_V3"
+      ],
+      "estimated_out": "\u2026"
+    },
+    "audit": {
+      "topic": "0.0.10495465",
+      "verify_command": "pnpm verify --deal 0xdfea4b07\u2026"
+    }
+  },
+  "prompt_template": "You are pricing a swap for an agent that will execute it, so a route built on unverified numbers is worse than no route at all.\n\nRequest: {{inputs}}\n\nDo this in order:\n1. Call buyWithTerms on the Receipt gateway with the given resource. It buys the holdings snapshot under acceptance terms and escrows the payment, releasing it only if the response passes every check. Read the verdict from the response headers.\n2. If the verdict is a failure, STOP. Return verified=false with the first_failure and the deal_id, and quote nothing. The payment was already refunded automatically; reporting that is the correct outcome, not an error.\n3. If the verdict passed, take the largest holding by amount from the verified data and call getClassicSwapRoute on the 1inch gateway with src set to that holding's contract, dst set to swap_to, and amount set to the verified amount.\n4. Return a single JSON object with: verified, deal_id, holdings_source, largest_holding, swap_route, and an audit object carrying the HCS topic and the command a third party can run to re-check the verdict.\n\nNever price a swap against data whose checks did not pass, and never present a route as though the underlying holdings were verified when they were not.",
+  "model": "openai/gpt-5-nano",
+  "tool_bindings": [
+    {
+      "gateway_slug": "2g6od7kdczdp7p5wr3ywz2vhlu",
+      "tool_name": "buyWithTerms"
+    },
+    {
+      "gateway_slug": "gkrbmuh3urcytk6aumsvf2kyxm",
+      "tool_name": "getClassicSwapRoute"
+    }
+  ]
+}

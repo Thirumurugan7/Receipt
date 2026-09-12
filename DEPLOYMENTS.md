@@ -152,6 +152,7 @@ gates nothing. It is reported, never trusted.
 | MCP endpoint | https://2g6od7kdczdp7p5wr3ywz2vhlu.bazgateway.com/mcp |
 | Tools | `buyWithTerms`, `getDeal`, `health`, `info` |
 | Recipe | `buy-data-you-can-refuse-to-pay-for` — **published** |
+| Recipe | `price-a-swap-on-data-you-actually-verified` — **published**, two sponsors |
 | Model | `openai/gpt-5-nano` |
 
 Pricing: `POST /proxy` $0.01, `GET /deals/{dealId}` free, `GET /health` free.
@@ -171,3 +172,21 @@ tools/call health ->
 An MCP client reached the Bazantic gateway, which reached the facilitator, which
 answered with the live escrow address and audit topic. The upstream is a tunnel
 to a local facilitator, so the gateway is live only while that tunnel is.
+
+### Two-sponsor recipe
+
+`price-a-swap-on-data-you-actually-verified` binds tools from two different
+gateways and needs both to produce an answer:
+
+| Gateway | Slug | Tool |
+|---|---|---|
+| Receipt | `2g6od7kdczdp7p5wr3ywz2vhlu` | `buyWithTerms` |
+| 1inch | `gkrbmuh3urcytk6aumsvf2kyxm` | `getClassicSwapRoute` |
+
+Receipt buys a holdings snapshot under acceptance terms and escrows the payment;
+1inch prices a Classic Swap route for the largest holding that passed its checks.
+If the snapshot fails its terms the payment refunds and the recipe quotes no
+route at all — a route built on unverified numbers is worse than no route.
+
+Inputs: `resource` (URI, required), `swap_to` (string, required).
+Source of truth for the definition: `recipes/swap-on-verified-data.bazantic.json`.

@@ -9,6 +9,7 @@
  * Phase 3 ships honest mode only; the garbage and dead modes belong to phase 4.
  */
 import '@receipt/core/loadenv'
+import { pathToFileURL } from 'node:url'
 import { serve } from '@hono/node-server'
 import { Hono } from 'hono'
 import { paymentMiddlewareFromConfig } from '@x402/hono'
@@ -203,8 +204,19 @@ export function declinedBody(verdict: { firstFailure: string | null; reproducibl
   }
 }
 
-serve({ fetch: app.fetch, port: PORT }, (info) => {
-  console.log(`seller on :${info.port}`)
-  console.log(`  facilitator ${RECEIPT}`)
-  console.log(`  price       ${PRICE_TINYBARS} tinybars of ${ASSET} on ${NETWORK}`)
-})
+/**
+ * Only listen when this file is the entry point. `selfCheck` and
+ * `declinedBody` are pure and imported elsewhere; binding a port as an import
+ * side effect makes the test suite fail with EADDRINUSE whenever the demo
+ * seller happens to be running.
+ */
+const isEntryPoint = process.argv[1] !== undefined &&
+  import.meta.url === pathToFileURL(process.argv[1]).href
+
+if (isEntryPoint) {
+  serve({ fetch: app.fetch, port: PORT }, (info) => {
+    console.log(`seller on :${info.port}`)
+    console.log(`  facilitator ${RECEIPT}`)
+    console.log(`  price       ${PRICE_TINYBARS} tinybars of ${ASSET} on ${NETWORK}`)
+  })
+}

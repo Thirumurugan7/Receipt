@@ -10,6 +10,7 @@ import Ajv2020Module from 'ajv/dist/2020.js'
  */
 const root = new URL('../../../', import.meta.url)
 const recipe = JSON.parse(readFileSync(new URL('recipes/receipt.bazantic.json', root), 'utf8'))
+const swapRecipe = JSON.parse(readFileSync(new URL('recipes/swap-on-verified-data.bazantic.json', root), 'utf8'))
 const manifest = readFileSync(new URL('bazantic.yaml', root), 'utf8')
 
 const ALLOWED_KEYS = [
@@ -22,13 +23,28 @@ const ALLOWED_KEYS = [
  * The platform's full list is longer; these are the ones in scope here, and a
  * small model is the right call for two calls and a shaped response.
  */
+/**
+ * The tools each live gateway actually exposes, read off its page on Bazantic.
+ * Receipt is ours; 1inch is a sponsor gateway we bind to but do not control.
+ */
+const LIVE_TOOLS: Record<string, string[]> = {
+  '2g6od7kdczdp7p5wr3ywz2vhlu': ['buyWithTerms', 'getDeal', 'health', 'info'],
+  'gkrbmuh3urcytk6aumsvf2kyxm': ['getClassicSwapRoute', 'info'],
+}
+
 const USABLE_MODELS = [
   'openai/gpt-5-nano',
   'meta/llama-3.1-8b',
   'deepseek/deepseek-v4-flash-0731',
 ]
 
-describe('recipe create file', () => {
+/**
+ * Both recipes are submitted through the same API, so every recipe in
+ * `recipes/` has to satisfy the same rules. Running them over one file and
+ * eyeballing the other is how the second one ships broken.
+ */
+function sharedRecipeRules(label: string, recipe: Record<string, any>) {
+  describe(`${label}: recipe create file`, () => {
   test('has exactly the eight allowed keys, since unknown keys fail', () => {
     expect(Object.keys(recipe).sort()).toEqual([...ALLOWED_KEYS].sort())
   })
@@ -104,26 +120,30 @@ describe('recipe create file', () => {
   })
 
   test('it chains more than one tool, which is what a Recipe is for', () => {
-    // Both tools live on the Receipt gateway: buy, then verify what you
-    // bought. Chaining across *gateways* would additionally satisfy
-    // Bazantic's "multiple sponsor APIs" track; this recipe targets
-    // "Agentify a New API" instead, and says so.
     const tools = new Set(recipe.tool_bindings.map((b: Record<string, string>) => b.tool_name))
     expect(tools.size).toBeGreaterThanOrEqual(2)
   })
 
-  test('every bound tool exists on the live gateway', () => {
-    // Confirmed against https://<slug>.bazgateway.com/mcp tools/list:
-    // buyWithTerms, getDeal, health, info
-    const live = ['buyWithTerms', 'getDeal', 'health', 'info']
-    for (const b of recipe.tool_bindings) expect(live).toContain(b.tool_name)
+  test('every bound tool exists on the live gateway it is bound to', () => {
+    // Tool lists read off each gateway's own page on Bazantic. Binding a tool
+    // a gateway does not expose is accepted at create time and fails at run
+    // time, which is the worst place to find out.
+    for (const b of recipe.tool_bindings) {
+      const live = LIVE_TOOLS[b.gateway_slug]
+      expect(live, `unknown gateway ${b.gateway_slug}`).toBeDefined()
+      expect(live).toContain(b.tool_name)
+    }
   })
 
   test('compact UTF-8 JSON fits inside the 24 KiB limit', () => {
     const bytes = Buffer.byteLength(JSON.stringify(recipe), 'utf8')
     expect(bytes).toBeLessThanOrEqual(24 * 1024)
   })
-})
+  })
+}
+
+sharedRecipeRules('buy-data-you-can-refuse-to-pay-for', recipe)
+sharedRecipeRules('price-a-swap-on-data-you-actually-verified', swapRecipe)
 
 describe('recipe behaviour instructions', () => {
   test('the prompt forbids presenting failed data as if it passed', () => {
@@ -171,5 +191,51 @@ describe('gateway manifest', () => {
   test('the manifest records the deployed gateway rather than a template', () => {
     expect(manifest).toMatch(/2g6od7kdczdp7p5wr3ywz2vhlu/)
     expect(manifest).not.toMatch(/none of that is done/)
+  })
+})
+
+describe('two-sponsor recipe', () => {
+  /**
+   * The "Recipe using sponsor APIs" track asks for a Recipe that composes more
+   * than one sponsor's API. One gateway with two tools does not qualify, so
+   * the property under test is *distinct gateways*, not distinct tools.
+   */
+  test('binds tools from more than one gateway', () => {
+    const gateways = new Set(
+      swapRecipe.tool_bindings.map((b: Record<string, string>) => b.gateway_slug),
+    )
+    expect(gateways.size).toBeGreaterThanOrEqual(2)
+  })
+
+  test('one of those gateways is a sponsor API we do not own', () => {
+    const gateways = swapRecipe.tool_bindings.map(
+      (b: Record<string, string>) => b.gateway_slug,
+    )
+    expect(gateways).toContain('2g6od7kdczdp7p5wr3ywz2vhlu')
+    expect(gateways.some((g: string) => g !== '2g6od7kdczdp7p5wr3ywz2vhlu')).toBe(true)
+  })
+
+  test('the buy happens before the swap is priced, not after', () => {
+    const buy = swapRecipe.prompt_template.indexOf('buyWithTerms')
+    const swap = swapRecipe.prompt_template.indexOf('getClassicSwapRoute')
+    expect(buy).toBeGreaterThanOrEqual(0)
+    expect(swap).toBeGreaterThan(buy)
+  })
+
+  test('a failed verdict stops the recipe instead of quoting anyway', () => {
+    expect(swapRecipe.prompt_template).toMatch(/STOP/)
+    expect(swapRecipe.prompt_template.toLowerCase()).toMatch(
+      /never price a swap against data whose checks did not pass/,
+    )
+  })
+
+  test('the output carries the handle a third party needs to re-check it', () => {
+    expect(swapRecipe.output_example).toHaveProperty('deal_id')
+    expect(swapRecipe.output_example.audit).toHaveProperty('topic')
+    expect(swapRecipe.output_example.audit).toHaveProperty('verify_command')
+  })
+
+  test('both inputs the prompt depends on are required by the schema', () => {
+    expect(swapRecipe.input_schema.required).toEqual(['resource', 'swap_to'])
   })
 })
