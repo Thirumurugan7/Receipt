@@ -1,7 +1,8 @@
 # demo
 
 `receipt-demo.mp4` — 3m44s, 1920×1080, no audio. Every number in it is real,
-captured from a live run against Hedera testnet.
+captured from a live run against Hedera testnet, buying live token data from
+The Graph's Token API.
 
 ## How it was made
 

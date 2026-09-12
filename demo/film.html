@@ -130,7 +130,7 @@ const SLIDES = [
     <h2>Receipt has no judge.</h2>
     <p class="sub">Every check is a pure function of (terms, response). Both parties can compute it. So can you.</p>
     <div class="arch">
-      <div class="box">BUYER signs Terms with EIP-712 — status, content type, size, required JSON paths, a schema, freshness</div>
+      <div class="box">BUYER signs Terms with EIP-712 — the shape of token data it will pay for: real contract addresses, integer amounts, a fresh snapshot</div>
       <div class="arrow">↓ one URL change, one header</div>
       <div class="box hot">RECEIPT settles through Blocky402 → escrows on Hedera → calls the seller → adjudicates → releases or refunds</div>
       <div class="arrow">↓ terms + raw response + verdict</div>
@@ -138,7 +138,7 @@ const SLIDES = [
     </div>`},
 
   { t: 24, dark:true, html: `
-    <p class="term-title">scene 1 — honest seller · <span style="color:#d9b36c">pnpm buy honest</span></p>
+    <p class="term-title">scene 1 — buying live token data from The Graph · <span style="color:#d9b36c">pnpm buy honest</span></p>
     <div class="term" data-type="honest"></div>`},
 
   { t: 31, dark:true, html: `
@@ -171,17 +171,17 @@ const SLIDES = [
     <p class="kicker">where each sponsor technology carries weight</p>
     <table>
       <tr><th>sponsor</th><th>what it does here</th><th>evidence</th></tr>
-      <tr><td class="who">Hedera</td><td>Escrow contract holds real HBAR between payment and verdict. <strong>HCS publishes terms, raw response and verdict</strong> — without it "re-run it yourself" is a slogan, not a command.</td><td class="ev">0x3483…4071 · topic 0.0.10495465 · Sourcify full match</td></tr>
-      <tr><td class="who">Blocky402</td><td>Performs every real payment. Buyer signs a <strong>partial</strong> transfer; Blocky402 adds the fee-payer signature and submits.</td><td class="ev">buyer pays 0 gas — fee payer 0.0.7162784</td></tr>
-      <tr><td class="who">Bazantic</td><td>Gateway manifest + Recipe chaining buy-and-verify into one MCP tool. Written and schema-validated in CI.</td><td class="ev"><span class="no">not published</span> — provider listing is a 2-day manual review</td></tr>
-      <tr><td class="who">Chainlink</td><td>Confidential Workflows would let the enclave see the body and publish only the verdict.</td><td class="ev"><span class="no">not claimed</span> — private beta, gated</td></tr>
-      <tr><td class="who">The Graph</td><td>Seller returns real live data, but from the Hedera Mirror Node.</td><td class="ev"><span class="no">not claimed</span></td></tr>
+      <tr><td class="who">The Graph</td><td><strong>This is what is being bought.</strong> The seller sells live ERC-20 holdings from the Token API; the buyer's terms are written against that shape and the adjudicator decides payment by validating it. The purchase is a verifiable receipt for a Graph query.</td><td class="ev"><span class="yes">live</span> — 1349-byte response on HCS, re-checked offline</td></tr>
+      <tr><td class="who">Hedera</td><td>Escrow holds real HBAR between payment and verdict. <strong>HCS carries terms, raw response and verdict</strong> — without it "re-run it yourself" is a slogan, not a command.</td><td class="ev"><span class="yes">live</span> — 0x3483…4071 · topic 0.0.10495465 · Sourcify full match</td></tr>
+      <tr><td class="who">Blocky402</td><td>Performs every real payment. The buyer signs a <strong>partial</strong> transfer; Blocky402 adds the fee-payer signature and submits.</td><td class="ev"><span class="yes">live</span> — buyer pays 0 gas, fee payer 0.0.7162784</td></tr>
+      <tr><td class="who">Bazantic</td><td>Gateway over the facilitator plus a Recipe chaining buy-and-verify into one MCP tool an agent can call.</td><td class="ev">gateway configured, recipe CI-validated — <span class="no">not yet published</span></td></tr>
+      <tr><td class="who">Chainlink</td><td>Confidential Workflows is the named fix for the limitation below: evaluate inside the enclave, publish only the verdict.</td><td class="ev"><span class="no">not claimed</span> — private beta, gated</td></tr>
     </table>`},
 
   { t: 12, dark:false, html: `
     <p class="kicker">what we cannot prove, said out loud</p>
     <h2 class="wide">Latency is our own stopwatch. So it gates nothing.</h2>
-    <p class="sub">The verdict splits in two. <strong>reproducible[]</strong> decides where the money goes and anyone can recompute it. <strong>attested[]</strong> is recorded, displayed, and decides nothing. The facilitator also custodies for one hop between settlement and escrow — both legs are on the public log, and <code>open()</code> verifies the buyer's signature so it cannot alter the deal.</p>`},
+    <p class="sub">The verdict splits in two. <strong>reproducible[]</strong> decides where the money goes and anyone can recompute it. <strong>attested[]</strong> is recorded, displayed, and decides nothing. Publishing the raw response is what makes verification real — and is wrong for a business selling data; a confidential enclave is the fix, and it is not built. The facilitator also custodies for one hop, both legs on the public log, and <code>open()</code> verifies the buyer's signature so it cannot alter the deal.</p>`},
 
   { t: 10, dark:false, html: `
     <div style="text-align:center">
