@@ -51,6 +51,11 @@ terminals, with a window and a prompt, and show six readable lines rather than
 twenty-five unreadable ones: the transcripts behind them are still real, and
 `realLine()` pulls the exact line out of the capture rather than retyping it.
 
+Three screens use well-known meme templates, downloaded blank and captioned by
+the film itself rather than baked into the image. They are third-party artwork,
+included here for a hackathon demo and nothing else. Anyone reusing this repo
+for another purpose should replace them.
+
 ## The film is a pure function of time
 
 `film.html` has no CSS animations and no timers. Every gesture in it, a word
@@ -96,5 +101,6 @@ Renders just those moments into `demo/.frames/` and exits.
 | `cdp.mjs` | the DevTools Protocol client both of those share |
 | `shots/` | those captures, committed so the film can be rebuilt offline |
 | `shots/run/` | the recorded session, one JPEG per frame |
+| `shots/memes/` | blank meme templates, captioned by the film in its own type |
 | `schedule.json` | the running order, written by the renderer; `DEMO.md` is tested against it |
 | `receipt-demo.mp4` | the rendered film |

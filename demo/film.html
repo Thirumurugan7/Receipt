@@ -66,12 +66,25 @@
   .panel{border:2px solid var(--ink); border-radius:6px; padding:28px 24px; background:#fff;
          display:flex; flex-direction:column; align-items:center; justify-content:center;
          text-align:center; min-height:300px}
-  .panel .art{font-size:78px; line-height:1.15; margin-bottom:14px}
+  /* one art height for every panel, so the captions below them line up
+     whether the art is emoji or a photograph */
+  .panel .art{height:210px; margin-bottom:16px; display:flex; align-items:center;
+              justify-content:center; overflow:hidden; font-size:74px; line-height:1.15}
+  .panel .art img{width:100%; height:100%; object-fit:contain; border-radius:4px}
   .panel .say{font-size:21px; font-weight:600; line-height:1.35}
   .panel .note{color:var(--muted); font-size:16px; margin-top:10px; line-height:1.4}
   .panel .code{font-family:"IBM Plex Mono",monospace; font-size:15px; background:var(--tty-bg);
                color:#ff9d90; padding:8px 12px; border-radius:4px; margin-top:12px; word-break:break-all}
   .panel.bad{border-color:var(--returned)}
+
+  /* meme templates, captioned in the film's own type */
+  .meme{position:relative; border:2px solid var(--ink); border-radius:6px; overflow:hidden; background:#fff}
+  .meme img{display:block; width:100%; height:auto}
+  .meme .cap{position:absolute; display:flex; align-items:center; justify-content:center;
+             text-align:center; font-weight:700; line-height:1.22; color:#141414; padding:0 10px}
+  .meme .strike{color:var(--returned)}
+  /* a plate, so a caption over busy artwork still reads */
+  .meme .cap.plate{background:rgba(255,255,255,.94); border-radius:5px; box-shadow:0 1px 3px rgba(0,0,0,.15)}
 
   /* a terminal that looks like a terminal */
   .tty{background:var(--tty-bg); border-radius:10px; overflow:hidden; max-width:1480px;
@@ -283,29 +296,45 @@ const SCENES = [
       <p class="code">{"error":"upstream rate limited"}</p>
     </div>
     <div class="panel bad" data-in="2700">
-      <div class="art">🤖 🔥</div>
+      <div class="art"><img src="shots/memes/fine.jpg" alt=""></div>
       <p class="say">The money is already gone.</p>
       <p class="note">x402 has no refund. There is no dispute step anywhere in it.</p>
     </div>
   </div>`},
 
-{ n:'why not sue', dur:10000, enter:'rise', html:`
-  <h2 class="wide">"Just dispute it." The argument costs more than the thing.</h2>
-  <div class="strip" style="grid-template-columns:1fr 1fr; max-width:1000px">
-    <div class="panel" data-in="600" style="min-height:260px">
-      <div class="art">🪙</div>
-      <p class="say">The typical x402 payment</p>
-      <p class="note" style="font-size:32px; font-weight:700; color:var(--ink); margin-top:8px">46 cents</p>
+{ n:'why not sue', dur:11000, enter:'rise', html:`
+  <h2 class="wide">"Just dispute it."</h2>
+  <div style="display:grid; grid-template-columns:430px 1fr; gap:52px; align-items:center; margin-top:26px">
+    <div class="meme" data-in="500">
+      <img src="shots/memes/buttons.jpg" alt="">
+      <div class="cap plate" style="left:4%; top:5%; width:35%; height:15%; font-size:16px">Post a bond worth more than the payment</div>
+      <div class="cap plate" style="left:42%; top:2%; width:36%; height:15%; font-size:16px">Eat the 46 cents and move on</div>
     </div>
-    <div class="panel bad" data-in="1500" style="min-height:260px">
-      <div class="art">⚖️</div>
-      <p class="say">Kleros or UMA to settle it</p>
-      <p class="note" style="font-size:32px; font-weight:700; color:var(--returned); margin-top:8px">bonds, gas, days</p>
+    <div>
+      <p class="lede" data-in="1500" style="font-size:25px; color:var(--ink); max-width:34ch">
+        Nobody arbitrates a <b>46 cent</b> payment. Kleros and UMA both work, and both
+        want bonds, gas and days.</p>
+      <p class="lede" data-in="2700" style="font-size:22px; max-width:38ch">
+        So people appoint a judge instead. The one product that shipped that way does
+        <b>five users a day</b>, because nobody could answer who judges, or who pays the judge.</p>
     </div>
-  </div>
-  <p class="lede" data-in="2600" style="font-size:23px; color:var(--ink); margin-top:26px; max-width:78ch">
-    So people reach for a judge instead. The one product that shipped that way does
-    <b>five users a day</b>, because nobody could answer who judges, or who pays the judge.</p>`},
+  </div>`},
+
+{ n:'so instead', dur:9000, enter:'rise', html:`
+  <div style="display:grid; grid-template-columns:640px 1fr; gap:60px; align-items:center">
+    <div class="meme" data-in="400">
+      <img src="shots/memes/drake.jpg" alt="">
+      <div class="cap" style="left:50%; top:4%; width:48%; height:42%; font-size:27px">
+        Pay first, then find out what you bought</div>
+      <div class="cap" style="left:50%; top:54%; width:48%; height:42%; font-size:27px">
+        Say what a good answer is, then pay for it</div>
+    </div>
+    <div>
+      <h2 data-in="1400" style="font-size:44px">That is the entire idea.</h2>
+      <p class="lede" data-in="2400" style="font-size:22px; max-width:32ch">
+        Everything after this is just making it actually work with real money.</p>
+    </div>
+  </div>`},
 
 { n:'the idea', dur:13000, enter:'rise', coin:[[0,14],[2600,14],[4400,50],[8400,50],[11000,86]], html:`
   <h2 class="wide">So nobody judges. The buyer says what "good" means, before paying.</h2>

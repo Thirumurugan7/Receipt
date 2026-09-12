@@ -1,5 +1,5 @@
 {
-  "totalMs": 198000,
+  "totalMs": 208000,
   "scenes": [
     {
       "n": "title",
@@ -14,76 +14,81 @@
     {
       "n": "why not sue",
       "start": 19000,
-      "dur": 10000
+      "dur": 11000
+    },
+    {
+      "n": "so instead",
+      "start": 30000,
+      "dur": 9000
     },
     {
       "n": "the idea",
-      "start": 29000,
+      "start": 39000,
       "dur": 13000
     },
     {
       "n": "the checks",
-      "start": 42000,
+      "start": 52000,
       "dur": 11000
     },
     {
       "n": "architecture",
-      "start": 53000,
+      "start": 63000,
       "dur": 16000
     },
     {
       "n": "it works",
-      "start": 69000,
+      "start": 79000,
       "dur": 12000
     },
     {
       "n": "seven checks",
-      "start": 81000,
+      "start": 91000,
       "dur": 10000
     },
     {
       "n": "junk answer",
-      "start": 91000,
+      "start": 101000,
       "dur": 12000
     },
     {
       "n": "refunded",
-      "start": 103000,
-      "dur": 10000
-    },
-    {
-      "n": "seller says no",
       "start": 113000,
       "dur": 10000
     },
     {
-      "n": "seller vanishes",
+      "n": "seller says no",
       "start": 123000,
+      "dur": 10000
+    },
+    {
+      "n": "seller vanishes",
+      "start": 133000,
       "dur": 11000
     },
     {
       "n": "check it yourself",
-      "start": 134000,
+      "start": 144000,
       "dur": 11000
     },
     {
       "n": "second opinion",
-      "start": 145000,
+      "start": 155000,
       "dur": 12000
     },
     {
       "n": "the receipts",
-      "start": 157000,
+      "start": 167000,
       "dur": 24000
     },
     {
       "n": "what we cannot prove",
-      "start": 181000,
+      "start": 191000,
       "dur": 9000
     },
     {
       "n": "close",
-      "start": 190000,
+      "start": 200000,
       "dur": 8000
     }
   ]
