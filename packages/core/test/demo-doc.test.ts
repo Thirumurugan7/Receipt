@@ -43,14 +43,15 @@ describe('the narration script matches the film', () => {
   })
 
   test('the runtime DEMO.md states is the runtime the film has', () => {
-    const stated = demo.match(/receipt-demo\.mp4` — (\d+:\d{2})/)?.[1]
+    // Match the runtime near the filename, not a particular punctuation mark.
+    const stated = demo.match(/receipt-demo\.mp4[^\n]{0,40}?(\d+:\d{2})/)?.[1]
     expect(stated, 'DEMO.md should state the runtime').toBeDefined()
     expect(stated).toBe(mmss(schedule.totalMs))
   })
 
   test('the README points at the film that exists, with its real runtime', () => {
     expect(readme).toContain('demo/receipt-demo.mp4')
-    const stated = readme.match(/receipt-demo\.mp4\)\*\* — (\d+:\d{2})/)?.[1]
+    const stated = readme.match(/receipt-demo\.mp4\)[^\n]{0,40}?(\d+:\d{2})/)?.[1]
     expect(stated, 'README should state the runtime').toBeDefined()
     expect(stated).toBe(mmss(schedule.totalMs))
   })

@@ -1,6 +1,6 @@
 # demo
 
-`receipt-demo.mp4` — 1920×1080, no audio. Every number in it is real, captured
+`receipt-demo.mp4` is 1920×1080, no audio. Every number in it is real, captured
 from a live run against Hedera testnet, buying live token data from The Graph.
 `DEMO.md` at the repo root is the narration to read over it.
 
@@ -15,8 +15,8 @@ node demo/interact.mjs    # records a real session on the live page -> shots/run
 node demo/render.mjs      # renders the film -> receipt-demo.mp4, schedule.json
 ```
 
-**`capture.mjs`** runs the scenes end to end — real settlement, real escrow,
-real release and refund — and writes the transcripts to `demo-data.js`. The
+**`capture.mjs`** runs the scenes end to end, real settlement, real escrow,
+real release and refund, and writes the transcripts to `demo-data.js`. The
 per-check results behind the animated checklist are read back from the
 facilitator's own deal record, so the ticks and crosses on screen are the ones
 the adjudicator produced, including the checks that failed *after* the first
@@ -33,7 +33,7 @@ middle of the shot.
 **`interact.mjs`** records the ledger page actually being used. A still proves
 the page exists; this presses the run button, lets a real deal go through, and
 captures the screen while the transcript streams and each transaction link
-lands — then follows one of those links to HashScan. The film plays the frames
+lands, then follows one of those links to HashScan. The film plays the frames
 back, so what a viewer sees is a real session rather than a mock-up of one. The
 frames are shrunk before they are committed, and a test keeps the film's frame
 count honest against the directory.
@@ -42,13 +42,22 @@ count honest against the directory.
 assembles the frames with ffmpeg. It has no dependencies: the WebSocket client
 is the one built into Node, and the page is served by `node:http`.
 
+## How each screen is built
+
+One idea per screen, and nothing on it that does not serve that idea. Every
+real value gets a plain-English label beside it, so a viewer never has to know
+what `requiredPaths` means to follow what happened. Terminals look like
+terminals, with a window and a prompt, and show six readable lines rather than
+twenty-five unreadable ones: the transcripts behind them are still real, and
+`realLine()` pulls the exact line out of the capture rather than retyping it.
+
 ## The film is a pure function of time
 
-`film.html` has no CSS animations and no timers. Every gesture in it — a word
+`film.html` has no CSS animations and no timers. Every gesture in it, a word
 building letter by letter, a list arriving a line at a time, a push into the
 part of a screenshot that carries the claim, a highlight sweeping across the
-verdict line once the transcript has printed it — is arithmetic on the clock.
-It exposes `seek(ms)`, which computes every pixel of state from that clock — which scene is showing, how much
+verdict line once the transcript has printed it, is arithmetic on the clock.
+It exposes `seek(ms)`, which computes every pixel of state from that clock, which scene is showing, how much
 of a transcript has printed, where a stamp is in its landing, what the escrow
 chip in the margin says. A frame at `t` is the same frame no matter when, or on
 whose machine, it is rendered.
@@ -80,7 +89,7 @@ Renders just those moments into `demo/.frames/` and exits.
 |---|---|
 | `film.html` | the film. one family, no animation, `seek(ms)` paints everything |
 | `capture.mjs` | runs the scenes for real and writes `demo-data.js` |
-| `demo-data.js` | captured transcripts and verdicts — generated, not hand-edited |
+| `demo-data.js` | captured transcripts and verdicts, generated, not hand-edited |
 | `render.mjs` | headless Chrome + ffmpeg, no dependencies |
 | `shot.mjs` | captures the explorer pages the *evidence* scene shows |
 | `interact.mjs` | records a real session on the live ledger, frame by frame |

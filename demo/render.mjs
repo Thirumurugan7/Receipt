@@ -76,11 +76,22 @@ async function main() {
   // because the webfont had not arrived yet would be a silent defect in the
   // finished video, so wait for it and refuse to render without it.
   await call('Runtime.evaluate', { expression: 'document.fonts.ready', awaitPromise: true })
-  const fontOk = await call('Runtime.evaluate', {
-    expression: `document.fonts.check('600 76px "IBM Plex Mono"')`,
+  // Check the faces the film actually sets text in. Checking a weight the
+  // film no longer uses fails for the wrong reason and blocks the render.
+  const FACES = ['700 80px "IBM Plex Mono"', '500 26px "IBM Plex Mono"',
+                 '400 17px "IBM Plex Sans"', '700 46px "IBM Plex Sans"']
+  // Ask for them first. A face is only fetched when something visible uses it,
+  // and every scene but the first is display:none at t=0, so checking without
+  // loading reports faces missing that simply had not been needed yet.
+  const missing = (await call('Runtime.evaluate', {
+    expression: `Promise.all(${JSON.stringify(FACES)}.map((f) => document.fonts.load(f)))
+      .then(() => JSON.stringify(${JSON.stringify(FACES)}.filter((f) => !document.fonts.check(f))))`,
+    awaitPromise: true,
     returnByValue: true,
-  })
-  if (!fontOk.result.value) throw new Error('IBM Plex Mono did not load; refusing to render')
+  })).result.value
+  if (JSON.parse(missing).length) {
+    throw new Error(`webfonts did not load, refusing to render: ${missing}`)
+  }
 
   // The evidence scene plays back dozens of captured frames. Screenshotting
   // one before it has decoded would put a blank rectangle in the finished

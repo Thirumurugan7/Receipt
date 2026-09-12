@@ -2,154 +2,171 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>Receipt — demo</title>
+<title>Receipt demo</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   /*
-   * One family, four weights. Every frame of this film is machine output --
-   * a transcript, a verdict, a hash -- and the claim being made is that a
-   * machine decided it and anyone can re-run it. A display face would soften
-   * exactly the thing the film is arguing, so hierarchy comes from size,
-   * weight and letterspacing instead.
+   * Rules for this film, learned the hard way:
+   *   one idea per screen, and nothing on screen that does not serve it;
+   *   a terminal looks like a terminal, with a window and a prompt, and shows
+   *     six legible lines rather than twenty-five unreadable ones;
+   *   every real value gets a plain-English label beside it;
+   *   pictures carry the argument, words caption it.
    *
-   * Nothing here animates. The film is a pure function of time: seek(ms)
-   * computes every pixel of state from the clock, so frames can be rendered
-   * offscreen in any order, on any machine, and come out identical.
+   * Nothing animates by CSS. seek(ms) computes every pixel from the clock, so
+   * the renderer can capture frames in any order and skip the still ones.
    */
   :root{
-    --paper:#faf7f2; --ink:#191d2b; --faded:#6b7486; --rule:#e2d9cc; --hair:#efe9e0;
+    --paper:#faf7f2; --ink:#191d2b; --muted:#6b7486; --rule:#e2d9cc; --hair:#efe9e0;
     --carbon:#2f3aa8; --carbon-soft:#eceefb;
-    --held:#c2740b; --paid:#13894f; --returned:#cf2f24;
-    --term-bg:#14171f; --term-fg:#dfe4ee; --term-dim:#7c879d;
-    --gutter:150px;
+    --held:#c2740b; --held-soft:#fdf3e2;
+    --paid:#13894f; --paid-soft:#e8f6ee;
+    --returned:#cf2f24; --returned-soft:#fdeceb;
+    --tty-bg:#171a23; --tty-bar:#262b38; --tty-fg:#e6eaf2; --tty-dim:#8892a6;
+    --gutter:132px;
   }
   *{box-sizing:border-box; margin:0; padding:0}
   html,body{height:100%; overflow:hidden}
   body{
     background:var(--paper); color:var(--ink);
-    font:400 17px/1.5 "IBM Plex Mono", ui-monospace, Menlo, monospace;
+    font:400 17px/1.5 "IBM Plex Sans", system-ui, sans-serif;
     font-variant-numeric:tabular-nums;
-    -webkit-font-smoothing:antialiased; text-rendering:geometricPrecision;
+    -webkit-font-smoothing:antialiased;
   }
+  .mono{font-family:"IBM Plex Mono", ui-monospace, Menlo, monospace}
 
   #stage{position:relative; width:100vw; height:100vh}
   .scene{position:absolute; inset:0; display:none; flex-direction:column; justify-content:center;
-         padding:70px 90px 70px var(--gutter)}
-  .scene.dark{justify-content:flex-start}
+         padding:64px 84px 64px var(--gutter)}
   .scene.on{display:flex}
-  .scene.dark{background:var(--term-bg); color:var(--term-fg)}
   .inner{will-change:transform}
 
-  /* the margin rail: a ledger's left margin, carrying where you are and what
-     the escrow is doing. it encodes state, it is not decoration. */
+  /* margin rail: where you are, and what the money is doing */
   #rail{position:absolute; left:0; top:0; bottom:0; width:var(--gutter); z-index:4;
-        padding:70px 0 70px 44px; display:flex; flex-direction:column; justify-content:space-between}
-  #rail:before{content:''; position:absolute; left:26px; top:0; bottom:0;
-               border-left:1px dotted var(--rule)}
-  body[data-dark="1"] #rail:before{border-left-color:#39405a}
-  #rail .num{font-size:15px; font-weight:600; letter-spacing:.06em; color:var(--faded)}
-  #rail .nm{font-size:13px; color:var(--faded); margin-top:7px; letter-spacing:.04em}
-  #rail .clock{font-size:13px; color:var(--faded)}
-  body[data-dark="1"] #rail .num,
-  body[data-dark="1"] #rail .nm,
-  body[data-dark="1"] #rail .clock{color:#69748f}
-  .chip{display:inline-block; max-width:82px; transform-origin:left center; margin-bottom:16px; padding:5px 8px 4px; font-size:11.5px;
-        font-weight:600; letter-spacing:.09em; line-height:1.4; border:1.5px solid currentColor}
+        padding:64px 0 64px 40px; display:flex; flex-direction:column; justify-content:space-between}
+  #rail:before{content:''; position:absolute; left:24px; top:0; bottom:0; border-left:1px dotted var(--rule)}
+  #rail .num{font-size:14px; font-weight:700; letter-spacing:.06em; color:var(--muted); font-family:"IBM Plex Mono",monospace}
+  #rail .nm{font-size:12.5px; color:var(--muted); margin-top:6px}
+  #rail .clock{font-size:12.5px; color:var(--muted); font-family:"IBM Plex Mono",monospace}
+  .chip{display:inline-block; max-width:80px; margin-bottom:14px; padding:5px 8px 4px;
+        font-size:11px; font-weight:700; letter-spacing:.08em; line-height:1.35;
+        border:1.5px solid currentColor; transform-origin:left center; font-family:"IBM Plex Mono",monospace}
   .chip.open{color:var(--held)} .chip.rel{color:var(--paid)} .chip.ref{color:var(--returned)}
 
-  h1{font-size:82px; font-weight:700; letter-spacing:.30em; text-indent:.30em; line-height:1}
-  h2{font-size:41px; font-weight:600; line-height:1.2; max-width:25ch; letter-spacing:-.005em}
-  h2.wide{max-width:36ch}
-  h3{font-size:26px; font-weight:600; line-height:1.3; max-width:44ch}
-  .lede{color:var(--faded); font-size:20px; margin-top:20px; max-width:62ch; line-height:1.55}
-  .huge{font-size:64px; font-weight:700; letter-spacing:-.02em}
+  h1{font-size:80px; font-weight:700; letter-spacing:.28em; text-indent:.28em; line-height:1; font-family:"IBM Plex Mono",monospace}
+  h2{font-size:46px; font-weight:700; line-height:1.18; max-width:24ch; letter-spacing:-.02em}
+  h2.wide{max-width:34ch}
+  h3{font-size:30px; font-weight:700; line-height:1.25; max-width:40ch; letter-spacing:-.015em}
+  .lede{color:var(--muted); font-size:21px; margin-top:16px; max-width:60ch; line-height:1.5}
 
-  ul{list-style:none; margin-top:30px; display:grid; gap:14px; max-width:78ch}
-  li{display:flex; gap:16px; font-size:19.5px; line-height:1.45; align-items:baseline}
-  li b{font-weight:700; color:var(--carbon)}
-  li .m{color:var(--carbon); flex:0 0 auto; font-weight:700}
-  .punch{margin-top:34px; font-size:26px; font-weight:600; color:var(--returned)}
+  /* comic strip: three panels, a picture each */
+  .strip{display:grid; grid-template-columns:1fr 1fr 1fr; gap:22px; margin-top:30px; max-width:1520px}
+  .panel{border:2px solid var(--ink); border-radius:6px; padding:28px 24px; background:#fff;
+         display:flex; flex-direction:column; align-items:center; justify-content:center;
+         text-align:center; min-height:300px}
+  .panel .art{font-size:78px; line-height:1.15; margin-bottom:14px}
+  .panel .say{font-size:21px; font-weight:600; line-height:1.35}
+  .panel .note{color:var(--muted); font-size:16px; margin-top:10px; line-height:1.4}
+  .panel .code{font-family:"IBM Plex Mono",monospace; font-size:15px; background:var(--tty-bg);
+               color:#ff9d90; padding:8px 12px; border-radius:4px; margin-top:12px; word-break:break-all}
+  .panel.bad{border-color:var(--returned)}
 
-  .stamp{display:inline-block; padding:9px 22px 8px; border:3px solid currentColor;
-         font-size:24px; font-weight:700; letter-spacing:.15em; text-indent:.15em;
-         text-transform:uppercase; transform-origin:center}
-  .stamp.paid{color:var(--paid)} .stamp.returned{color:var(--returned)} .stamp.held{color:var(--held)}
+  /* a terminal that looks like a terminal */
+  .tty{background:var(--tty-bg); border-radius:10px; overflow:hidden; max-width:1480px;
+       box-shadow:0 18px 40px rgba(25,29,43,.18)}
+  .tty .bar{background:var(--tty-bar); padding:12px 16px; display:flex; align-items:center; gap:9px}
+  .tty .bar i{width:12px; height:12px; border-radius:50%; display:block}
+  .tty .bar i:nth-child(1){background:#ff5f57} .tty .bar i:nth-child(2){background:#febc2e}
+  .tty .bar i:nth-child(3){background:#28c840}
+  .tty .bar span{color:var(--tty-dim); font-size:14px; margin-left:10px; font-family:"IBM Plex Mono",monospace}
+  .tty .body{padding:24px 28px 28px; font-family:"IBM Plex Mono",monospace; color:var(--tty-fg)}
+  .tty .cmd{font-size:26px; font-weight:500; margin-bottom:18px}
+  .tty .cmd .p{color:#5ed99b; margin-right:10px}
+  .cur{display:inline-block; width:11px; height:22px; background:var(--tty-fg); vertical-align:-3px}
+  .tty .out{display:grid; grid-template-columns:300px 1fr; gap:22px; align-items:baseline;
+            padding:7px 0; font-size:21px}
+  .tty .out .what{color:var(--tty-dim); font-size:18px; font-family:"IBM Plex Sans",sans-serif}
+  .tty .out .val{font-weight:500; word-break:break-word}
+  .tty .out .val.g{color:#5ed99b} .tty .out .val.r{color:#ff8d80} .tty .out .val.y{color:#f2c069}
+  .tty .out .val.big{font-size:28px; font-weight:700}
+  .tty .rule{height:1px; background:#2d3340; margin:14px 0}
 
-  /* terminal */
-  .term{white-space:pre-wrap; word-break:break-word; line-height:1.62; letter-spacing:.002em}
-  .term .dim{color:var(--term-dim)} .term .g{color:#5ed99b} .term .r{color:#ff8d80}
-  .term .y{color:#f2c069} .term .w{color:#fff; font-weight:500}
-  .term .hot{color:#5ef0a6; font-weight:600}
-  /* The line currently being printed rides a little brighter than the ones
-     behind it, so the eye follows the output instead of re-reading the top.
-     A filter rather than a colour, so it lifts the syntax colours with it. */
-  .term .live{filter:brightness(1.55)}
-  .term{transform-origin:top left}
+  /* where the money is */
+  .flow3{position:relative; display:grid; grid-template-columns:1fr 90px 1fr 90px 1fr;
+         align-items:center; margin-top:40px; max-width:1300px}
+  .node{border:2px solid var(--rule); border-radius:8px; background:#fff; padding:30px 18px; text-align:center}
+  .node.hot{border-color:var(--held); background:var(--held-soft)}
+  .node .ic{font-size:70px; line-height:1.1}
+  .node .nm{font-weight:700; font-size:19px; letter-spacing:.04em; margin-top:8px}
+  .node .sub{color:var(--muted); font-size:15.5px; margin-top:4px}
+  .wire{height:3px; background:var(--rule); border-radius:2px}
+  .coin{position:absolute; top:50%; font-size:46px; line-height:1; transform:translate(-50%,-50%);
+        filter:drop-shadow(0 3px 6px rgba(25,29,43,.25))}
+  .flowcap{margin-top:26px; font-size:22px; font-weight:600; min-height:32px}
 
-  /* filled in from seek(): a sweep across the line the scene is about */
-  .term .w{background-image:linear-gradient(90deg, rgba(94,217,155,.20), rgba(94,217,155,.20));
-           background-repeat:no-repeat; background-size:var(--sweep,0%) 100%}
-  .term .r.w{background-image:linear-gradient(90deg, rgba(255,141,128,.20), rgba(255,141,128,.20))}
-  .term .warn{color:#f2c069; font-weight:600}
-  .slug{color:var(--term-dim); font-size:15.5px; margin-bottom:18px; letter-spacing:.02em}
-  .slug b{color:#f2c069; font-weight:500}
-  .cur{display:inline-block; width:9px; height:17px; background:var(--term-fg); vertical-align:-3px}
+  /* big numbers */
+  .nums{display:flex; gap:74px; margin-top:34px; align-items:flex-start}
+  .num .v{font-size:104px; font-weight:700; line-height:.95; letter-spacing:-.04em; font-family:"IBM Plex Mono",monospace}
+  .num .k{color:var(--muted); font-size:17px; margin-top:10px; max-width:26ch}
+  .num.ok .v{color:var(--paid)} .num.no .v{color:var(--returned)}
 
-  /* the checklist: the verdict, drawn */
-  .checks{margin-top:26px; display:grid; gap:0; max-width:96ch; font-size:20px}
-  .checks .row{display:grid; grid-template-columns:34px 224px 104px 1fr; align-items:baseline;
-               padding:9px 0; border-bottom:1px dotted var(--hair)}
-  .checks .mk{font-weight:700; font-size:19px}
-  .checks .nm{font-weight:500}
-  .checks .vd{font-weight:600; letter-spacing:.04em}
-  .checks .dt{color:var(--faded); font-size:15.5px; overflow:hidden; white-space:nowrap; text-overflow:ellipsis}
+  /* two things that agree */
+  .twin{display:grid; grid-template-columns:1fr 1fr; gap:26px; margin-top:28px; max-width:1480px}
+  .side{border:2px solid var(--rule); border-radius:8px; background:#fff; padding:22px 24px}
+  .side .who{font-weight:700; font-size:21px}
+  .side .meta{color:var(--muted); font-size:16px; margin-top:3px}
+  .side .hash{font-family:"IBM Plex Mono",monospace; font-size:16px; word-break:break-all; margin-top:16px;
+              background:var(--paid-soft); color:var(--paid); padding:10px 12px; border-radius:5px; font-weight:600}
+  .verdictline{margin-top:22px; font-size:26px; font-weight:700; color:var(--paid)}
+
+  /* the checklist */
+  .checks{margin-top:20px; max-width:1500px}
+  .rowwrap{border-bottom:1px dotted var(--hair); padding:8px 0}
+  .checks .row{display:grid; grid-template-columns:42px 1fr 230px 118px; align-items:baseline; gap:14px}
+  .checks .mk{font-weight:700; font-size:22px}
+  .checks .say{font-size:21px; font-weight:500}
+  .checks .nm{font-size:17px; color:var(--muted); font-family:"IBM Plex Mono",monospace}
+  .checks .vd{font-weight:700; font-size:20px; text-align:right; font-family:"IBM Plex Mono",monospace}
+  .checks .dt{color:var(--returned); font-size:16px; margin:4px 0 0 56px; font-family:"IBM Plex Mono",monospace;
+              overflow:hidden; white-space:nowrap; text-overflow:ellipsis; max-width:104ch}
   .checks .row.p .mk,.checks .row.p .vd{color:var(--paid)}
   .checks .row.f .mk,.checks .row.f .vd{color:var(--returned)}
-  .checks .row.att{border-bottom:none; margin-top:10px; opacity:.72}
-  .checks .row.att .mk,.checks .row.att .vd{color:var(--faded)}
+  .checks .row.att .mk,.checks .row.att .vd{color:var(--muted)}
+  .checks .row.att .say{color:var(--muted)}
+  .stamp{display:inline-block; padding:10px 22px 9px; border:3px solid currentColor; border-radius:3px;
+         font-size:24px; font-weight:700; letter-spacing:.14em; text-transform:uppercase;
+         transform-origin:center; font-family:"IBM Plex Mono",monospace}
+  .stamp.paid{color:var(--paid); background:var(--paid-soft)}
+  .stamp.returned{color:var(--returned); background:var(--returned-soft)}
 
-  /* the money line */
-  .ledger{margin-top:30px; display:grid; gap:9px; max-width:52ch; font-size:19px}
-  .ledger div{display:flex; justify-content:space-between; border-bottom:1px dotted var(--hair); padding-bottom:8px}
-  .ledger .tot{border-bottom:none; font-weight:700; font-size:25px; padding-top:4px}
+  /* architecture */
+  .arch{display:grid; grid-template-columns:repeat(5, 1fr); gap:16px; margin-top:34px; max-width:1560px}
+  .arch{position:relative}
+  .abox{border:2px solid var(--rule); border-radius:8px; background:#fff; padding:18px 16px;
+        text-align:center; display:flex; flex-direction:column; position:relative}
+  /* a chevron in each gap, so the order is not left to guesswork */
+  .abox + .abox:before{content:'›'; position:absolute; left:-19px; top:50%; transform:translateY(-50%);
+                       color:var(--rule); font-size:30px; font-weight:700; line-height:1}
+  .abox .ic{font-size:42px; line-height:1.1}
+  .abox .nm{font-weight:700; font-size:17px; margin-top:8px}
+  .abox .sub{color:var(--muted); font-size:14.5px; margin-top:6px; line-height:1.35}
+  .abox .tech{margin-top:auto; padding-top:12px; font-size:13px; font-weight:700; color:var(--carbon)}
+  .archnote{margin-top:26px; font-size:20px; max-width:96ch; line-height:1.45}
 
-  .flow{display:grid; gap:11px; margin-top:26px; font-size:18.5px; max-width:86ch; line-height:1.45}
-  .flow .b{border:1.5px solid #cfd4ee; border-left:4px solid var(--carbon); padding:13px 17px}
-  .flow .b.hot{border-color:#eccf9f; border-left-color:var(--held); background:#fdf7ec}
-  .flow .a{color:var(--faded); padding-left:24px; font-size:16px}
-
-  table{border-collapse:collapse; margin-top:22px; font-size:17px; width:100%; max-width:1430px}
-  th,td{text-align:left; padding:10px 14px 10px 0; border-bottom:1px dotted var(--hair); vertical-align:top}
-  th{color:var(--faded); font-weight:400; font-size:14.5px; letter-spacing:.05em}
-  td.who{font-weight:700; white-space:nowrap; padding-right:26px}
-  td.ev{color:var(--faded); font-size:15px; white-space:nowrap}
-  .ok{color:var(--paid)} .nope{color:var(--returned)}
-
-  /* architecture: what each piece does, and what it is built on */
-  .arch2{margin-top:20px; max-width:1560px}
-  .arow{display:grid; grid-template-columns:30px 168px 1fr 158px; gap:16px; align-items:baseline;
-        padding:8px 0; border-bottom:1px dotted var(--hair)}
-  .arow .n{color:var(--carbon); font-weight:700; font-size:14px}
-  .arow .nm{font-weight:700; font-size:16.5px; letter-spacing:.02em}
-  .arow .what{font-size:16px; color:var(--ink); line-height:1.4}
-  .arow .tech{font-size:14px; font-weight:600; text-align:right; white-space:nowrap}
-  .arow .tech.s{color:var(--carbon)}
-  .arow .tech.none{color:var(--rule); font-weight:400}
-
-  /* evidence: real captures of the explorer, shown at size */
-  /* the captures are 1500x1000; the box keeps that ratio so nothing is
-     squashed and nothing overflows onto the caption. */
-  .shot{position:relative; width:1140px; height:730px}
-  /* only the pictures are clipped; the caption lives outside the frame */
-  .shot .frame{position:absolute; inset:0; overflow:hidden; border-radius:3px}
+  /* real captures */
+  .shot{position:relative; width:1180px; height:700px}
+  .shot .frame{position:absolute; inset:0; overflow:hidden; border-radius:8px; border:1px solid var(--rule);
+               box-shadow:0 14px 34px rgba(25,29,43,.14)}
   .shot img{position:absolute; inset:0; width:100%; height:100%; object-fit:contain;
-            object-position:top center; border:1px solid var(--rule);
-            border-radius:3px; box-shadow:0 2px 10px rgba(25,29,43,.10);
-            transform-origin:center center}
-  .shot .cap{position:absolute; left:0; right:0; bottom:-40px; font-size:16.5px; color:var(--faded)}
-  .shot .cap b{color:var(--carbon); font-weight:600}
+            object-position:top center; transform-origin:center center}
+  .shot .cap{position:absolute; left:0; right:0; bottom:-46px; font-size:19px; color:var(--muted)}
+  .shot .cap b{color:var(--ink); font-weight:700}
+
+  .bullets{list-style:none; margin-top:22px; display:grid; gap:14px; max-width:76ch}
+  .bullets li{display:flex; gap:14px; font-size:21px; line-height:1.4}
+  .bullets .m{color:var(--carbon); font-weight:700}
 
   #bar{position:absolute; left:0; bottom:0; height:3px; background:var(--carbon); width:0; z-index:6}
 </style>
@@ -166,186 +183,281 @@ const D = window.DEMO_DATA || {};
 const esc = (s) => String(s ?? '').replace(/[&<>]/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const easeOut = (x) => 1 - Math.pow(1 - clamp(x, 0, 1), 3);
-/* A little overshoot, so things arrive rather than merely appear. */
-const easeBack = (x) => {
-  const u = clamp(x, 0, 1), c = 1.7;
-  return 1 + (c + 1) * Math.pow(u - 1, 3) + c * Math.pow(u - 1, 2);
-};
-const easeInOut = (x) => {
-  const u = clamp(x, 0, 1);
-  return u < 0.5 ? 4 * u * u * u : 1 - Math.pow(-2 * u + 2, 3) / 2;
-};
+const easeBack = (x) => { const u = clamp(x, 0, 1), c = 1.7;
+  return 1 + (c + 1) * Math.pow(u - 1, 3) + c * Math.pow(u - 1, 2); };
+const easeInOut = (x) => { const u = clamp(x, 0, 1);
+  return u < 0.5 ? 4 * u * u * u : 1 - Math.pow(-2 * u + 2, 3) / 2; };
 
-/** Colour a captured transcript so the eye lands where the argument is. */
-function paint(text){
-  return esc(text)
-    .replace(/^(.*verdict\s+pass.*)$/gm, '<span class="g w">$1</span>')
-    .replace(/^(.*verdict\s+fail.*)$/gm, '<span class="r w">$1</span>')
-    .replace(/\bMATCH\b/g, '<span class="hot">MATCH</span>')
-    .replace(/\bDECLINED\b/g, '<span class="warn">DECLINED</span>')
-    .replace(/\b(ALL \d+ VERDICTS REPRODUCE)\b/g, '<span class="hot">$1</span>')
-    .replace(/\b(agree)\b/g, '<span class="g">$1</span>')
-    .replace(/\b(ok)\b/g, '<span class="g">$1</span>')
-    .replace(/\b(pass|released)\b/g, '<span class="g">$1</span>')
-    .replace(/\b(fail|refunded)\b/g, '<span class="r">$1</span>')
-    .replace(/(-0\.50000000 ℏ)/g, '<span class="y">$1</span>')
-    .replace(/(\b0\.00000000 ℏ)/g, '<span class="g w">$1</span>')
-    .replace(/^(\s*[a-zA-Z0-9_()\/\[\]. -]{3,28})(\s{2,})/gm, '<span class="dim">$1</span>$2');
+/** Pull a real line out of a captured transcript, so nothing here is retyped. */
+function realLine(key, re) {
+  const hit = (D[key] ?? '').split('\n').find((l) => re.test(l));
+  return hit ? hit.trim() : '';
+}
+function realValue(key, re, strip) {
+  return realLine(key, re).replace(strip, '').trim();
 }
 
-/** Fit a transcript to the frame: long ones set smaller rather than overflow. */
-function termSize(text){
-  const lines = String(text ?? '').split('\n').length;
-  return clamp(Math.floor((900 / (lines * 1.62)) * 10) / 10, 11, 17.5);
+/** A terminal window: title bar, prompt, and a handful of readable lines. */
+function tty(title, cmd, rows) {
+  const out = rows.map((r, i) => r[0] === '-'
+    ? `<div class="rule" data-line="${i}"></div>`
+    : `<div class="out" data-line="${i}"><span class="what">${r[0]}</span>` +
+      `<span class="val ${r[2] ?? ''}">${esc(r[1])}</span></div>`).join('');
+  return `<div class="tty">
+    <div class="bar"><i></i><i></i><i></i><span>${esc(title)}</span></div>
+    <div class="body">
+      <p class="cmd"><span class="p">$</span><span data-cmd="${esc(cmd)}"></span><span class="cur"></span></p>
+      ${out}
+    </div>
+  </div>`;
 }
 
-const termScene = (n, slug, key, chip, flip) => ({
-  n, dark: true, type: key, chip, flip, enter: 'push',
-  html: `<p class="slug">${slug}</p><div class="term" data-k="${key}" style="font-size:${termSize(D[key])}px"></div>`,
-});
+const FLOW = `
+  <div class="flow3">
+    <div class="node"><div class="ic">🤖</div><div class="nm">BUYER</div><div class="sub">writes the checks, then pays</div></div>
+    <div class="wire"></div>
+    <div class="node hot"><div class="ic">🏦</div><div class="nm">ESCROW</div><div class="sub">holds it while the checks run</div></div>
+    <div class="wire"></div>
+    <div class="node"><div class="ic">📦</div><div class="nm">SELLER</div><div class="sub">sends the data</div></div>
+    <div class="coin" data-coin>💰</div>
+  </div>`;
 
-/** The checklist is drawn from the verdict the adjudicator actually produced. */
-function checkRows(v){
+/** What each check means, for someone who has never read the code. */
+const MEANS = {
+  status: 'Did it answer HTTP 200?',
+  contentType: 'Is it actually JSON?',
+  minBytes: 'Is the body not empty?',
+  requiredPaths: 'Does it contain the fields we asked for?',
+  jsonSchema: 'Are the addresses real addresses, and the amounts whole numbers?',
+  freshness: 'Is the snapshot recent, not hours old?',
+  expectedHash: 'Does it match an exact answer we named?',
+  maxLatencyMs: 'How fast did it answer?',
+};
+
+function checkRows(v) {
   if (!v) return '<p class="lede">(no verdict captured)</p>';
   const rows = v.reproducible.map((c) => {
     const cls = c.pass ? 'p' : 'f';
-    const mark = c.pass ? '✓' : '✗';
-    const detail = c.skipped ? 'not required by these terms' : (c.detail ?? '');
-    return `<div class="row ${cls}" data-reveal><span class="mk">${mark}</span><span class="nm">${esc(c.check)}</span>` +
-           `<span class="vd">${c.pass ? 'pass' : 'fail'}</span><span class="dt">${esc(detail)}</span></div>`;
+    const why = !c.pass && c.detail ? `<p class="dt">${esc(c.detail)}</p>` : '';
+    return `<div class="rowwrap" data-reveal><div class="row ${c.skipped ? 'att' : cls}">` +
+      `<span class="mk">${c.skipped ? '·' : (c.pass ? '✓' : '✗')}</span>` +
+      `<span class="say">${esc(MEANS[c.check] || c.check)}</span>` +
+      `<span class="nm">${esc(c.check)}</span>` +
+      `<span class="vd">${c.skipped ? 'not asked' : (c.pass ? 'pass' : 'fail')}</span>` +
+      `</div>${why}</div>`;
   });
-  const a = v.attested?.[0];
-  if (a) {
-    rows.push(`<div class="row att" data-reveal><span class="mk">·</span><span class="nm">${esc(a.check)}</span>` +
-      `<span class="vd">${a.observed}ms</span><span class="dt">attested, not reproducible — gates nothing</span></div>`);
-  }
+  const a = v.attested && v.attested[0];
+  if (a) rows.push(`<div class="rowwrap" data-reveal><div class="row att">` +
+    `<span class="mk">·</span><span class="say">${esc(MEANS[a.check])} ` +
+    `<b style="font-weight:600">Our own stopwatch, so it decides nothing.</b></span>` +
+    `<span class="nm">${esc(a.check)}</span><span class="vd">${a.observed}ms</span></div></div>`);
   return `<div class="checks">${rows.join('')}</div>`;
 }
 
-/**
- * Frames of a real session on the live ledger, captured by demo/interact.mjs:
- * the button pressed, the transcript streaming, each transaction link landing,
- * and then the explorer page for that exact transaction. Preloaded as elements
- * rather than swapped into one src, so a frame can never be captured mid-load.
- * A test keeps this count honest against the directory.
- */
 const RUN_FRAMES = 86;
 const runFrames = Array.from({ length: RUN_FRAMES }, (_, i) =>
   `<img data-run="${i}" src="shots/run/f${String(i).padStart(3, '0')}.jpg" alt="">`).join('');
 
 const SCENES = [
 
-{ n:'title', dur:9000, enter:'cut', html:`
-  <div style="text-align:center; padding-right:60px">
-    <h1><span data-in="120" style="display:inline-block">R</span><span data-in="190" style="display:inline-block">E</span><span data-in="260" style="display:inline-block">C</span><span data-in="330" style="display:inline-block">E</span><span data-in="400" style="display:inline-block">I</span><span data-in="470" style="display:inline-block">P</span><span data-in="540" style="display:inline-block">T</span></h1>
-    <p class="lede" data-in="820" style="margin:30px auto 0; max-width:56ch; color:var(--ink); font-size:23px">
-      Conditional settlement for x402. The money moves only if the response passes checks the buyer wrote.</p>
-    <p data-in="1450" style="margin-top:34px; color:var(--faded); font-size:16px; line-height:2">
-      live on Hedera testnet &nbsp;escrow 0x3483B376…4071 &nbsp;audit topic 0.0.10495465<br>
-      every figure in this film came off a real run</p>
+{ n:'title', dur:7000, enter:'cut', html:`
+  <div style="text-align:center; padding-right:50px">
+    <div data-in="0" style="font-size:82px; line-height:1">🧾</div>
+    <h1 style="margin-top:14px">${'RECEIPT'.split('').map((c, i) =>
+      `<span data-in="${260 + i * 68}" style="display:inline-block">${c}</span>`).join('')}</h1>
+    <p data-in="900" class="lede" style="margin:22px auto 0; max-width:46ch; color:var(--ink); font-size:26px">
+      Pay for an API call. Get your money back automatically if the answer is junk.</p>
   </div>`},
 
-{ n:'problem', dur:15000, enter:'rise', html:`
-  <h2 class="wide">An agent pays. The API returns HTTP 200 and garbage. The money is already gone.</h2>
-  <ul>
-    <li data-in="750"><span class="m">—</span><span>x402 has <b>no refund primitive</b>. There is no dispute step anywhere in the stack.</span></li>
-    <li data-in="1370"><span class="m">—</span><span>The median ticket is about <b>$0.46</b>. Kleros and UMA want bonds, liveness windows and gas — dollars and days.</span></li>
-    <li data-in="1990"><span class="m">—</span><span>Google AP2 and ERC-8004 stop at <b>evidence</b>. Both hand the remedy back to whatever rail you are on.</span></li>
-    <li data-in="2610"><span class="m">—</span><span>The one shipped alternative appoints an <b>evaluator</b>: 12M cumulative memos, and <b>five unique senders a day</b>.</span></li>
+{ n:'the problem', dur:12000, enter:'rise', html:`
+  <h2 class="wide">An AI agent pays first, and looks at what it bought second.</h2>
+  <div class="strip">
+    <div class="panel" data-in="700">
+      <div class="art">🤖 💸 ➡️ 📦</div>
+      <p class="say">The agent pays 50 cents for live token data.</p>
+      <p class="note">This is how x402 works today. Money first.</p>
+    </div>
+    <div class="panel bad" data-in="1700">
+      <div class="art">📦 ➡️ 🗑️</div>
+      <p class="say">The API answers HTTP 200, with junk.</p>
+      <p class="code">{"error":"upstream rate limited"}</p>
+    </div>
+    <div class="panel bad" data-in="2700">
+      <div class="art">🤖 🔥</div>
+      <p class="say">The money is already gone.</p>
+      <p class="note">x402 has no refund. There is no dispute step anywhere in it.</p>
+    </div>
+  </div>`},
+
+{ n:'why not sue', dur:10000, enter:'rise', html:`
+  <h2 class="wide">"Just dispute it." The argument costs more than the thing.</h2>
+  <div class="strip" style="grid-template-columns:1fr 1fr; max-width:1000px">
+    <div class="panel" data-in="600" style="min-height:260px">
+      <div class="art">🪙</div>
+      <p class="say">The typical x402 payment</p>
+      <p class="note" style="font-size:32px; font-weight:700; color:var(--ink); margin-top:8px">46 cents</p>
+    </div>
+    <div class="panel bad" data-in="1500" style="min-height:260px">
+      <div class="art">⚖️</div>
+      <p class="say">Kleros or UMA to settle it</p>
+      <p class="note" style="font-size:32px; font-weight:700; color:var(--returned); margin-top:8px">bonds, gas, days</p>
+    </div>
+  </div>
+  <p class="lede" data-in="2600" style="font-size:23px; color:var(--ink); margin-top:26px; max-width:78ch">
+    So people reach for a judge instead. The one product that shipped that way does
+    <b>five users a day</b>, because nobody could answer who judges, or who pays the judge.</p>`},
+
+{ n:'the idea', dur:13000, enter:'rise', coin:[[0,14],[2600,14],[4400,50],[8400,50],[11000,86]], html:`
+  <h2 class="wide">So nobody judges. The buyer says what "good" means, before paying.</h2>
+  ${FLOW}
+  <p class="flowcap" data-flowcap></p>`},
+
+{ n:'the checks', dur:11000, enter:'rise', html:`
+  <h3 style="max-width:52ch">The buyer signs seven checks before paying. A machine runs them. That is the whole product.</h3>
+  <ul class="bullets">
+    <li data-in="500"><span class="m">1</span><span>Did it answer <b>HTTP 200</b>, as JSON, and not empty?</span></li>
+    <li data-in="1100"><span class="m">2</span><span>Does the body really contain the fields that were asked for?</span></li>
+    <li data-in="1700"><span class="m">3</span><span>Are the contract addresses real, and the amounts whole numbers?</span></li>
+    <li data-in="2300"><span class="m">4</span><span>Is the snapshot <b>fresh</b>, and indexed past a block the buyer named?</span></li>
   </ul>
-  <p class="punch" data-in="3600">The evaluator is what broke it. Who judges? Who pays the judge?</p>`},
+  <p class="lede" data-in="3300" style="color:var(--ink); font-size:22px; max-width:80ch">
+    Every one is arithmetic on the answer. The buyer can run it, the seller can run it,
+    and so can a stranger. There is nothing left to argue about.</p>`},
 
-{ n:'architecture', dur:22000, revealMs:1250, html:`
-  <h3 style="max-width:82ch">Receipt has no judge. Here is every piece, and what it is built on.</h3>
-  <div class="arch2">
-    <div class="arow" data-reveal><span class="n">01</span><span class="nm">BUYER</span><span class="what">Signs Terms with EIP-712 — the exact shape of data it will pay for, before any money moves.</span><span class="tech s">x402</span></div>
-    <div class="arow" data-reveal><span class="n">02</span><span class="nm">RECEIPT</span><span class="what">A drop-in facilitator. The seller points its x402 middleware at this URL and changes nothing else.</span><span class="tech none">this project</span></div>
-    <div class="arow" data-reveal><span class="n">03</span><span class="nm">SETTLEMENT</span><span class="what">Performs the real payment. The buyer signs a <b>partial</b> transfer and pays no gas.</span><span class="tech s">Blocky402</span></div>
-    <div class="arow" data-reveal><span class="n">04</span><span class="nm">ESCROW</span><span class="what">Holds the HBAR between payment and verdict, and verifies the buyer&rsquo;s signature on-chain so the facilitator cannot alter the deal.</span><span class="tech s">Hedera EVM</span></div>
-    <div class="arow" data-reveal><span class="n">05</span><span class="nm">SELLER</span><span class="what">An ordinary x402 resource server — which runs the buyer&rsquo;s own checks on itself before answering, and may decline.</span><span class="tech s">x402</span></div>
-    <div class="arow" data-reveal><span class="n">06</span><span class="nm">THE DATA</span><span class="what">Holdings from the Token API, pools from the Subgraph gateway. <b>This is what is being bought.</b></span><span class="tech s">The Graph</span></div>
-    <div class="arow" data-reveal><span class="n">07</span><span class="nm">ADJUDICATOR</span><span class="what">A pure function of (terms, response). Seven checks decide the money; latency is attested and decides nothing.</span><span class="tech none">this project</span></div>
-    <div class="arow" data-reveal><span class="n">08</span><span class="nm">AUDIT LOG</span><span class="what">Publishes the terms, the raw response and the verdict for every deal, in consensus order.</span><span class="tech s">Hedera HCS</span></div>
-    <div class="arow" data-reveal><span class="n">09</span><span class="nm">ANYONE</span><span class="what">Replays all of it from the mirror node: the CLI, a zero-dependency Python verifier, or your own browser.</span><span class="tech s">Mirror Node</span></div>
-    <div class="arow" data-reveal><span class="n">10</span><span class="nm">AGENTS</span><span class="what">A gateway and two Recipes, so an agent can use every one of these without knowing x402 exists.</span><span class="tech s">Bazantic</span></div>
+{ n:'architecture', dur:16000, enter:'rise', revealMs:900, html:`
+  <h3 style="max-width:62ch">What is actually running, and whose technology does each part.</h3>
+  <div class="arch">
+    <div class="abox" data-reveal><div class="ic">🤖</div><div class="nm">Buyer</div>
+      <div class="sub">Signs the seven checks, then pays.</div><div class="tech">x402</div></div>
+    <div class="abox" data-reveal><div class="ic">🏦</div><div class="nm">Escrow</div>
+      <div class="sub">Holds real HBAR until the checks have run.</div><div class="tech">Hedera</div></div>
+    <div class="abox" data-reveal><div class="ic">📦</div><div class="nm">Seller</div>
+      <div class="sub">Sells live token data. Grades itself first.</div><div class="tech">The Graph</div></div>
+    <div class="abox" data-reveal><div class="ic">⚖️</div><div class="nm">Adjudicator</div>
+      <div class="sub">Runs the checks. Arithmetic, not opinion.</div><div class="tech">Receipt</div></div>
+    <div class="abox" data-reveal><div class="ic">📜</div><div class="nm">Public log</div>
+      <div class="sub">Publishes the terms, the answer and the verdict.</div><div class="tech">Hedera HCS</div></div>
+  </div>
+  <p class="archnote" data-in="5400">
+    Payments settle through <b>Blocky402</b>, so the buyer signs a partial transfer and pays no gas.
+    <b>Bazantic</b> wraps all of it as a tool an agent can call without knowing any of this exists.</p>`},
+
+{ n:'it works', dur:12000, enter:'push', chip:'open', flipAt:0.72, flipTo:'rel',
+  html: tty('buyer', 'pnpm buy honest', [
+    ['what it bought', 'live token holdings from The Graph'],
+    ['the seller answered', realValue('honest', /seller responded HTTP/, /seller responded\s*/), 'g'],
+    ['-', ''],
+    ['the verdict', 'PASS, all seven checks', 'g big'],
+    ['the money', 'released to the seller', 'g'],
+    ['the buyer paid', realValue('honest', /buyer delta/, /buyer delta\s*/), 'y'],
+  ])},
+
+{ n:'seven checks', dur:10000, enter:'cut', chip:'open', state:'rel',
+  stamp:{at:6400}, html:`
+  <h3 style="max-width:56ch">Seven checks decided it, and anyone can re-run all seven.</h3>
+  ${checkRows(D.verdicts && D.verdicts.honest)}
+  <p style="margin-top:22px" data-stamp><span class="stamp paid">released to seller</span></p>`},
+
+{ n:'junk answer', dur:12000, enter:'push', chip:'open', flipAt:0.72, flipTo:'ref',
+  html: tty('buyer', 'pnpm buy garbage', [
+    ['the seller answered', realValue('garbage', /seller responded HTTP/, /seller responded\s*/), 'g'],
+    ['what came back', realLine('garbage', /^body:/).replace(/^body:\s*/, ''), 'r'],
+    ['-', ''],
+    ['the verdict', 'FAIL', 'r big'],
+    ['first thing wrong', realValue('garbage', /firstFailure/, /firstFailure\s*/), 'r'],
+    ['the money', 'refunded to the buyer, in seconds', 'g'],
+    ['the buyer paid', realValue('garbage', /buyer delta/, /buyer delta\s*/), 'g'],
+  ])},
+
+{ n:'refunded', dur:10000, enter:'cut', chip:'open', state:'ref',
+  stamp:{at:6400}, html:`
+  <h3 style="max-width:60ch">Nothing was wrong at the HTTP layer. Status passed. The shape of the data is what failed.</h3>
+  ${checkRows(D.verdicts && D.verdicts.garbage)}
+  <p style="margin-top:22px" data-stamp><span class="stamp returned">returned to buyer</span></p>`},
+
+{ n:'seller says no', dur:10000, enter:'push', chip:'open', flipAt:0.70, flipTo:'ref',
+  html: tty('buyer', 'pnpm buy subtle-selfcheck', [
+    ['the twist', 'the seller ran the buyer’s own checks on itself, first'],
+    ['it saw it would fail', 'its data was an hour stale', 'y'],
+    ['-', ''],
+    ['the seller answered', realValue('selfcheck', /seller responded HTTP/, /seller responded\s*/), 'y'],
+    ['what it said', 'I decline the sale', 'y big'],
+    ['the money', 'never left the buyer', 'g'],
+  ])},
+
+{ n:'seller vanishes', dur:11000, enter:'push', chip:'open', flipAt:0.74, flipTo:'ref',
+  html: tty('a stranger, not the buyer', 'pnpm claim --deal 0x194e3155', [
+    ['the seller never answered', 'HTTP 504, no response at all', 'r'],
+    ['so no verdict was invented', 'the escrow just stayed open', 'y'],
+    ['-', ''],
+    ['who unlocked it', 'an unrelated wallet, 0x13DD3C13', 'y'],
+    ['where that money could go', 'back to the buyer, and nowhere else', 'g big'],
+    ['result', 'deal is now Refunded', 'g'],
+  ])},
+
+{ n:'check it yourself', dur:11000, enter:'rise', html:`
+  <h2 class="wide">Do not trust our verdicts. Re-run every one of them.</h2>
+  <p class="lede" data-in="500" style="font-size:22px; max-width:80ch">
+    Every deal published its terms, the raw answer and the verdict to a public Hedera topic.
+    This replays all of them from that log, with no help from us.</p>
+  <div class="nums">
+    <div class="num ok" data-in="1400"><div class="v">28</div><div class="k">verdicts reproduced exactly</div></div>
+    <div class="num no" data-in="2200"><div class="v">0</div><div class="k">that did not match</div></div>
+    <div class="num" data-in="3000"><div class="v" style="color:var(--muted)">6</div>
+      <div class="k">no verdict, because the seller never answered</div></div>
   </div>`},
 
-termScene('honest', 'the honest case — buying live token data from The Graph &nbsp;<b>pnpm buy honest</b>', 'honest', 'open', { needle: 'funds released', to: 'rel' }),
+{ n:'second opinion', dur:12000, enter:'rise', html:`
+  <h3 style="max-width:60ch">Written twice, sharing no code. Same answer, same hash.</h3>
+  <div class="twin">
+    <div class="side" data-in="600">
+      <div class="who">The facilitator</div>
+      <div class="meta">TypeScript. The one that took the money.</div>
+      <div class="hash">0xbf851c854bb38caf7d13d57e95ac3c7c0200752fd972a594cda4a127e49fb7ce</div>
+    </div>
+    <div class="side" data-in="1600">
+      <div class="who">A second checker</div>
+      <div class="meta">Python, no dependencies, written from the written spec.</div>
+      <div class="hash">0xbf851c854bb38caf7d13d57e95ac3c7c0200752fd972a594cda4a127e49fb7ce</div>
+    </div>
+  </div>
+  <p class="verdictline" data-in="2800">Identical. And it is the hash the escrow recorded on chain.</p>
+  <p class="lede" data-in="3600" style="font-size:19px">If the rules were vague these two would disagree. Across twelve test cases they never do.</p>`},
 
-{ n:'verdict', dur:10000, enter:'cut', chip:'open', stamp:{at:6200, kind:'paid', text:'released to seller'}, state:'rel', html:`
-  <h3>Seven checks decide the money. One is recorded and decides nothing.</h3>
-  ${checkRows(D.verdicts?.honest)}
-  <p style="margin-top:30px" data-stamp><span class="stamp paid">released to seller</span>
-    <span style="margin-left:22px; color:var(--faded); font-size:17px">buyer delta −0.50000000 ℏ</span></p>`},
-
-termScene('garbage', 'HTTP 200 with a useless body &nbsp;<b>pnpm buy garbage</b>', 'garbage', 'open', { needle: 'funds refunded', to: 'ref' }),
-
-{ n:'refund', dur:11000, enter:'cut', chip:'open', stamp:{at:7000, kind:'returned', text:'returned to buyer'}, state:'ref', html:`
-  <h3>Nothing at the HTTP layer was wrong. Status passed. The schema caught it.</h3>
-  ${checkRows(D.verdicts?.garbage)}
-  <p style="margin-top:26px" data-stamp><span class="stamp returned">returned to buyer</span>
-    <span style="margin-left:22px; color:var(--faded); font-size:17px">refunded in seconds — no human, no evaluator, no dispute</span></p>`},
-
-termScene('stale', 'well-formed, correct, and stale — only freshness catches it &nbsp;<b>pnpm buy subtle</b>', 'subtle', 'open', { needle: 'funds refunded', to: 'ref' }),
-
-termScene('declined', 'the seller runs the buyer&rsquo;s own checks first, and declines the sale &nbsp;<b>HTTP 409</b>', 'selfcheck', 'open', { needle: 'funds refunded', to: 'ref' }),
-
-termScene('expired', 'the seller never answers — a stranger recovers the funds &nbsp;<b>pnpm claim</b>', 'dead', 'open', { needle: 'deal is now Refunded', to: 'ref' }),
-
-termScene('replay', 'replaying every verdict on the public log &nbsp;<b>pnpm verify --all</b>', 'verifyAll', null),
-
-termScene('second impl', 'a second implementation, sharing no code with the first &nbsp;<b>python3 verify.py</b>', 'python', null),
-
-{ n:'evidence', dur:24000, beats:[6000, 12000, 24000], runBeat:2,
-  focus:{ 0:{ x:11, y:-34, scale:1.85, at:0.40, over:0.34 },
-          1:{ x:-14, y:-12, scale:1.80, at:0.40, over:0.34 } }, html:`
-  <h3 style="max-width:62ch; margin-bottom:18px">Every figure in this film is on a public ledger. Here is where to find it.</h3>
+{ n:'the receipts', dur:24000, enter:'rise', beats:[6500, 13000, 24000], runBeat:2,
+  focus:{ 0:{ x:11, y:-34, scale:1.85, at:0.42, over:0.32 },
+          1:{ x:-14, y:-12, scale:1.80, at:0.42, over:0.32 } },
+  html:`
+  <h3 style="max-width:56ch; margin-bottom:16px">All of it is public. Here is where to look.</h3>
   <div class="shot">
     <div class="frame">
       <img data-shot="0" src="shots/tx-release.png" alt="the release transaction on HashScan">
-      <img data-shot="1" src="shots/topic-messages.png" alt="the audit topic messages on HashScan">
+      <img data-shot="1" src="shots/topic-messages.png" alt="the audit topic on HashScan">
       ${runFrames}
     </div>
-    <p class="cap" data-cap="0"><b>release()</b> on HashScan — 0.50000000 ℏ leaves the escrow contract for the seller</p>
-    <p class="cap" data-cap="1"><b>the audit log</b> — terms, the raw response and the verdict, published for every deal</p>
-    <p class="cap" data-cap="2"><b>a real session</b> — one press, and every link is a transaction that just happened</p>
+    <p class="cap" data-cap="0"><b>The money moving.</b> Half an HBAR leaving the escrow for the seller, on HashScan.</p>
+    <p class="cap" data-cap="1"><b>The reasoning.</b> Every check result, published, for every deal.</p>
+    <p class="cap" data-cap="2"><b>A real session.</b> One button, a real deal, and every link is a transaction that just happened.</p>
   </div>`},
 
-{ n:'conform', dur:9000, html:`
-  <h2 class="wide">Two implementations. Same verdicts, same hashes.</h2>
-  <p class="lede">The Python verifier is 600 lines with no dependencies — its own keccak, its own JCS canonicaliser, written from SPEC.md rather than from the TypeScript. If the spec were ambiguous these would disagree.</p>
-  <div class="term" style="background:var(--term-bg); color:var(--term-fg); padding:22px 26px; margin-top:24px; font-size:15px; max-width:92ch" data-static="conformance"></div>`},
+{ n:'what we cannot prove', dur:9000, enter:'rise', html:`
+  <h2 class="wide">One thing we cannot prove, so we let it decide nothing.</h2>
+  <p class="lede" data-in="600" style="font-size:23px; color:var(--ink); max-width:78ch">
+    How fast the seller answered is our own stopwatch. Nobody can check it afterwards,
+    so we publish it and it gates no money.</p>
+  <p class="lede" data-in="1800" style="font-size:20px; max-width:78ch">
+    And publishing the raw answer is what makes any of this checkable, which is exactly wrong
+    for a business selling data. The fix is a confidential enclave. It is not built.</p>`},
 
-{ n:'sponsors', dur:13000, html:`
-  <h3 style="max-width:60ch">Where each sponsor technology actually carries weight.</h3>
-  <table>
-    <tr><th>sponsor</th><th>what it does here</th><th>evidence</th></tr>
-    <tr><td class="who">The Graph</td><td><b>This is what is being bought.</b> Two products composed: Token API for holdings, Subgraph gateway for the pools. The terms name both, and require a snapshot indexed past a stated block.</td><td class="ev"><span class="ok">live</span> — 1897-byte<br>response on HCS</td></tr>
-    <tr><td class="who">Hedera</td><td>Escrow holds real HBAR between payment and verdict. HCS carries terms, raw response and verdict — without it, “re-run it yourself” is a slogan rather than a command.</td><td class="ev"><span class="ok">live</span> — 0x3483…4071<br>topic 0.0.10495465</td></tr>
-    <tr><td class="who">Blocky402</td><td>Performs every real payment. The buyer signs a <b>partial</b> transfer; Blocky402 adds the fee-payer signature and submits it.</td><td class="ev"><span class="ok">live</span> — buyer pays<br>zero gas</td></tr>
-    <tr><td class="who">Bazantic</td><td>Gateway over the facilitator, plus two published Recipes — one of them chains Receipt and 1inch, so a swap is only ever priced against holdings that passed their checks.</td><td class="ev"><span class="ok">live</span> — 2 recipes<br>published</td></tr>
-  </table>`},
-
-{ n:'limits', dur:11000, html:`
-  <h2 class="wide">Latency is our own stopwatch. So it gates nothing.</h2>
-  <p class="lede">The verdict splits in two. <b>reproducible[]</b> decides where the money goes and anyone can recompute it. <b>attested[]</b> is recorded, shown, and decides nothing.
-  Publishing the raw response is what makes verification real — and is wrong for a business selling data. A confidential enclave is the fix, and it is not built.
-  The facilitator also custodies for one hop; both legs are on the public log, and <code>open()</code> verifies the buyer's signature on-chain so it cannot alter the deal it was handed.</p>`},
-
-{ n:'close', dur:9000, enter:'cut', html:`
-  <div style="padding-right:60px">
-    <h2 class="wide" data-in="150" style="margin-bottom:22px">x402 has no refund primitive.</h2>
-    <h2 class="wide" data-in="1100" style="margin-bottom:22px">The shipped alternative appoints an evaluator, and runs at five senders a day.</h2>
-    <h2 class="wide" data-in="2300" style="color:var(--paid)">Receipt has no evaluator, because the verdict is a pure function anyone can recompute.</h2>
-    <p data-in="3600" style="margin-top:40px; color:var(--faded); font-size:17px">github.com/Thirumurugan7/Receipt</p>
+{ n:'close', dur:8000, enter:'cut', html:`
+  <div style="padding-right:50px">
+    <h2 class="wide" data-in="100">x402 has no refund. Arbitration costs more than the payment.</h2>
+    <h2 class="wide" data-in="1200" style="margin-top:20px">Appointing a judge has been tried. It does five users a day.</h2>
+    <h2 class="wide" data-in="2400" style="margin-top:20px; color:var(--paid)">Receipt has no judge, because the answer is arithmetic anyone can redo.</h2>
+    <p data-in="3600" class="mono" style="margin-top:34px; color:var(--muted); font-size:18px">github.com/Thirumurugan7/Receipt</p>
   </div>`},
 
 ];
-
-// terminal scenes get their duration from how much there is to read
-const TERM_DUR = { honest:21000, garbage:13000, subtle:12000, selfcheck:13000, dead:13000,
-                   verifyAll:15000, python:14000 };
-for (const s of SCENES) if (s.type) s.dur = TERM_DUR[s.type] ?? 16000;
 
 const TOTAL_MS = SCENES.reduce((a, s) => a + s.dur, 0);
 const starts = [];
@@ -359,27 +471,27 @@ const railNm = rail.querySelector('.nm');
 const railState = rail.querySelector('.state');
 const railClock = rail.querySelector('.clock');
 
-SCENES.forEach((s, i) => {
+SCENES.forEach((s) => {
   const el = document.createElement('section');
-  el.className = 'scene' + (s.dark ? ' dark' : '');
+  el.className = 'scene';
   el.innerHTML = `<div class="inner">${s.html}</div>`;
   stage.appendChild(el);
-  const st = el.querySelector('[data-static]');
-  if (st) st.innerHTML = paint(D[st.dataset.static] ?? '');
 });
 
 const ENTER_MS = 420;
-const mmss = (ms) => {
-  const s = Math.floor(ms / 1000);
-  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
-};
+const mmss = (ms) => { const x = Math.floor(ms / 1000);
+  return `${Math.floor(x / 60)}:${String(x % 60).padStart(2, '0')}`; };
 
-/**
- * The whole film, as a function of the clock. Returns a signature of the
- * state it painted: the renderer skips capturing frames whose signature has
- * not changed, which is why a static slide costs one screenshot rather than
- * three hundred.
- */
+/** What the coin is doing, in words, at each stop. */
+const COIN_SAYS = [
+  [0, 'First the buyer writes down what it is willing to pay for.'],
+  [2600, 'It pays. The money does not go to the seller.'],
+  [4600, 'It waits here while the answer is checked.'],
+  [8600, 'The checks passed, so it goes on. Had they failed it would go back.'],
+];
+
+let flipAtMs = null;
+
 function seek(ms){
   const t = clamp(ms, 0, TOTAL_MS);
   let i = SCENES.length - 1;
@@ -389,37 +501,22 @@ function seek(ms){
 
   const kids = stage.children;
   for (let j = 0; j < kids.length; j++) kids[j].classList.toggle('on', j === i);
-  document.body.dataset.dark = s.dark ? '1' : '0';
 
-  /*
-   * Scenes do not all arrive the same way. A cut lands hard on a verdict; a
-   * push carries momentum out of a transcript; a rise is the resting default.
-   * Same clock, different gesture -- which is most of what makes an edit read
-   * as edited rather than as a slideshow on a timer.
-   */
   const inner = kids[i].firstElementChild;
-  const enter = s.enter ?? 'rise';
+  const enter = s.enter || 'rise';
   let e = 1;
-  if (enter === 'cut') {
-    inner.style.transform = 'none';
-    inner.style.opacity = '1';
-  } else if (enter === 'push') {
-    e = easeInOut(st / 480);
-    inner.style.transform = `translateX(${(1 - e) * 46}px)`;
-    inner.style.opacity = String(clamp(st / 260, 0, 1));
+  if (enter === 'cut') { inner.style.transform = 'none'; inner.style.opacity = '1'; }
+  else if (enter === 'push') {
+    e = easeInOut(st / 460);
+    inner.style.transform = `translateX(${(1 - e) * 44}px)`;
+    inner.style.opacity = String(clamp(st / 250, 0, 1));
   } else {
     e = easeOut(st / ENTER_MS);
-    inner.style.transform = `translateY(${(1 - e) * 22}px)`;
+    inner.style.transform = `translateY(${(1 - e) * 20}px)`;
     inner.style.opacity = String(e);
   }
-
   const sig = [i, enter === 'cut' ? 1 : Math.round(e * 100)];
 
-  /*
-   * Anything with data-in arrives at its own moment. Choreographing the parts
-   * separately is the difference between a slide appearing and a slide being
-   * built in front of you.
-   */
   const timed = kids[i].querySelectorAll('[data-in]');
   if (timed.length) {
     let acc = 0;
@@ -428,49 +525,44 @@ function seek(ms){
       const p = easeBack((st - at) / 420);
       const o = clamp((st - at) / 280, 0, 1);
       el.style.opacity = String(o);
-      el.style.transform = st >= at + 420 ? 'none' : `translateY(${(1 - p) * 13}px)`;
+      el.style.transform = st >= at + 420 ? 'none' : `translateY(${(1 - p) * 12}px)`;
       acc += Math.round(o * 20);
     }
     sig.push('t' + acc);
   }
-  let flipAtMs = null;   // when the transcript printed the line where the money moves
 
-  const term = kids[i].querySelector('.term[data-k]');
-  if (term) {
-    const text = D[term.dataset.k] ?? '';
-    const printMs = s.dur * 0.66;
-    const chars = Math.floor(clamp(st / printMs, 0, 1) * text.length);
-    const blink = st < printMs || Math.floor(t / 530) % 2 === 0;
-    // Paint, then lift the last line: nothing in paint() spans a newline, so
-    // the painted HTML can be split on one safely.
-    const painted = paint(text.slice(0, chars)).split('\n');
-    const printing = chars < text.length && painted.length > 0;
-    if (printing) painted[painted.length - 1] = `<span class="live">${painted[painted.length - 1]}</span>`;
-    term.innerHTML = painted.join('\n') + (blink ? '<span class="cur"></span>' : '');
-
-    // A slow drift while it fills. Anchored top-left so the text cannot walk
-    // out of the frame, and small enough that it reads as life rather than
-    // as a zoom.
-    const dr = easeInOut(clamp(st / s.dur, 0, 1));
-    term.style.transform = `translateY(${(-5 * dr).toFixed(2)}px) scale(${(1 + 0.012 * dr).toFixed(4)})`;
-
-    // Once the transcript has finished printing, light up the verdict line.
-    // Without it the eye has to hunt for the one line the scene is about.
-    const sweep = Math.round(easeOut((st - printMs - 260) / 520) * 100);
-    term.style.setProperty('--sweep', `${sweep}%`);
-
-    sig.push(chars, blink ? 1 : 0, sweep, Math.round(dr * 60));
-
-    if (s.flip) {
-      const at = text.indexOf(s.flip.needle);
-      // when, in scene time, the money-moving line finished printing
-      if (at !== -1) flipAtMs = ((at + s.flip.needle.length) / text.length) * printMs;
-    }
+  // the terminal: type the command, then answer it a line at a time
+  const cmdEl = kids[i].querySelector('[data-cmd]');
+  if (cmdEl) {
+    const cmd = cmdEl.dataset.cmd;
+    const typed = Math.floor(clamp(st / 950, 0, 1) * cmd.length);
+    cmdEl.textContent = cmd.slice(0, typed);
+    const lines = kids[i].querySelectorAll('[data-line]');
+    lines.forEach((l, j) => {
+      const o = clamp((st - 1250 - j * 620) / 260, 0, 1);
+      l.style.opacity = String(o);
+      l.style.transform = o < 1 ? `translateY(${((1 - easeOut(o)) * 8).toFixed(1)}px)` : 'none';
+    });
+    const curEl = kids[i].querySelector('.cmd .cur');
+    if (curEl) curEl.style.opacity = (typed < cmd.length || Math.floor(t / 530) % 2 === 0) ? '1' : '0';
+    sig.push(typed, Math.round(clamp((st - 1250) / 620, 0, lines.length) * 10));
   }
 
-  // checks tick down one at a time, then the stamp lands once
-  // Several captures in one scene, with their own lengths: two stills to read,
-  // then a recorded session played back.
+  // the coin, moving between buyer, escrow and seller
+  const coin = kids[i].querySelector('[data-coin]');
+  if (coin && s.coin) {
+    let pos = s.coin[0][1];
+    for (let k = 0; k < s.coin.length - 1; k++) {
+      const a = s.coin[k], b = s.coin[k + 1];
+      if (st >= a[0] && st <= b[0]) { pos = a[1] + (b[1] - a[1]) * easeInOut((st - a[0]) / (b[0] - a[0])); break; }
+      if (st > b[0]) pos = b[1];
+    }
+    coin.style.left = `${pos}%`;
+    const cap = kids[i].querySelector('[data-flowcap]');
+    if (cap) { let say = ''; for (const c of COIN_SAYS) if (st >= c[0]) say = c[1]; cap.textContent = say; }
+    sig.push(Math.round(pos * 4));
+  }
+
   if (s.beats) {
     let idx = s.beats.findIndex((end) => st < end);
     if (idx === -1) idx = s.beats.length - 1;
@@ -478,44 +570,31 @@ function seek(ms){
     const u = (st - from) / (s.beats[idx] - from);
     const into = easeOut((st - from) / 260);
 
-    /*
-     * Hold the whole page long enough to see what it is, then push in on the
-     * line that carries the claim. A full-page screenshot held flat for six
-     * seconds is a slide; moving to the evidence is an edit -- and it makes
-     * the small print legible, which matters more.
-     */
-    const focus = s.focus?.[idx];
+    const focus = s.focus && s.focus[idx];
     let fx = '';
     if (focus) {
       const k = easeInOut((u - focus.at) / focus.over);
-      const z = 1 + (focus.scale - 1) * k;
-      fx = `scale(${z.toFixed(3)}) translate(${(focus.x * k).toFixed(2)}%, ${(focus.y * k).toFixed(2)}%)`;
+      fx = `scale(${(1 + (focus.scale - 1) * k).toFixed(3)}) translate(${(focus.x * k).toFixed(2)}%, ${(focus.y * k).toFixed(2)}%)`;
     }
     for (const img of kids[i].querySelectorAll('[data-shot]')) {
       const on = Number(img.dataset.shot) === idx;
       img.style.opacity = on ? String(into) : '0';
       img.style.transform = on && fx ? fx : 'none';
     }
-    if (focus) sig.push('f' + Math.round(easeInOut((u - focus.at) / focus.over) * 100));
-
-    // On the run beat, play the captured frames; otherwise hide them all.
-    const runIdx = idx === s.runBeat
-      ? Math.min(RUN_FRAMES - 1, Math.floor(u * RUN_FRAMES))
-      : -1;
+    const runIdx = idx === s.runBeat ? Math.min(RUN_FRAMES - 1, Math.floor(u * RUN_FRAMES)) : -1;
     for (const img of kids[i].querySelectorAll('[data-run]')) {
       img.style.opacity = Number(img.dataset.run) === runIdx ? String(into) : '0';
     }
-
     for (const cap of kids[i].querySelectorAll('[data-cap]')) {
       cap.style.opacity = Number(cap.dataset.cap) === idx ? String(into) : '0';
     }
-    sig.push('b' + idx, runIdx, Math.round(into * 100));
+    sig.push('b' + idx, runIdx, focus ? Math.round(easeInOut((u - focus.at) / focus.over) * 100) : 0);
   }
 
   const rows = kids[i].querySelectorAll('[data-reveal]');
   if (rows.length) {
-    const per = s.revealMs ?? 520;
-    const shown = clamp(Math.floor((st - 350) / per) + 1, 0, rows.length);
+    const per = s.revealMs || 500;
+    const shown = clamp(Math.floor((st - 320) / per) + 1, 0, rows.length);
     rows.forEach((r, j) => { r.style.opacity = j < shown ? '1' : '0' });
     sig.push(shown);
   }
@@ -525,51 +604,37 @@ function seek(ms){
     const p = easeOut((st - s.stamp.at) / 320);
     const vis = st >= s.stamp.at;
     stampEl.style.opacity = vis ? '1' : '0';
-    const inner2 = stampEl.querySelector('.stamp');
-    const scale = vis ? 1 + (1 - p) * 0.38 : 1.38;
-    const rot = vis ? -3 * p : 0;
-    inner2.style.transform = `rotate(${rot.toFixed(2)}deg) scale(${scale.toFixed(3)})`;
+    const el2 = stampEl.querySelector('.stamp');
+    el2.style.transform = `rotate(${(vis ? -3 * p : 0).toFixed(2)}deg) scale(${(vis ? 1 + (1 - p) * 0.38 : 1.38).toFixed(3)})`;
     sig.push(vis ? Math.round(p * 100) : -1);
   }
 
   railNum.textContent = `${String(i + 1).padStart(2, '0')}/${SCENES.length}`;
   railNm.textContent = s.n;
-  const flipped = flipAtMs !== null && st >= flipAtMs;
-  const changedAt = s.state ? (s.stamp?.at ?? 0) : (flipped ? flipAtMs : null);
-  const settledTo = (s.state && st >= (s.stamp?.at ?? 0)) ? s.state
-    : (flipped ? s.flip.to : null);
-  const chip = settledTo
+  const flipped = s.flipAt && st >= s.dur * s.flipAt;
+  const changedAt = s.state ? (s.stamp ? s.stamp.at : 0) : (flipped ? s.dur * s.flipAt : null);
+  const settledTo = (s.state && st >= (s.stamp ? s.stamp.at : 0)) ? s.state : (flipped ? s.flipTo : null);
+  railState.innerHTML = settledTo
     ? `<span class="chip ${settledTo}">${settledTo === 'rel' ? 'RELEASED' : 'REFUNDED'}</span>`
     : ((s.chip || s.state) ? `<span class="chip open">ESCROW OPEN</span>` : '');
-  railState.innerHTML = chip;
-  // The state of the money changing is the point of the whole scene, so the
-  // chip lands rather than merely swapping.
-  const pop = settledTo && changedAt !== null
-    ? 1 + (1 - easeBack(clamp((st - changedAt) / 300, 0, 1))) * 0.45
-    : 1;
   const chipEl = railState.firstElementChild;
-  if (chipEl) chipEl.style.transform = `scale(${pop.toFixed(3)})`;
-  sig.push(Math.round(pop * 100));
+  if (chipEl && settledTo && changedAt !== null) {
+    chipEl.style.transform = `scale(${(1 + (1 - easeBack(clamp((st - changedAt) / 300, 0, 1))) * 0.45).toFixed(3)})`;
+  }
   railClock.textContent = `${mmss(t)} / ${mmss(TOTAL_MS)}`;
   bar.style.width = `${(t / TOTAL_MS) * 100}%`;
-  sig.push(Math.floor(t / 1000), settledTo ?? '-');
+  sig.push(Math.floor(t / 1000), settledTo || '-');
 
   return sig.join('|');
 }
 
 window.seek = seek;
 window.TOTAL_MS = TOTAL_MS;
-/** The running order, so the narration script can be checked against it. */
 window.SCHEDULE = SCENES.map((s, i) => ({ n: s.n, start: starts[i], dur: s.dur }));
 
-// Watching it in a browser drives the same pure function off the wall clock.
 if (!location.hash.includes('render')) {
   const t0 = performance.now();
-  const frame = (now) => {
-    const t = now - t0;
-    seek(t);
-    if (t < TOTAL_MS) requestAnimationFrame(frame);
-  };
+  const frame = (now) => { const t = now - t0; seek(t); if (t < TOTAL_MS) requestAnimationFrame(frame) };
   requestAnimationFrame(frame);
 } else {
   seek(0);

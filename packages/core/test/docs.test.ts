@@ -106,8 +106,10 @@ describe('DEMO.md is runnable as written', () => {
    * them to the film itself instead of to numbers written down by hand.
    * What is still worth asserting here is that the script makes the argument.
    */
-  test('it tells the viewer not to trust the adjudicator, and how to check', () => {
-    expect(demo.toLowerCase()).toMatch(/do not trust/)
+  test('it tells the viewer not to take the verdicts on trust, and how to check', () => {
+    // The wording is the presenter's; what must survive a rewrite is that the
+    // script says do not take our word for it, and names the command.
+    expect(demo.toLowerCase()).toMatch(/do not (trust|believe|take)/)
     expect(demo).toMatch(/verify --all/)
   })
 

@@ -1,90 +1,90 @@
 {
-  "totalMs": 234000,
+  "totalMs": 198000,
   "scenes": [
     {
       "n": "title",
       "start": 0,
-      "dur": 9000
+      "dur": 7000
     },
     {
-      "n": "problem",
-      "start": 9000,
-      "dur": 15000
-    },
-    {
-      "n": "architecture",
-      "start": 24000,
-      "dur": 22000
-    },
-    {
-      "n": "honest",
-      "start": 46000,
-      "dur": 21000
-    },
-    {
-      "n": "verdict",
-      "start": 67000,
-      "dur": 10000
-    },
-    {
-      "n": "garbage",
-      "start": 77000,
-      "dur": 13000
-    },
-    {
-      "n": "refund",
-      "start": 90000,
-      "dur": 11000
-    },
-    {
-      "n": "stale",
-      "start": 101000,
+      "n": "the problem",
+      "start": 7000,
       "dur": 12000
     },
     {
-      "n": "declined",
-      "start": 113000,
+      "n": "why not sue",
+      "start": 19000,
+      "dur": 10000
+    },
+    {
+      "n": "the idea",
+      "start": 29000,
       "dur": 13000
     },
     {
-      "n": "expired",
-      "start": 126000,
-      "dur": 13000
-    },
-    {
-      "n": "replay",
-      "start": 139000,
-      "dur": 15000
-    },
-    {
-      "n": "second impl",
-      "start": 154000,
-      "dur": 14000
-    },
-    {
-      "n": "evidence",
-      "start": 168000,
-      "dur": 24000
-    },
-    {
-      "n": "conform",
-      "start": 192000,
-      "dur": 9000
-    },
-    {
-      "n": "sponsors",
-      "start": 201000,
-      "dur": 13000
-    },
-    {
-      "n": "limits",
-      "start": 214000,
+      "n": "the checks",
+      "start": 42000,
       "dur": 11000
     },
     {
-      "n": "close",
-      "start": 225000,
+      "n": "architecture",
+      "start": 53000,
+      "dur": 16000
+    },
+    {
+      "n": "it works",
+      "start": 69000,
+      "dur": 12000
+    },
+    {
+      "n": "seven checks",
+      "start": 81000,
+      "dur": 10000
+    },
+    {
+      "n": "junk answer",
+      "start": 91000,
+      "dur": 12000
+    },
+    {
+      "n": "refunded",
+      "start": 103000,
+      "dur": 10000
+    },
+    {
+      "n": "seller says no",
+      "start": 113000,
+      "dur": 10000
+    },
+    {
+      "n": "seller vanishes",
+      "start": 123000,
+      "dur": 11000
+    },
+    {
+      "n": "check it yourself",
+      "start": 134000,
+      "dur": 11000
+    },
+    {
+      "n": "second opinion",
+      "start": 145000,
+      "dur": 12000
+    },
+    {
+      "n": "the receipts",
+      "start": 157000,
+      "dur": 24000
+    },
+    {
+      "n": "what we cannot prove",
+      "start": 181000,
       "dur": 9000
+    },
+    {
+      "n": "close",
+      "start": 190000,
+      "dur": 8000
     }
   ]
 }
