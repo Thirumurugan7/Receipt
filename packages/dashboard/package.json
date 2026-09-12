@@ -1,0 +1,6 @@
+{
+  "name": "@receipt/dashboard",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Single page served by the facilitator at /"
+}

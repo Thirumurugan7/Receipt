@@ -7,6 +7,9 @@
  *     The seller points @x402/hono at this URL instead of Blocky402 and
  *     changes nothing else. That is the drop-in claim, made literal.
  */
+import { readFileSync } from 'node:fs'
+import { dirname, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { serve } from '@hono/node-server'
 import { Hono } from 'hono'
 import { decodeTermsHeader, hashVerdict } from '@receipt/core'
@@ -25,6 +28,20 @@ app.use('*', async (c, next) => {
   const started = Date.now()
   await next()
   console.log(`${c.req.method} ${c.req.path} -> ${c.res.status} (${Date.now() - started}ms)`)
+})
+
+/** The dashboard is a single static file; no build step, no bundler. */
+const DASHBOARD = resolve(
+  dirname(fileURLToPath(import.meta.url)),
+  '../../dashboard/public/index.html',
+)
+
+app.get('/', (c) => {
+  try {
+    return c.html(readFileSync(DASHBOARD, 'utf8'))
+  } catch {
+    return c.text('dashboard not found', 404)
+  }
 })
 
 app.get('/health', (c) =>

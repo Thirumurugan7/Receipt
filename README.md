@@ -172,6 +172,10 @@ pnpm seller          # :8787
 pnpm scenes          # runs every scene end to end against testnet
 ```
 
+The live ledger is at **http://localhost:8080** — deals appear as they settle,
+each stamped held, paid or returned, with every check result and links to
+HashScan.
+
 `pnpm scenes` is the whole demo in one command:
 
 | Scene | Seller mode | Outcome | Buyer delta |
@@ -222,6 +226,6 @@ surfacing as an unexplained `BadSignature` during a live paid request.
 
 **No Graph integration.** The seller returns real live data, but from the Hedera Mirror Node rather than The Graph's Token API. It is real data, not a fixture — just not that sponsor's data.
 
-**No dashboard screenshots in this README** and the `/stream` SSE endpoint exists but has no UI attached yet.
+**The dashboard is a prop.** It is a single static file served by the facilitator at `/`, with no build step and no third-party scripts. It reads deployment identifiers from `/health` and deal state from `/stream`, so it needs no configuration — but it is read-only, keeps state in memory, and is not something to point at production.
 
 **Testnet only.** Nothing here has been audited, and `ReceiptEscrow` holds real funds only in the sense that testnet HBAR is real.
