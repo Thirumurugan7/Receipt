@@ -44,8 +44,11 @@ is the one built into Node, and the page is served by `node:http`.
 
 ## The film is a pure function of time
 
-`film.html` has no CSS animations and no timers. It exposes `seek(ms)`, which
-computes every pixel of state from the clock — which scene is showing, how much
+`film.html` has no CSS animations and no timers. Every gesture in it — a word
+building letter by letter, a list arriving a line at a time, a push into the
+part of a screenshot that carries the claim, a highlight sweeping across the
+verdict line once the transcript has printed it — is arithmetic on the clock.
+It exposes `seek(ms)`, which computes every pixel of state from that clock — which scene is showing, how much
 of a transcript has printed, where a stamp is in its landing, what the escrow
 chip in the margin says. A frame at `t` is the same frame no matter when, or on
 whose machine, it is rendered.

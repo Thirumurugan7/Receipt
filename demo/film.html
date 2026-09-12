@@ -82,6 +82,10 @@
   .term .dim{color:var(--term-dim)} .term .g{color:#5ed99b} .term .r{color:#ff8d80}
   .term .y{color:#f2c069} .term .w{color:#fff; font-weight:500}
   .term .hot{color:#5ef0a6; font-weight:600}
+  /* filled in from seek(): a sweep across the line the scene is about */
+  .term .w{background-image:linear-gradient(90deg, rgba(94,217,155,.20), rgba(94,217,155,.20));
+           background-repeat:no-repeat; background-size:var(--sweep,0%) 100%}
+  .term .r.w{background-image:linear-gradient(90deg, rgba(255,141,128,.20), rgba(255,141,128,.20))}
   .term .warn{color:#f2c069; font-weight:600}
   .slug{color:var(--term-dim); font-size:15.5px; margin-bottom:18px; letter-spacing:.02em}
   .slug b{color:#f2c069; font-weight:500}
@@ -132,9 +136,12 @@
   /* the captures are 1500x1000; the box keeps that ratio so nothing is
      squashed and nothing overflows onto the caption. */
   .shot{position:relative; width:1140px; height:730px}
+  /* only the pictures are clipped; the caption lives outside the frame */
+  .shot .frame{position:absolute; inset:0; overflow:hidden; border-radius:3px}
   .shot img{position:absolute; inset:0; width:100%; height:100%; object-fit:contain;
             object-position:top center; border:1px solid var(--rule);
-            border-radius:3px; box-shadow:0 2px 10px rgba(25,29,43,.10)}
+            border-radius:3px; box-shadow:0 2px 10px rgba(25,29,43,.10);
+            transform-origin:center center}
   .shot .cap{position:absolute; left:0; right:0; bottom:-40px; font-size:16.5px; color:var(--faded)}
   .shot .cap b{color:var(--carbon); font-weight:600}
 
@@ -153,6 +160,15 @@ const D = window.DEMO_DATA || {};
 const esc = (s) => String(s ?? '').replace(/[&<>]/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const easeOut = (x) => 1 - Math.pow(1 - clamp(x, 0, 1), 3);
+/* A little overshoot, so things arrive rather than merely appear. */
+const easeBack = (x) => {
+  const u = clamp(x, 0, 1), c = 1.7;
+  return 1 + (c + 1) * Math.pow(u - 1, 3) + c * Math.pow(u - 1, 2);
+};
+const easeInOut = (x) => {
+  const u = clamp(x, 0, 1);
+  return u < 0.5 ? 4 * u * u * u : 1 - Math.pow(-2 * u + 2, 3) / 2;
+};
 
 /** Colour a captured transcript so the eye lands where the argument is. */
 function paint(text){
@@ -178,7 +194,7 @@ function termSize(text){
 }
 
 const termScene = (n, slug, key, chip, flip) => ({
-  n, dark: true, type: key, chip, flip,
+  n, dark: true, type: key, chip, flip, enter: 'push',
   html: `<p class="slug">${slug}</p><div class="term" data-k="${key}" style="font-size:${termSize(D[key])}px"></div>`,
 });
 
@@ -213,25 +229,25 @@ const runFrames = Array.from({ length: RUN_FRAMES }, (_, i) =>
 
 const SCENES = [
 
-{ n:'title', dur:9000, html:`
+{ n:'title', dur:9000, enter:'cut', html:`
   <div style="text-align:center; padding-right:60px">
-    <h1>RECEIPT</h1>
-    <p class="lede" style="margin:30px auto 0; max-width:56ch; color:var(--ink); font-size:23px">
+    <h1><span data-in="120" style="display:inline-block">R</span><span data-in="190" style="display:inline-block">E</span><span data-in="260" style="display:inline-block">C</span><span data-in="330" style="display:inline-block">E</span><span data-in="400" style="display:inline-block">I</span><span data-in="470" style="display:inline-block">P</span><span data-in="540" style="display:inline-block">T</span></h1>
+    <p class="lede" data-in="820" style="margin:30px auto 0; max-width:56ch; color:var(--ink); font-size:23px">
       Conditional settlement for x402. The money moves only if the response passes checks the buyer wrote.</p>
-    <p style="margin-top:34px; color:var(--faded); font-size:16px; line-height:2">
+    <p data-in="1450" style="margin-top:34px; color:var(--faded); font-size:16px; line-height:2">
       live on Hedera testnet &nbsp;escrow 0x3483B376…4071 &nbsp;audit topic 0.0.10495465<br>
       every figure in this film came off a real run</p>
   </div>`},
 
-{ n:'problem', dur:15000, html:`
+{ n:'problem', dur:15000, enter:'rise', html:`
   <h2 class="wide">An agent pays. The API returns HTTP 200 and garbage. The money is already gone.</h2>
   <ul>
-    <li><span class="m">—</span><span>x402 has <b>no refund primitive</b>. There is no dispute step anywhere in the stack.</span></li>
-    <li><span class="m">—</span><span>The median ticket is about <b>$0.46</b>. Kleros and UMA want bonds, liveness windows and gas — dollars and days.</span></li>
-    <li><span class="m">—</span><span>Google AP2 and ERC-8004 stop at <b>evidence</b>. Both hand the remedy back to whatever rail you are on.</span></li>
-    <li><span class="m">—</span><span>The one shipped alternative appoints an <b>evaluator</b>: 12M cumulative memos, and <b>five unique senders a day</b>.</span></li>
+    <li data-in="750"><span class="m">—</span><span>x402 has <b>no refund primitive</b>. There is no dispute step anywhere in the stack.</span></li>
+    <li data-in="1370"><span class="m">—</span><span>The median ticket is about <b>$0.46</b>. Kleros and UMA want bonds, liveness windows and gas — dollars and days.</span></li>
+    <li data-in="1990"><span class="m">—</span><span>Google AP2 and ERC-8004 stop at <b>evidence</b>. Both hand the remedy back to whatever rail you are on.</span></li>
+    <li data-in="2610"><span class="m">—</span><span>The one shipped alternative appoints an <b>evaluator</b>: 12M cumulative memos, and <b>five unique senders a day</b>.</span></li>
   </ul>
-  <p class="punch">The evaluator is what broke it. Who judges? Who pays the judge?</p>`},
+  <p class="punch" data-in="3600">The evaluator is what broke it. Who judges? Who pays the judge?</p>`},
 
 { n:'architecture', dur:22000, revealMs:1250, html:`
   <h3 style="max-width:82ch">Receipt has no judge. Here is every piece, and what it is built on.</h3>
@@ -250,7 +266,7 @@ const SCENES = [
 
 termScene('honest', 'the honest case — buying live token data from The Graph &nbsp;<b>pnpm buy honest</b>', 'honest', 'open', { needle: 'funds released', to: 'rel' }),
 
-{ n:'verdict', dur:10000, chip:'open', stamp:{at:6200, kind:'paid', text:'released to seller'}, state:'rel', html:`
+{ n:'verdict', dur:10000, enter:'cut', chip:'open', stamp:{at:6200, kind:'paid', text:'released to seller'}, state:'rel', html:`
   <h3>Seven checks decide the money. One is recorded and decides nothing.</h3>
   ${checkRows(D.verdicts?.honest)}
   <p style="margin-top:30px" data-stamp><span class="stamp paid">released to seller</span>
@@ -258,7 +274,7 @@ termScene('honest', 'the honest case — buying live token data from The Graph &
 
 termScene('garbage', 'HTTP 200 with a useless body &nbsp;<b>pnpm buy garbage</b>', 'garbage', 'open', { needle: 'funds refunded', to: 'ref' }),
 
-{ n:'refund', dur:11000, chip:'open', stamp:{at:7000, kind:'returned', text:'returned to buyer'}, state:'ref', html:`
+{ n:'refund', dur:11000, enter:'cut', chip:'open', stamp:{at:7000, kind:'returned', text:'returned to buyer'}, state:'ref', html:`
   <h3>Nothing at the HTTP layer was wrong. Status passed. The schema caught it.</h3>
   ${checkRows(D.verdicts?.garbage)}
   <p style="margin-top:26px" data-stamp><span class="stamp returned">returned to buyer</span>
@@ -274,12 +290,16 @@ termScene('replay', 'replaying every verdict on the public log &nbsp;<b>pnpm ver
 
 termScene('second impl', 'a second implementation, sharing no code with the first &nbsp;<b>python3 verify.py</b>', 'python', null),
 
-{ n:'evidence', dur:24000, beats:[6000, 12000, 24000], runBeat:2, html:`
+{ n:'evidence', dur:24000, beats:[6000, 12000, 24000], runBeat:2,
+  focus:{ 0:{ x:11, y:-34, scale:1.85, at:0.40, over:0.34 },
+          1:{ x:-14, y:-12, scale:1.80, at:0.40, over:0.34 } }, html:`
   <h3 style="max-width:62ch; margin-bottom:18px">Every figure in this film is on a public ledger. Here is where to find it.</h3>
   <div class="shot">
-    <img data-shot="0" src="shots/tx-release.png" alt="the release transaction on HashScan">
-    <img data-shot="1" src="shots/topic-messages.png" alt="the audit topic messages on HashScan">
-    ${runFrames}
+    <div class="frame">
+      <img data-shot="0" src="shots/tx-release.png" alt="the release transaction on HashScan">
+      <img data-shot="1" src="shots/topic-messages.png" alt="the audit topic messages on HashScan">
+      ${runFrames}
+    </div>
     <p class="cap" data-cap="0"><b>release()</b> on HashScan — 0.50000000 ℏ leaves the escrow contract for the seller</p>
     <p class="cap" data-cap="1"><b>the audit log</b> — terms, the raw response and the verdict, published for every deal</p>
     <p class="cap" data-cap="2"><b>a real session</b> — one press, and every link is a transaction that just happened</p>
@@ -306,12 +326,12 @@ termScene('second impl', 'a second implementation, sharing no code with the firs
   Publishing the raw response is what makes verification real — and is wrong for a business selling data. A confidential enclave is the fix, and it is not built.
   The facilitator also custodies for one hop; both legs are on the public log, and <code>open()</code> verifies the buyer's signature on-chain so it cannot alter the deal it was handed.</p>`},
 
-{ n:'close', dur:9000, html:`
+{ n:'close', dur:9000, enter:'cut', html:`
   <div style="padding-right:60px">
-    <h2 class="wide" style="margin-bottom:22px">x402 has no refund primitive.</h2>
-    <h2 class="wide" style="margin-bottom:22px">The shipped alternative appoints an evaluator, and runs at five senders a day.</h2>
-    <h2 class="wide" style="color:var(--paid)">Receipt has no evaluator, because the verdict is a pure function anyone can recompute.</h2>
-    <p style="margin-top:40px; color:var(--faded); font-size:17px">github.com/Thirumurugan7/Receipt</p>
+    <h2 class="wide" data-in="150" style="margin-bottom:22px">x402 has no refund primitive.</h2>
+    <h2 class="wide" data-in="1100" style="margin-bottom:22px">The shipped alternative appoints an evaluator, and runs at five senders a day.</h2>
+    <h2 class="wide" data-in="2300" style="color:var(--paid)">Receipt has no evaluator, because the verdict is a pure function anyone can recompute.</h2>
+    <p data-in="3600" style="margin-top:40px; color:var(--faded); font-size:17px">github.com/Thirumurugan7/Receipt</p>
   </div>`},
 
 ];
@@ -365,13 +385,48 @@ function seek(ms){
   for (let j = 0; j < kids.length; j++) kids[j].classList.toggle('on', j === i);
   document.body.dataset.dark = s.dark ? '1' : '0';
 
-  // one orchestrated motion: the tape advances, and nothing else moves
-  const e = easeOut(st / ENTER_MS);
+  /*
+   * Scenes do not all arrive the same way. A cut lands hard on a verdict; a
+   * push carries momentum out of a transcript; a rise is the resting default.
+   * Same clock, different gesture -- which is most of what makes an edit read
+   * as edited rather than as a slideshow on a timer.
+   */
   const inner = kids[i].firstElementChild;
-  inner.style.transform = `translateY(${(1 - e) * 22}px)`;
-  inner.style.opacity = String(e);
+  const enter = s.enter ?? 'rise';
+  let e = 1;
+  if (enter === 'cut') {
+    inner.style.transform = 'none';
+    inner.style.opacity = '1';
+  } else if (enter === 'push') {
+    e = easeInOut(st / 480);
+    inner.style.transform = `translateX(${(1 - e) * 46}px)`;
+    inner.style.opacity = String(clamp(st / 260, 0, 1));
+  } else {
+    e = easeOut(st / ENTER_MS);
+    inner.style.transform = `translateY(${(1 - e) * 22}px)`;
+    inner.style.opacity = String(e);
+  }
 
-  const sig = [i, Math.round(e * 100)];
+  const sig = [i, enter === 'cut' ? 1 : Math.round(e * 100)];
+
+  /*
+   * Anything with data-in arrives at its own moment. Choreographing the parts
+   * separately is the difference between a slide appearing and a slide being
+   * built in front of you.
+   */
+  const timed = kids[i].querySelectorAll('[data-in]');
+  if (timed.length) {
+    let acc = 0;
+    for (const el of timed) {
+      const at = Number(el.dataset.in);
+      const p = easeBack((st - at) / 420);
+      const o = clamp((st - at) / 280, 0, 1);
+      el.style.opacity = String(o);
+      el.style.transform = st >= at + 420 ? 'none' : `translateY(${(1 - p) * 13}px)`;
+      acc += Math.round(o * 20);
+    }
+    sig.push('t' + acc);
+  }
   let printed = false;   // has the transcript reached the line where the money moves?
 
   const term = kids[i].querySelector('.term[data-k]');
@@ -381,7 +436,13 @@ function seek(ms){
     const chars = Math.floor(clamp(st / printMs, 0, 1) * text.length);
     const blink = st < printMs || Math.floor(t / 530) % 2 === 0;
     term.innerHTML = paint(text.slice(0, chars)) + (blink ? '<span class="cur"></span>' : '');
-    sig.push(chars, blink ? 1 : 0);
+
+    // Once the transcript has finished printing, light up the verdict line.
+    // Without it the eye has to hunt for the one line the scene is about.
+    const sweep = Math.round(easeOut((st - printMs - 260) / 520) * 100);
+    term.style.setProperty('--sweep', `${sweep}%`);
+
+    sig.push(chars, blink ? 1 : 0, sweep);
     if (s.flip) {
       const at = text.indexOf(s.flip.needle);
       printed = at !== -1 && chars >= at + s.flip.needle.length;
@@ -398,9 +459,25 @@ function seek(ms){
     const u = (st - from) / (s.beats[idx] - from);
     const into = easeOut((st - from) / 260);
 
-    for (const img of kids[i].querySelectorAll('[data-shot]')) {
-      img.style.opacity = Number(img.dataset.shot) === idx ? String(into) : '0';
+    /*
+     * Hold the whole page long enough to see what it is, then push in on the
+     * line that carries the claim. A full-page screenshot held flat for six
+     * seconds is a slide; moving to the evidence is an edit -- and it makes
+     * the small print legible, which matters more.
+     */
+    const focus = s.focus?.[idx];
+    let fx = '';
+    if (focus) {
+      const k = easeInOut((u - focus.at) / focus.over);
+      const z = 1 + (focus.scale - 1) * k;
+      fx = `scale(${z.toFixed(3)}) translate(${(focus.x * k).toFixed(2)}%, ${(focus.y * k).toFixed(2)}%)`;
     }
+    for (const img of kids[i].querySelectorAll('[data-shot]')) {
+      const on = Number(img.dataset.shot) === idx;
+      img.style.opacity = on ? String(into) : '0';
+      img.style.transform = on && fx ? fx : 'none';
+    }
+    if (focus) sig.push('f' + Math.round(easeInOut((u - focus.at) / focus.over) * 100));
 
     // On the run beat, play the captured frames; otherwise hide them all.
     const runIdx = idx === s.runBeat
