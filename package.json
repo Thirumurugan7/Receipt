@@ -18,7 +18,9 @@
     "verify:all": "pnpm --filter @receipt/verify start --all",
     "build:verifier": "esbuild packages/dashboard/src/verify-browser.ts --bundle --format=iife --platform=browser --target=es2022 --minify --outfile=packages/dashboard/public/verify.js",
     "build:site": "pnpm build:verifier && cp packages/dashboard/public/verify.js site/verify.js",
-    "deploy:site": "pnpm build:site && npx -y vercel@latest deploy --prod --cwd site --yes"
+    "deploy:site": "pnpm build:site && npx -y vercel@latest deploy --prod --cwd site --yes",
+    "health": "node scripts/health.mjs",
+    "serve": "bash scripts/serve.sh"
   },
   "devDependencies": {
     "@bazantic/cli": "0.10.0",

@@ -378,9 +378,46 @@ Individually:
 
 ```bash
 pnpm buy honest                     # or: garbage, subtle, dead
+pnpm buy subtle-selfcheck           # the seller declines rather than be refunded
 pnpm claim  --deal 0x…              # permissionless expiry, from an unrelated wallet
 pnpm verify --deal 0x…              # re-run the adjudicator offline
 ```
+
+### Keeping the local stack up
+
+Three terminals is fine while you are working. For a demo it is not, so there
+are two commands:
+
+```bash
+pnpm serve          # start the facilitator and the seller, supervised
+pnpm serve stop     # stop them
+pnpm health         # is everything a visitor might open actually up?
+```
+
+`pnpm serve` runs each service under a restart loop, detached from the shell
+that launched it, with output in `.run/`. Kill one and it is back in about
+three seconds.
+
+It also starts them in the right order and waits, rather than sleeping and
+hoping. That ordering is not cosmetic. The seller is a stock x402 resource
+server, and a stock x402 resource server loads the supported payment kinds
+from its facilitator exactly once, at startup. If the facilitator is not
+answering yet, that load fails, the seller keeps its port open, and every paid
+request answers 500 for the rest of that process's life. Nothing crashes. The
+symptom is an honest deal that gets refunded, which is the one result this
+project must never produce by accident.
+
+So `/health` on the seller answers the question that actually matters. It
+reports `ok` only when it can reach the facilitator, and `degraded` with a 503
+and a reason when it cannot:
+
+```json
+{ "status": "degraded", "detail": "facilitator unreachable at http://localhost:8080/supported" }
+```
+
+`pnpm health` checks the hosted ledger, the audit topic on the mirror node, the
+Bazantic gateway, both local services and the tunnel, prints what it found, and
+exits non-zero only when something a judge would actually reach is broken.
 
 ### As an MCP tool
 
@@ -509,6 +546,7 @@ surfacing as an unexplained `BadSignature` during a live paid request.
 | [`site`](site) | The hosted static ledger deployed to Vercel |
 | [`demo`](demo) | The film, and the tooling that renders it without recording a screen |
 | [`recipes`](recipes) | The two published Bazantic Recipes |
+| [`scripts`](scripts) | `pnpm serve` keeps the local stack up in the right order, `pnpm health` says whether it is |
 
 ---
 

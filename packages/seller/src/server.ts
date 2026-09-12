@@ -16,6 +16,7 @@ import { paymentMiddlewareFromConfig } from '@x402/hono'
 import { HTTPFacilitatorClient } from '@x402/core/server'
 import { ExactHederaScheme } from '@x402/hedera/exact/server'
 import { balances, GraphError, poolsFor, toQuote } from './graph.js'
+import { readiness } from './readiness.js'
 import { adjudicate, decodeTermsHeader } from '@receipt/core'
 import type { Observation } from '@receipt/core'
 
@@ -53,15 +54,27 @@ app.use('*', async (c, next) => {
   )
 })
 
-app.get('/health', (c) =>
-  c.json({
-    status: 'ok',
-    facilitator: RECEIPT,
-    price: PRICE_TINYBARS,
-    sells: 'the-graph-token-api',
-    graphKeyConfigured: Boolean(process.env.GRAPH_TOKEN_API_KEY),
-  }),
-)
+/**
+ * Health means "can this seller take a payment", not "is this process alive".
+ * The difference is not academic: the x402 resource server loads supported
+ * payment kinds from the facilitator once at startup, and if the facilitator
+ * was not up yet it keeps listening and answers every paid request with 500.
+ * Reporting ok in that state is how a restart produced a refunded honest deal.
+ */
+app.get('/health', async (c) => {
+  const dep = await readiness(RECEIPT)
+  return c.json(
+    {
+      status: dep.ready ? 'ok' : 'degraded',
+      detail: dep.detail,
+      facilitator: RECEIPT,
+      price: PRICE_TINYBARS,
+      sells: 'the-graph-token-api',
+      graphKeyConfigured: Boolean(process.env.GRAPH_TOKEN_API_KEY),
+    },
+    dep.ready ? 200 : 503,
+  )
+})
 
 app.use(
   paymentMiddlewareFromConfig(
