@@ -228,6 +228,30 @@ against the hash the escrow recorded. Nothing above does that.
 | Mirror node | [`testnet.mirrornode.hedera.com`](https://testnet.mirrornode.hedera.com/api/v1/topics/0.0.10495465/messages), the raw bytes |
 | Local ledger | `http://localhost:8080` after `pnpm facilitator`, which can also run new deals |
 
+**Three deals you can open right now**
+
+One of each outcome, on testnet, every hash resolving to a `SUCCESS` transaction. Each row is
+the same flow: the buyer's payment settles, the escrow opens against the buyer's signed terms,
+the seller answers, the checks run, and the escrow resolves one way or the other.
+
+| | Passed | Failed on `requiredPaths` | Failed on `freshness` |
+|---|---|---|---|
+| Seller behaviour | real Graph data | HTTP 200 with an error blob | real Graph data, stale snapshot |
+| Outcome | released to seller | refunded to buyer | refunded to buyer |
+| Buyer delta | −0.5 ℏ | 0 ℏ | 0 ℏ |
+| Deal id | `0x0aa1e03a…7623` | `0x55e54e95…5411` | `0xe17dcdc8…cd7bc` |
+| 1. Payment settles (x402) | [`0.0.7162784@1789256036…`](https://hashscan.io/testnet/transaction/0.0.7162784-1789256036-789077402) | [`0.0.7162784@1789256075…`](https://hashscan.io/testnet/transaction/0.0.7162784-1789256075-451504628) | [`0.0.7162784@1789256104…`](https://hashscan.io/testnet/transaction/0.0.7162784-1789256104-779124963) |
+| 2. `open()` escrow | [`0x24e9baae…c143`](https://hashscan.io/testnet/transaction/0x24e9baae2628765aadfe8409cb8588fb7c329ec206b00b42120aac5055e0c143) | [`0xded99959…51b1`](https://hashscan.io/testnet/transaction/0xded99959f58c5fcc1b14fd570d05c1d42bc7f08b01f1352373620d7e1bab51b1) | [`0xde4e8241…f506e`](https://hashscan.io/testnet/transaction/0xde4e8241914de9be15698ae7e9b79f3bc61441359bfbfef9394396a05c9f506e) |
+| 3. `release()` / `refund()` | [`0x8e4805f7…1aaa`](https://hashscan.io/testnet/transaction/0x8e4805f761c73814512bc1ce54ffcd506462628733ae74525432caa2849e1aaa) | [`0xdc71a23d…2a2a5`](https://hashscan.io/testnet/transaction/0xdc71a23dab3f6566d0e6a6d6ce8ececdf993b61315b53c98c34e29ea45a2a2a5) | [`0x43eb94f5…3dbb3`](https://hashscan.io/testnet/transaction/0x43eb94f56c3adda7a92487192df8a2024a3c5dcfec1f77b8ff496d3c6253dbb3) |
+
+The `freshness` column is the interesting one. That response is genuine Graph data with every
+field valid and the right shape. A human reviewer would wave it through. Only the timestamp is
+hours old, and only the check catches it.
+
+Every one of these also has its terms, its raw response body and its verdict on
+[topic `0.0.10495465`](https://hashscan.io/testnet/topic/0.0.10495465/messages), which is what
+lets `pnpm verify --deal 0x…` recompute any of them without our help.
+
 Full detail, including the four testnet accounts and their roles, is in [DEPLOYMENTS.md](DEPLOYMENTS.md).
 The wire format and adjudication semantics are specified in [SPEC.md](SPEC.md), precise
 enough to write a second implementation, and asserted against the code in CI.
