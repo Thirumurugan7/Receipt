@@ -28,14 +28,33 @@ almost impossible to hear and a 60% rate jump is impossible to miss. Only if a
 line still will not fit after the pauses are at their floor does the rate move
 at all, and then by at most ten percent.
 
-The remaining honest limitation: macOS ships only compact voices for en_IN, so
-this is a clearly synthetic read. A recorded human voice over the same silent
-film is strictly better and the ffmpeg mux at the end of this file will take
-one without any other change.
+ENGINES
+-------
+Two, picked in this order:
+
+  edge-tts   free, open source (GPL-3.0), no API key and no account. Neural
+             voices, including three for en_IN. This is the default because
+             macOS ships only *compact* voices for Indian English, which are
+             formant synthesis and sound it. Install with
+             `pip install edge-tts`, or point RECEIPT_EDGE_TTS at the binary.
+             It calls Microsoft's read-aloud endpoint, so rebuilding the
+             narration needs a network connection.
+
+  say        macOS built in, fully offline, no install. Used automatically
+             when edge-tts is not on PATH. Noticeably more synthetic, so the
+             pause and pitch shaping below exists mainly to help this engine.
+
+Piper was the other candidate worth trying, being fully offline and MIT, but
+it ships 38 English voices and none of them are en_IN.
+
+A recorded human voice over the same silent film still beats both, and the
+ffmpeg mux at the end of this file will take one without any other change.
 """
 import json
 import pathlib
 import re
+import os
+import shutil
 import subprocess
 import sys
 
@@ -45,7 +64,8 @@ WORK = HERE / '.narration'
 FILM = HERE / 'receipt-demo.mp4'
 OUT = HERE / 'receipt-demo-narrated.mp4'
 
-VOICE = 'Rishi'          # en_IN, macOS built in
+SAY_VOICE = 'Rishi'              # en_IN, macOS built in
+EDGE_VOICE = 'en-IN-PrabhatNeural'   # en_IN, neural, free, no key
 RATE = 168               # words a minute, the same in every scene
 RATE_CEILING = 185       # only reached when pauses are already at the floor
 PITCH_MOD = 130          # more melody than the flat default, less monotone
@@ -53,6 +73,7 @@ SENTENCE_PAUSE = 340     # ms of breath after a full stop
 CLAUSE_PAUSE = 150       # ms after a comma
 PAUSE_FLOOR = 0.35       # pauses may shrink to this fraction before rate moves
 LEAD_IN = 250            # ms after the cut before the voice starts
+EDGE_BASE_PCT = 26       # edge-tts reads slow by default; this is its 168 wpm
 
 
 def duration(path: pathlib.Path) -> float:
@@ -82,14 +103,33 @@ def with_breath(text: str, scale: float) -> str:
     return f'[[pmod {PITCH_MOD}]] {out}'
 
 
+def edge_binary() -> str | None:
+    return os.environ.get('RECEIPT_EDGE_TTS') or shutil.which('edge-tts')
+
+
+EDGE = edge_binary()
+
+
 def speak(text: str, rate: int, scale: float, dest: pathlib.Path) -> float:
-    subprocess.run(['say', '-v', VOICE, '-r', str(rate), '-o', str(dest),
-                    with_breath(text, scale)], check=True)
+    """Render one line. `rate` is words a minute; `scale` shrinks the pauses."""
+    if EDGE:
+        # A neural voice paces and breathes on its own, so the pause and pitch
+        # shaping is not applied to it: doing so fights the model. Fitting is
+        # expressed as a percentage off its natural pace instead.
+        pct = round((rate - RATE) / RATE * 100) + EDGE_BASE_PCT
+        subprocess.run([EDGE, '--voice', EDGE_VOICE,
+                        f'--rate={pct:+d}%', '--text', text,
+                        '--write-media', str(dest)],
+                       check=True, capture_output=True)
+    else:
+        subprocess.run(['say', '-v', SAY_VOICE, '-r', str(rate), '-o', str(dest),
+                        with_breath(text, scale)], check=True)
     return duration(dest)
 
 
 def main() -> int:
     WORK.mkdir(exist_ok=True)
+    print(f"engine: {'edge-tts ' + EDGE_VOICE if EDGE else 'say ' + SAY_VOICE}\n")
     scenes = json.loads((HERE / 'schedule.json').read_text())
     if isinstance(scenes, dict):
         scenes = scenes.get('scenes') or scenes.get('cues')
@@ -103,7 +143,7 @@ def main() -> int:
     clips, moved = [], 0
     for s in scenes:
         text = lines[s['n']]
-        clip = WORK / f"{s['start']:06d}.aiff"
+        clip = WORK / (f"{s['start']:06d}." + ('mp3' if EDGE else 'aiff'))
         lead = LEAD_IN
         budget = s['dur'] / 1000 - lead / 1000
 
