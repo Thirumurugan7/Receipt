@@ -4,16 +4,34 @@ Reads the narration script onto the film.
 
     python3 demo/narrate.py
 
-The film is silent by design: every screen is built to be understood without
-a voice over it. ETHGlobal requires a narrated video, so this speaks the
+The film is silent by design: every screen is built to be understood without a
+voice over it. A narrated cut is required for submission, so this speaks the
 script in DEMO.md over the rendered film.
 
-It is deliberately not a hand-made recording. The narration table in DEMO.md
-is the single source of the words, and demo/schedule.json, written by the
-renderer from the film itself, is the single source of the timings. Each line
-is spoken into its own scene and its rate is solved so it fits the scene it
-belongs to. Change a scene length and re-run: the read re-times itself rather
-than drifting out of sync.
+The narration table in DEMO.md is the only source of the words, and
+demo/schedule.json, which the renderer writes from the film itself, is the only
+source of the timings. Change a scene length and re-run: the read re-times
+itself rather than drifting out of sync.
+
+WHY IT IS BUILT THIS WAY
+------------------------
+The first version of this script solved a speaking rate per scene so each line
+would fit its slot. That worked and sounded terrible, because it meant the
+voice ran at 150 words a minute in one scene and 264 in the next. Nobody speaks
+like that, and the lurching is what made it sound synthetic, more than the
+voice itself did.
+
+So the rate is now fixed. Every scene is read at the same pace a person would
+use. When a line does not fit, the time comes out of the pauses between
+sentences, not out of the speaking rate, because a slightly clipped pause is
+almost impossible to hear and a 60% rate jump is impossible to miss. Only if a
+line still will not fit after the pauses are at their floor does the rate move
+at all, and then by at most ten percent.
+
+The remaining honest limitation: macOS ships only compact voices for en_IN, so
+this is a clearly synthetic read. A recorded human voice over the same silent
+film is strictly better and the ffmpeg mux at the end of this file will take
+one without any other change.
 """
 import json
 import pathlib
@@ -24,11 +42,17 @@ import sys
 HERE = pathlib.Path(__file__).resolve().parent
 ROOT = HERE.parent
 WORK = HERE / '.narration'
-VOICE = 'Rishi'          # en_IN, macOS built in
 FILM = HERE / 'receipt-demo.mp4'
 OUT = HERE / 'receipt-demo-narrated.mp4'
-# A line is given 93% of its scene, so the next scene never opens mid-sentence.
-HEADROOM = 0.93
+
+VOICE = 'Rishi'          # en_IN, macOS built in
+RATE = 168               # words a minute, the same in every scene
+RATE_CEILING = 185       # only reached when pauses are already at the floor
+PITCH_MOD = 130          # more melody than the flat default, less monotone
+SENTENCE_PAUSE = 340     # ms of breath after a full stop
+CLAUSE_PAUSE = 150       # ms after a comma
+PAUSE_FLOOR = 0.35       # pauses may shrink to this fraction before rate moves
+LEAD_IN = 250            # ms after the cut before the voice starts
 
 
 def duration(path: pathlib.Path) -> float:
@@ -39,7 +63,7 @@ def duration(path: pathlib.Path) -> float:
     return float(out.stdout.strip())
 
 
-def narration_lines() -> dict[str, str]:
+def narration_lines() -> dict:
     """The `| 0:00 | scene | what to say |` table in DEMO.md, keyed by scene."""
     rows = {}
     for line in (ROOT / 'DEMO.md').read_text().split('\n'):
@@ -47,6 +71,21 @@ def narration_lines() -> dict[str, str]:
         if m:
             rows[m.group(1).strip()] = m.group(2).strip()
     return rows
+
+
+def with_breath(text: str, scale: float) -> str:
+    """Apple's embedded speech commands, so the read breathes between thoughts."""
+    sentence = max(1, int(SENTENCE_PAUSE * scale))
+    clause = max(1, int(CLAUSE_PAUSE * scale))
+    out = re.sub(r'([.!?]) +', rf'\1 [[slnc {sentence}]] ', text)
+    out = re.sub(r'(,) +', rf'\1 [[slnc {clause}]] ', out)
+    return f'[[pmod {PITCH_MOD}]] {out}'
+
+
+def speak(text: str, rate: int, scale: float, dest: pathlib.Path) -> float:
+    subprocess.run(['say', '-v', VOICE, '-r', str(rate), '-o', str(dest),
+                    with_breath(text, scale)], check=True)
+    return duration(dest)
 
 
 def main() -> int:
@@ -61,39 +100,60 @@ def main() -> int:
         print(f'DEMO.md has no line for: {missing}', file=sys.stderr)
         return 1
 
-    clips = []
+    clips, moved = [], 0
     for s in scenes:
-        text, budget = lines[s['n']], s['dur'] / 1000 * HEADROOM
-        rate = max(150, min(260, round(len(text.split()) / budget * 60)))
+        text = lines[s['n']]
         clip = WORK / f"{s['start']:06d}.aiff"
-        subprocess.run(['say', '-v', VOICE, '-r', str(rate), '-o', str(clip), text], check=True)
-        spoken = duration(clip)
-        # Solving for the rate is approximate, so close the gap by measuring.
-        for _ in range(6):
-            if spoken <= budget:
-                break
-            rate = min(300, round(rate * (spoken / budget) * 1.02))
-            subprocess.run(['say', '-v', VOICE, '-r', str(rate), '-o', str(clip), text], check=True)
-            spoken = duration(clip)
-        clips.append((s, clip, rate, spoken))
-        print(f"{s['start']/1000:7.1f}s  {s['n']:22} rate {rate:3}  {spoken:5.1f}s / {s['dur']/1000:5.1f}s")
+        lead = LEAD_IN
+        budget = s['dur'] / 1000 - lead / 1000
 
-    # Lay every clip onto one track at its own scene start. normalize=0 because
-    # the clips do not overlap, so mixing must not scale them down.
+        scale, rate = 1.0, RATE
+        spoken = speak(text, rate, scale, clip)
+        # First give back pause time, which nobody can hear.
+        while spoken > budget and scale > PAUSE_FLOOR:
+            scale = max(PAUSE_FLOOR, scale - 0.15)
+            spoken = speak(text, rate, scale, clip)
+        # Then drop the lead-in, so the voice starts on the cut instead.
+        if spoken > budget:
+            lead = 0
+            budget = s['dur'] / 1000
+        # Only then touch the rate, and never by much.
+        while spoken > budget and rate < RATE_CEILING:
+            rate = min(RATE_CEILING, rate + 5)
+            spoken = speak(text, rate, scale, clip)
+
+        if rate != RATE:
+            moved += 1
+        clips.append((s, clip, lead))
+        flag = '' if rate == RATE else f'  rate {rate}'
+        over = '' if spoken <= s['dur'] / 1000 else '  OVERRUN'
+        print(f"{s['start']/1000:7.1f}s  {s['n']:22} {spoken:5.1f}s / "
+              f"{s['dur']/1000:5.1f}s  pauses {scale:.2f}{flag}{over}")
+
+    print(f'\nscenes read at the base rate: {len(clips) - moved}/{len(clips)}')
+
     inputs, filters, labels = [], [], []
-    for i, (s, clip, _, _) in enumerate(clips):
+    for i, (s, clip, lead) in enumerate(clips):
         inputs += ['-i', str(clip)]
+        at = s['start'] + lead
         filters.append(f"[{i}:a]aformat=sample_rates=44100:channel_layouts=stereo,"
-                       f"adelay={s['start']}|{s['start']}[a{i}]")
+                       f"adelay={at}|{at}[a{i}]")
         labels.append(f'[a{i}]')
-    track = WORK / 'narration.m4a'
-    subprocess.run(
-        ['ffmpeg', '-v', 'error', '-y', *inputs, '-filter_complex',
-         ';'.join(filters) + ';' + ''.join(labels) +
-         f'amix=inputs={len(clips)}:normalize=0:dropout_transition=0,dynaudnorm=p=0.9:m=10[out]',
-         '-map', '[out]', str(track)], check=True)
 
-    # Mono at 64k: it is speech, and the file has to stay small enough to upload.
+    # Gentle compression and a small presence lift for intelligibility, then
+    # loudnorm rather than dynaudnorm: dynaudnorm chases every syllable to the
+    # same level, which flattens the read and is its own kind of robotic.
+    chain = ('amix=inputs=%d:normalize=0:dropout_transition=0,'
+             'highpass=f=85,'
+             'acompressor=threshold=-20dB:ratio=2.5:attack=15:release=250,'
+             'treble=g=2:f=5500,'
+             'loudnorm=I=-18:TP=-2:LRA=11' % len(clips))
+    track = WORK / 'narration.m4a'
+    subprocess.run(['ffmpeg', '-v', 'error', '-y', *inputs, '-filter_complex',
+                    ';'.join(filters) + ';' + ''.join(labels) + chain + '[out]',
+                    '-map', '[out]', str(track)], check=True)
+
+    # Mono at 80k: it is speech, and the file has to stay small enough to upload.
     subprocess.run(
         ['ffmpeg', '-v', 'error', '-y', '-i', str(FILM), '-i', str(track),
          '-c:v', 'copy', '-c:a', 'aac', '-b:a', '64k', '-ac', '1',
