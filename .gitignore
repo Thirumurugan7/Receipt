@@ -21,3 +21,4 @@ demo/.frames/
 # chrome profile used while capturing explorer screenshots
 demo/shots/.profile/
 .run/
+demo/.narration/

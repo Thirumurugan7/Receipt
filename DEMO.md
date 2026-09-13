@@ -1,6 +1,6 @@
 # DEMO.md: the film, and what to say over it
 
-`demo/receipt-demo.mp4` is 3:47, 1920×1080, no audio.
+`demo/receipt-demo.mp4` is 3:47, 1920×1080 and silent. `demo/receipt-demo-narrated.mp4` is the same film with the narration below read onto it by `demo/narrate.py`, and is the cut that was submitted.
 
 Every figure in it came off a live run against Hedera testnet: real settlement,
 real escrow, real release and refund, real data bought from The Graph. Nothing
@@ -35,7 +35,7 @@ script cannot drift out of sync with what is on screen.
 | 2:36 | second opinion | And again in Python, no dependencies, written from the written spec. Same answer, same hash, and it is the hash the escrow recorded on chain. |
 | 2:47 | the receipts | All of it is public. Here is half an HBAR leaving the escrow, on HashScan. And here is the reasoning: every check result, published, for every deal. |
 | 3:01 | architecture | Here is the whole path. The buyer signs, Blocky402 settles the payment, Hedera holds it in escrow, the seller answers with Graph data, the checks run, and all of it lands on a public log. Money only moves at two of those steps. |
-| 3:18 | sponsors | Every sponsor here is load-bearing. Hedera holds the money and carries the log. The Graph is the thing being bought. Blocky402 moves every payment. Bazantic makes it callable by an agent. Chainlink we have not claimed. |
+| 3:18 | sponsors | Every sponsor here is load-bearing. Hedera holds the money and carries the log. The Graph is the thing being bought. Blocky402 moves every payment. Bazantic makes it callable by an agent. |
 | 3:30 | what we cannot prove | There is one thing we cannot prove. How fast the seller answered is our own stopwatch, so we publish it and let it gate no money at all. |
 | 3:39 | close | x402 has no refund. Appointing a judge has been tried. It does five users a day. Receipt has no judge, because the answer is arithmetic. |
 

@@ -1,6 +1,6 @@
 # demo
 
-`receipt-demo.mp4` is 1920×1080, no audio. Every number in it is real, captured
+`receipt-demo.mp4` is 1920×1080 and silent. Every number in it is real, captured
 from a live run against Hedera testnet, buying live token data from The Graph.
 `DEMO.md` at the repo root is the narration to read over it.
 
@@ -117,4 +117,6 @@ Renders just those moments into `demo/.frames/` and exits.
 | `run-frames.js` | the frame count, written by `interact.mjs` so the film cannot hold a stale copy |
 | `schedule.json` | the running order, written by the renderer; `DEMO.md` is tested against it |
 | `receipt-demo.mp4` | the rendered film |
+| `narrate.py` | reads the DEMO.md script onto the film, timed from `schedule.json` |
+| `receipt-demo-narrated.mp4` | the narrated cut, the one submitted |
 | `receipt-demo-v1.mp4` | the earlier cut, kept on request: same content, longer runway, emoji art |
