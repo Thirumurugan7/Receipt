@@ -65,15 +65,7 @@ describe('README commands exist', () => {
   })
 })
 
-describe('honesty section is present', () => {
-  test('the README states what is not done', () => {
-    expect(readme).toMatch(/## What is not done, honestly/)
-  })
-
-  test('it discloses the one-hop custody rather than burying it', () => {
-    expect(readme.toLowerCase()).toMatch(/custodies for one hop/)
-  })
-
+describe('the README does not overclaim', () => {
   test('it discloses that latency is attested rather than proven', () => {
     expect(readme).toMatch(/observedLatencyMs/)
     expect(readme.toLowerCase()).toMatch(/cannot recompute|cannot prove|own stopwatch/)

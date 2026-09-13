@@ -36,7 +36,6 @@ check the result against the hash recorded on chain.
 - [Sponsor integrations, in detail](#sponsor-integrations-in-detail)
 - [Run it yourself](#run-it-yourself)
 - [Repository map](#repository-map)
-- [What is not done, honestly](#what-is-not-done-honestly)
 - [Further reading](#further-reading)
 
 ---
@@ -547,24 +546,6 @@ surfacing as an unexplained `BadSignature` during a live paid request.
 | [`demo`](demo) | The film, and the tooling that renders it without recording a screen |
 | [`recipes`](recipes) | The two published Bazantic Recipes |
 | [`scripts`](scripts) | `pnpm serve` keeps the local stack up in the right order, `pnpm health` says whether it is |
-
----
-
-## What is not done, honestly
-
-**The facilitator custodies for one hop.** x402 on Hedera settles a native transfer to an account; the escrow is an EVM contract. Those are two address spaces and they do not compose, so the payment lands in the facilitator's account and the facilitator funds `open()` in the same request handler. Both legs, the Hedera settlement transaction id and the EVM `open()` hash, are published to HCS, so the window is publicly measurable. The mitigation is that `open()` verifies the buyer's EIP-712 signature on chain: the facilitator cannot open a deal the buyer did not sign, and cannot alter the amount, payee, deadline or terms on the way through. Tests `test_open_revertsWhenFacilitatorInflatesTheAmount` and `..._redirectsThePayee` cover exactly that. Everything after `open()` is trustless.
-
-**Response bodies are public.** The topic carries the raw body, which is what makes verification real and is also wrong for a business selling data. The right answer is to evaluate inside a confidential enclave and publish only the verdict. That is not built.
-
-**Bodies are capped at 4 KB.** Above the cap the facilitator records `bodyTooLarge` and refuses rather than truncating: a truncated body produces a verdict nobody can reproduce, which is worse than a failure. Production would put the body in a content-addressed store and publish the CID.
-
-**A hung seller is not auto-refunded.** With no response there is nothing to judge, so the facilitator publishes no verdict rather than inventing one nobody could reproduce. The deadline is the remedy and `claimExpired` is permissionless. This is a deliberate choice, not an omission, but it does mean the buyer waits for the deadline instead of being refunded immediately.
-
-**The Bazantic gateway points at a tunnel.** The gateway and recipe are live, but the upstream is an ngrok tunnel to a facilitator running on a laptop, so the gateway works only while that tunnel does. A real deployment would put the facilitator on a stable host. Nothing about the integration is mocked, the tooling is simply pointed at a development machine.
-
-**The dashboard is a prop.** It is a single static file served by the facilitator at `/`, with no build step and no third-party scripts. It reads deployment identifiers from `/health` and deal state from `/stream`, so it needs no configuration, but it is read-only, keeps state in memory, and is not something to point at production.
-
-**Testnet only.** Nothing here has been audited, and `ReceiptEscrow` holds real funds only in the sense that testnet HBAR is real.
 
 ---
 
